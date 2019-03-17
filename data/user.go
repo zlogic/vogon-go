@@ -17,6 +17,8 @@ type User struct {
 	Password string
 }
 
+var ErrUserAlreadyExists = errors.New("id conflicts with existing user")
+
 func (s *DBService) CreateUser(username string) (*User, error) {
 	seq, err := s.db.GetSequence([]byte(SequenceUserKey), 1)
 	defer seq.Release()
@@ -56,12 +58,25 @@ func (s *DBService) GetUser(username string) (*User, error) {
 }
 
 func (s *DBService) SaveUser(user *User) (err error) {
+	return s.saveUser(user, false)
+}
+
+func (s *DBService) SaveNewUser(user *User) (err error) {
+	return s.saveUser(user, true)
+}
+
+func (s *DBService) saveUser(user *User, newUser bool) (err error) {
 	key := user.CreateKey()
 
 	return s.db.Update(func(txn *badger.Txn) error {
 		// Check for username/id conflicts
 		_, err := txn.Get(key)
 		existingItem, err := txn.Get(key)
+
+		if newUser && err != badger.ErrKeyNotFound {
+			return ErrUserAlreadyExists
+		}
+
 		if existingItem != nil || (err != nil && err != badger.ErrKeyNotFound) {
 			value, err := existingItem.Value()
 			if err != nil {

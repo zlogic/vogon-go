@@ -1,0 +1,66 @@
+{{ define "content" }}
+<h2>Register</h2>
+<form id="registerForm" autocomplete="off">
+  <div class="form-row">
+    <div class="form-group col-md-6">
+      <label for="inputUsername">Username</label>
+      <input type="text" class="form-control" id="inputUsername" placeholder="Username" required>
+    </div>
+    <div class="form-group col-md-6">
+      <label for="inputPassword">Password</label>
+      <input type="password" class="form-control" id="inputPassword" placeholder="Password" required>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group col-md-6">
+      <div class="custom-control custom-checkbox">
+        <input class="custom-control-input" type="checkbox" id="rememberMe">
+        <label class="custom-control-label" for="rememberMe">Remember me</label>
+      </div>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group col-md-12">
+      <button type="submit" class="btn btn-primary">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
+        Register
+      </button>
+    </div>
+  </div>
+  <div id="registerFailed" class="alert alert-danger" role="alert" hidden>Registration failed: <span id="failReason"></span></div>
+</form>
+<script>
+$(document).ready(function() {
+  $("#registerForm").submit(function(event) {
+    event.preventDefault();
+    // Prepare request
+    var $form = $(this);
+    $form.find("#registerFailed").prop("hidden", true);
+    var username = $form.find("input[id='inputUsername']");
+    var password = $form.find("input[id='inputPassword']");
+    var rememberMe = $form.find("input[id='rememberMe']");
+    var submit = $form.find('button[type="submit"]');
+    var spinner = $form.find('button[type="submit"] span[role="status"]');
+    var lockForm = function(processing){
+      [username, password, rememberMe, submit].forEach(function(control){
+        control.attr("disabled", processing);
+      })
+      spinner.prop("hidden", !processing);
+    }
+    lockForm(true);
+    $.post("api/register", {username: username.val(), password: password.val(), rememberMe: rememberMe.prop('checked')})
+    .done(function() {
+      window.location.href = "settings";
+    })
+    .fail(function(response) {
+      lockForm(false);
+      var alertDiv = $form.find("#registerFailed")
+      alertDiv.hide();
+      alertDiv.find("#failReason").text(response.responseText);
+      alertDiv.prop("hidden", false);
+      alertDiv.slideDown();
+    });
+  });
+});
+</script>
+{{ end }}

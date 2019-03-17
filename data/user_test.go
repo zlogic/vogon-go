@@ -70,6 +70,28 @@ func TestSaveExistingUser(t *testing.T) {
 	assert.Equal(t, "newPassword", user.Password)
 }
 
+func TestSaveUsernameAlreadyInUse(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	user := &User{
+		Password: "password",
+		username: "user01",
+	}
+	err = dbService.SaveUser(user)
+	assert.NoError(t, err)
+
+	user.Password = "newPassword"
+	err = dbService.SaveNewUser(user)
+	assert.Equal(t, ErrUserAlreadyExists, err)
+
+	user, err = dbService.GetUser("user01")
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.Equal(t, "password", user.Password)
+}
+
 func TestSetUserPassword(t *testing.T) {
 	user := &User{}
 	err := user.SetPassword("hello")
