@@ -29,7 +29,9 @@
   </div>
   <div id="loginFailed" class="alert alert-danger" role="alert" hidden>Login failed</div>
 </form>
+{{ if .RegistrationAllowed }}
 <a class="btn btn-outline-secondary" href="register" role="button">Register</a>
+{{ end }}
 <script>
 $(document).ready(function() {
   $("#loginForm").submit(function(event) {

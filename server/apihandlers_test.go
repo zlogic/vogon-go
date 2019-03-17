@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -146,6 +147,31 @@ func TestRegisterHandlerUsernameAlreadyInUse(t *testing.T) {
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusInternalServerError, res.Code)
 	assert.Equal(t, "Username is already in use\n", string(res.Body.Bytes()))
+	assert.Empty(t, res.Result().Cookies())
+
+	dbMock.AssertExpectations(t)
+}
+
+func TestRegisterRegistrationNotAllowed(t *testing.T) {
+	dbMock := new(DBMock)
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	err = os.Setenv("ALLOW_REGISTRATION", "false")
+	defer func() { os.Unsetenv("ALLOW_REGISTRATION") }()
+	assert.NoError(t, err)
+
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("POST", "/api/register", strings.NewReader("username=user01&password=pass"))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusNotFound, res.Code)
+	assert.Equal(t, "404 page not found\n", string(res.Body.Bytes()))
 	assert.Empty(t, res.Result().Cookies())
 
 	dbMock.AssertExpectations(t)

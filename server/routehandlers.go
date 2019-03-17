@@ -70,7 +70,11 @@ func HtmlLoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) 
 			handleError(w, r, err)
 			return
 		}
-		t.ExecuteTemplate(w, "layout", &viewData{})
+		type loginData struct {
+			viewData
+			RegistrationAllowed bool
+		}
+		t.ExecuteTemplate(w, "layout", &loginData{RegistrationAllowed: registrationAllowed()})
 	}
 }
 

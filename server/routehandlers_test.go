@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path"
 	"testing"
 
@@ -184,6 +185,30 @@ func TestHtmlRegisterHandlerAlreadyLoggedIn(t *testing.T) {
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusSeeOther, res.Code)
 	assert.Equal(t, "/settings", res.Header().Get("Location"))
+}
+
+func TestHtmlRegisterHandlerRegistrationNotAllowed(t *testing.T) {
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	err = os.Setenv("ALLOW_REGISTRATION", "false")
+	defer func() { os.Unsetenv("ALLOW_REGISTRATION") }()
+	assert.NoError(t, err)
+
+	services := &Services{cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("GET", "/register", nil)
+	res := httptest.NewRecorder()
+
+	cookie := cookieHandler.NewCookie()
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, "404 page not found\n", string(res.Body.Bytes()))
+	assert.Empty(t, res.Result().Cookies())
 }
 
 func TestHtmlSettingsHandlerLoggedIn(t *testing.T) {

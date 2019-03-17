@@ -5,3 +5,4 @@ Development is in progress, and the project is not production-ready or useful in
 
 ## Available configuration options
 * DATABASE_DIR
+* ALLOW_REGISTRATION
