@@ -50,7 +50,7 @@ $(document).ready(function() {
     lockForm(true);
     $.post("api/register", {username: username.val(), password: password.val(), rememberMe: rememberMe.prop('checked')})
     .done(function() {
-      window.location.href = "settings";
+      window.location.href = "transactions";
     })
     .fail(function(response) {
       lockForm(false);

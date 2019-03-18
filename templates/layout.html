@@ -20,6 +20,12 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mr-auto">
           {{ if .User }}
+          <li class="nav-item{{ if eq .Name `transactions` }} active{{ end }}">
+            <a class="nav-link" href="transactions">Transactions</a>
+          </li>
+          <li class="nav-item{{ if eq .Name `accounts` }} active{{ end }}">
+            <a class="nav-link" href="accounts">Accounts</a>
+          </li>
           <li class="nav-item{{ if eq .Name `settings` }} active{{ end }}">
             <a class="nav-link" href="settings">Settings</a>
           </li>

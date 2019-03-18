@@ -31,10 +31,12 @@ func CreateRouter(s *Services) (*mux.Router, error) {
 	r.HandleFunc("/", RootHandler(s)).Methods("GET")
 	r.HandleFunc("/login", HtmlLoginHandler(s)).Methods("GET")
 	if registrationAllowed {
-		r.HandleFunc("/register", HtmlRegisterHandler(s)).Methods("GET").Name("settings")
+		r.HandleFunc("/register", HtmlRegisterHandler(s)).Methods("GET")
 	}
 	r.HandleFunc("/logout", LogoutHandler(s)).Methods("GET")
-	r.HandleFunc("/settings", HtmlSettingsHandler(s)).Methods("GET").Name("settings")
+	r.HandleFunc("/transactions", HtmlUserPageHandler(s)).Methods("GET").Name("transactions")
+	r.HandleFunc("/accounts", HtmlUserPageHandler(s)).Methods("GET").Name("accounts")
+	r.HandleFunc("/settings", HtmlUserPageHandler(s)).Methods("GET").Name("settings")
 	r.HandleFunc("/favicon.ico", FaviconHandler)
 	fs := http.FileServer(staticResourceFileSystem{http.Dir("static")})
 	r.PathPrefix("/static/").Handler(http.StripPrefix(strings.TrimRight("/static", "/"), fs))

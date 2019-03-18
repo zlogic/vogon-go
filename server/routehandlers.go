@@ -40,7 +40,7 @@ func RootHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 		if username == "" {
 			url = "login"
 		} else {
-			url = "settings"
+			url = "transactions"
 		}
 		http.Redirect(w, r, url, http.StatusSeeOther)
 	}
@@ -62,7 +62,7 @@ func HtmlLoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
 		if username != "" {
-			http.Redirect(w, r, "settings", http.StatusSeeOther)
+			http.Redirect(w, r, "transactions", http.StatusSeeOther)
 			return
 		}
 		t, err := loadTemplate("login")
@@ -82,7 +82,7 @@ func HtmlRegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
 		if username != "" {
-			http.Redirect(w, r, "settings", http.StatusSeeOther)
+			http.Redirect(w, r, "transactions", http.StatusSeeOther)
 			return
 		}
 		t, err := loadTemplate("register")
@@ -94,7 +94,7 @@ func HtmlRegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func HtmlSettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+func HtmlUserPageHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := validateUser(w, r, s)
 		if username == "" {
@@ -106,11 +106,13 @@ func HtmlSettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		t, err := loadTemplate("settings")
+		templateName := mux.CurrentRoute(r).GetName()
+
+		t, err := loadTemplate(templateName)
 		if err != nil {
 			handleError(w, r, err)
 			return
 		}
-		t.ExecuteTemplate(w, "layout", &viewData{User: user, Username: username, Name: mux.CurrentRoute(r).GetName()})
+		t.ExecuteTemplate(w, "layout", &viewData{User: user, Username: username, Name: templateName})
 	}
 }
