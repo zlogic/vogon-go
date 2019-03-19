@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/base64"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -39,6 +40,16 @@ func DecodeUserKey(key []byte) (*string, error) {
 	return &parts[1], nil
 }
 
+const AccountKeyPrefix = "account" + separator
+
+func (user *User) CreateAccountKeyPrefix() string {
+	return AccountKeyPrefix + strconv.FormatUint(user.ID, 10) + separator
+}
+
+func (user *User) CreateAccountKey(account *Account) []byte {
+	return []byte(user.CreateAccountKeyPrefix() + strconv.FormatUint(account.ID, 10))
+}
+
 const ServerConfigKeyPrefix = "serverconfig" + separator
 
 func CreateServerConfigKey(varName string) []byte {
@@ -63,3 +74,9 @@ func DecodeServerConfigKey(key []byte) (string, error) {
 
 const SequencePrefix = "sequence" + separator
 const SequenceUserKey = SequencePrefix + "user"
+
+const SequenceAccountPrefix = SequencePrefix + "account" + separator
+
+func CreateSequenceAccountKey(user *User) []byte {
+	return []byte(SequenceAccountPrefix + strconv.FormatUint(user.ID, 10))
+}
