@@ -3,6 +3,7 @@ package data
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
@@ -39,39 +40,40 @@ func (s *DBService) CreateAccount(user *User, account *Account) error {
 	account.ID = id
 	account.Balance = 0
 
-	accountKey := user.CreateAccountKey(account)
+	key := user.CreateAccountKey(account)
 	value, err := account.Encode()
 	if err != nil {
 		return errors.Wrap(err, "Cannot encode account")
 	}
 
 	return s.db.Update(func(txn *badger.Txn) error {
-		return txn.Set(accountKey, value)
+		return txn.Set(key, value)
 	})
 }
 
 func (s *DBService) UpdateAccount(user *User, account *Account) error {
 	return s.db.Update(func(txn *badger.Txn) error {
-		accountKey := user.CreateAccountKey(account)
+		key := user.CreateAccountKey(account)
 
-		previousValue, err := getPreviousValue(txn, accountKey)
+		previousValue, err := getPreviousValue(txn, key)
 		if err != nil {
-			log.WithField("key", accountKey).WithError(err).Error("Cannot get previous value for account")
+			log.WithField("key", key).WithError(err).Error("Cannot get previous value for account")
 			return err
 		}
 
 		if previousValue == nil {
-			log.WithField("key", accountKey).WithError(err).Error("Cannot update account if it doesn't exist")
+			log.WithField("key", key).Error("Cannot update account if it doesn't exist")
+			return fmt.Errorf("Cannot update account if it doesn't exist")
 		}
 
 		previousAccount := &Account{}
 		if err := gob.NewDecoder(bytes.NewBuffer(previousValue)).Decode(previousAccount); err != nil {
-			log.WithField("key", accountKey).WithError(err).Error("Failed to read previous value of account")
+			log.WithField("key", key).WithError(err).Error("Failed to read previous value of account")
 			return err
 		}
 		account.Balance = previousAccount.Balance
 		if account == previousAccount {
-			log.WithField("key", accountKey).Debug("Account is unchanged")
+			log.WithField("key", key).Debug("Account is unchanged")
 			return nil
 		}
 
@@ -79,8 +81,42 @@ func (s *DBService) UpdateAccount(user *User, account *Account) error {
 		if err != nil {
 			return errors.Wrap(err, "Cannot encode account")
 		}
-		return txn.Set(accountKey, value)
+		return txn.Set(key, value)
 	})
+}
+
+func (s *DBService) updateAccountBalance(user *User, accountID uint64, deltaBalance int64) func(txn *badger.Txn) error {
+	return func(txn *badger.Txn) error {
+		if deltaBalance == 0 {
+			return nil
+		}
+		key := user.CreateAccountKeyFromID(accountID)
+
+		previousValue, err := getPreviousValue(txn, key)
+		if err != nil {
+			log.WithField("key", key).WithError(err).Error("Cannot get previous value for account")
+			return err
+		}
+
+		if previousValue == nil {
+			log.WithField("key", key).Error("Cannot update account if it doesn't exist")
+			return fmt.Errorf("Cannot update account balance if it doesn't exist")
+		}
+
+		account := &Account{}
+		if err := gob.NewDecoder(bytes.NewBuffer(previousValue)).Decode(account); err != nil {
+			log.WithField("key", key).WithError(err).Error("Failed to read previous value of account")
+			return err
+		}
+
+		account.Balance += deltaBalance
+
+		value, err := account.Encode()
+		if err != nil {
+			return errors.Wrap(err, "Cannot encode account")
+		}
+		return txn.Set(key, value)
+	}
 }
 
 func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
@@ -112,4 +148,16 @@ func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
 		return nil, errors.Wrapf(err, "Failed to get accounts")
 	}
 	return accounts, nil
+}
+
+func (s *DBService) DeleteAccount(user *User, account *Account) error {
+	key := user.CreateAccountKey(account)
+	return s.db.Update(func(txn *badger.Txn) error {
+		if _, err := txn.Get(key); err != nil {
+			log.WithField("key", key).WithError(err).Error("Cannot delete account if it doesn't exist")
+			return err
+		}
+
+		return txn.Delete(key)
+	})
 }

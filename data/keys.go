@@ -46,8 +46,22 @@ func (user *User) CreateAccountKeyPrefix() string {
 	return AccountKeyPrefix + strconv.FormatUint(user.ID, 10) + separator
 }
 
+func (user *User) CreateAccountKeyFromID(accountID uint64) []byte {
+	return []byte(user.CreateAccountKeyPrefix() + strconv.FormatUint(accountID, 10))
+}
+
 func (user *User) CreateAccountKey(account *Account) []byte {
-	return []byte(user.CreateAccountKeyPrefix() + strconv.FormatUint(account.ID, 10))
+	return user.CreateAccountKeyFromID(account.ID)
+}
+
+const TransactionKeyPrefix = "transaction" + separator
+
+func (user *User) CreateTransactionKeyPrefix() string {
+	return TransactionKeyPrefix + strconv.FormatUint(user.ID, 10) + separator
+}
+
+func (user *User) CreateTransactionKey(transaction *Transaction) []byte {
+	return []byte(user.CreateTransactionKeyPrefix() + strconv.FormatUint(transaction.ID, 10))
 }
 
 const ServerConfigKeyPrefix = "serverconfig" + separator
@@ -79,4 +93,10 @@ const SequenceAccountPrefix = SequencePrefix + "account" + separator
 
 func CreateSequenceAccountKey(user *User) []byte {
 	return []byte(SequenceAccountPrefix + strconv.FormatUint(user.ID, 10))
+}
+
+const SequenceTransactionPrefix = SequencePrefix + "transaction" + separator
+
+func CreateSequenceTransactionKey(user *User) []byte {
+	return []byte(SequenceTransactionPrefix + strconv.FormatUint(user.ID, 10))
 }

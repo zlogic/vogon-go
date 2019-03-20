@@ -10,6 +10,23 @@ import (
 	"github.com/pkg/errors"
 )
 
+var testUser = User{ID: 11}
+
+var testAccount1 = Account{
+	ID:             0,
+	Name:           "Test 1",
+	Currency:       "USD",
+	IncludeInTotal: false,
+	ShowInList:     true,
+}
+var testAccount2 = Account{
+	ID:             1,
+	Name:           "Test 2",
+	Currency:       "EUR",
+	IncludeInTotal: false,
+	ShowInList:     true,
+}
+
 func createDb() (dbService *DBService, cleanupFunc func(), err error) {
 	dir, err := ioutil.TempDir("", "vogon")
 	if err != nil {
@@ -66,4 +83,14 @@ func getAllUsers(s *DBService) ([]*User, error) {
 		return nil, errors.Wrapf(err, "Cannot read users")
 	}
 	return users, nil
+}
+
+func createTestAccounts(s *DBService) error {
+	saveUser := testUser
+	saveAccount := testAccount1
+	if err := s.CreateAccount(&saveUser, &saveAccount); err != nil {
+		return err
+	}
+	saveAccount = testAccount2
+	return s.CreateAccount(&saveUser, &saveAccount)
 }
