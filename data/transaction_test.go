@@ -6,6 +6,53 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNormalizeTransaction(t *testing.T) {
+	typicalTransaction := Transaction{
+		Description: "t1",
+		Date:        "2019-03-20",
+		Type:        TransactionTypeExpenseIncome,
+		Tags:        []string{"t1", "t2"},
+	}
+	err := typicalTransaction.Normalize()
+	assert.NoError(t, err)
+	assert.Equal(t, Transaction{
+		Description: "t1",
+		Date:        "2019-03-20",
+		Type:        TransactionTypeExpenseIncome,
+		Tags:        []string{"t1", "t2"},
+	}, typicalTransaction)
+
+	unsortedTagsUnformattedDateTransaction := Transaction{Date: "2019-3-2", Tags: []string{"t2", "t1", "ta"}}
+	err = unsortedTagsUnformattedDateTransaction.Normalize()
+	assert.NoError(t, err)
+	assert.Equal(t, Transaction{Date: "2019-03-02", Tags: []string{"t1", "t2", "ta"}}, unsortedTagsUnformattedDateTransaction)
+
+	noTagsTransaction := Transaction{Date: "2019-03-02"}
+	err = noTagsTransaction.Normalize()
+	assert.NoError(t, err)
+	assert.Equal(t, Transaction{Date: "2019-03-02"}, noTagsTransaction)
+
+	duplicateTagsTransaction := Transaction{Date: "2019-03-02", Tags: []string{"t2", "t1", "t1"}}
+	err = duplicateTagsTransaction.Normalize()
+	assert.NoError(t, err)
+	assert.Equal(t, Transaction{Date: "2019-03-02", Tags: []string{"t1", "t2"}}, duplicateTagsTransaction)
+
+	emptyTagTransaction := Transaction{Date: "2019-03-02", Tags: []string{"t2", "t1", ""}}
+	err = emptyTagTransaction.Normalize()
+	assert.NoError(t, err)
+	assert.Equal(t, Transaction{Date: "2019-03-02", Tags: []string{"t1", "t2"}}, emptyTagTransaction)
+
+	noDateTransaction := Transaction{Tags: []string{"t2", "t1", "ta"}}
+	err = noDateTransaction.Normalize()
+	assert.Error(t, err)
+	assert.Equal(t, Transaction{Tags: []string{"t2", "t1", "ta"}}, noDateTransaction)
+
+	badDateTransaction := Transaction{Date: "helloworld", Tags: []string{"t2", "t1", "ta"}}
+	err = badDateTransaction.Normalize()
+	assert.Error(t, err)
+	assert.Equal(t, Transaction{Date: "helloworld", Tags: []string{"t2", "t1", "ta"}}, badDateTransaction)
+}
+
 func TestCreateTransactionNoComponents(t *testing.T) {
 	dbService, cleanup, err := createDb()
 	assert.NoError(t, err)

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"sort"
+	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
@@ -35,6 +37,40 @@ func (transaction *Transaction) Encode() ([]byte, error) {
 		return nil, err
 	}
 	return value.Bytes(), nil
+}
+
+const DateFormat = "2006-01-02"
+const inputDateFormat = "2006-1-2"
+
+func (transaction *Transaction) Normalize() error {
+	date, err := time.Parse(inputDateFormat, transaction.Date)
+	if err != nil {
+		return errors.Wrapf(err, "Cannot parse date "+transaction.Date)
+	}
+
+	transaction.Date = date.Format(DateFormat)
+
+	if len(transaction.Tags) > 0 {
+		filteredTags := make([]string, 0, len(transaction.Tags))
+		for _, tag := range transaction.Tags {
+			duplicate := false
+			if tag == "" {
+				continue
+			}
+			for _, filteredTag := range filteredTags {
+				if filteredTag == tag {
+					duplicate = true
+					break
+				}
+			}
+			if !duplicate {
+				filteredTags = append(filteredTags, tag)
+			}
+		}
+		sort.Strings(filteredTags)
+		transaction.Tags = filteredTags
+	}
+	return nil
 }
 
 func (s *DBService) CreateTransaction(user *User, transaction *Transaction) error {
