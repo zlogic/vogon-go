@@ -49,7 +49,7 @@ func (user *User) CreateAccountKeyPrefix() string {
 
 func (user *User) CreateAccountKeyFromID(accountID uint64) []byte {
 	id := make([]byte, 2^8)
-	binary.LittleEndian.PutUint64(id, accountID)
+	binary.BigEndian.PutUint64(id, accountID)
 	return append([]byte(user.CreateAccountKeyPrefix()), id...)
 }
 
@@ -65,7 +65,7 @@ func (user *User) CreateTransactionKeyPrefix() string {
 
 func (user *User) CreateTransactionKey(transaction *Transaction) []byte {
 	id := make([]byte, 2^8)
-	binary.LittleEndian.PutUint64(id, transaction.ID)
+	binary.BigEndian.PutUint64(id, transaction.ID)
 	return append([]byte(user.CreateTransactionKeyPrefix()), id...)
 }
 

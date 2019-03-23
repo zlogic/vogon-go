@@ -17,7 +17,7 @@ func DefaultOptions() badger.Options {
 	opts.Dir = dbPath
 	opts.ValueDir = dbPath
 	// Optimize options for low memory and disk usage
-	opts.MaxTableSize = 1 << 20
+	opts.MaxTableSize = 1 << 24
 	return opts
 }
 

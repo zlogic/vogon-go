@@ -11,6 +11,8 @@ import (
 	"github.com/zlogic/vogon-go/data"
 )
 
+var testUser = data.User{ID: 11}
+
 type DBMock struct {
 	mock.Mock
 }
@@ -52,6 +54,16 @@ func (m *DBMock) SaveNewUser(user *data.User) error {
 
 func (m *DBMock) SetUsername(user *data.User, newUsername string) error {
 	args := m.Called(user, newUsername)
+	return args.Error(0)
+}
+
+func (m *DBMock) Backup(user *data.User) (string, error) {
+	args := m.Called(user)
+	return args.Get(0).(string), args.Error(1)
+}
+
+func (m *DBMock) Restore(user *data.User, value string) error {
+	args := m.Called(user, value)
 	return args.Error(0)
 }
 

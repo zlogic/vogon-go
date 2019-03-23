@@ -1,0 +1,52 @@
+<html>
+  <body>
+    <form>
+      <input type="file" class="custom-file-input" name="uploadFile">
+      <br>
+      <button type="submit">Convert</button>
+    </form>
+  </body>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector("form").addEventListener("submit", function(event) {
+      event.preventDefault();
+
+      var input = document.querySelector('input[type="file"]');
+      var reader = new FileReader();
+      reader.onload = function (e) { 
+        data = JSON.parse(e.target.result);
+
+        //Convert data
+        data.accounts.forEach(account => {
+          account.balance = Math.round(account.balance * 100);
+        });
+        data.transactions.forEach(transaction => {
+          switch(transaction.type) {
+            case "EXPENSEINCOME":
+              transaction.type = 0;
+              break;
+            case "TRANSFER":
+              transaction.type = 1;
+              break;
+          }
+          transaction.components.forEach(component => {
+            component.amount = Math.round(component.amount * 100);
+          })
+        });
+
+        //Download converted file
+        var blob = new Blob([JSON.stringify(data)], {encoding:"UTF-8", type : 'application/json;charset=UTF-8'});
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        document.body.appendChild(a);
+        a.style = "display: none";
+        a.href = url;
+        a.download = 'converted ' + input.files[0].name;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      };
+      reader.readAsText(input.files[0]);
+    });
+  });
+  </script>
+</html>

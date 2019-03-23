@@ -17,7 +17,7 @@ func handleBadCredentials(w http.ResponseWriter, r *http.Request, err error) {
 	http.Error(w, "Bad credentials", http.StatusUnauthorized)
 }
 
-func validateUserForApi(w http.ResponseWriter, r *http.Request, s *Services) *data.User {
+func validateUserForAPI(w http.ResponseWriter, r *http.Request, s *Services) *data.User {
 	username := s.cookieHandler.GetUsername(w, r)
 	if username == "" {
 		http.Error(w, "Bad credentials", http.StatusUnauthorized)

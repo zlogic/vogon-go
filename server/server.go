@@ -11,6 +11,8 @@ type DB interface {
 	SaveUser(*data.User) error
 	SaveNewUser(*data.User) error
 	SetUsername(user *data.User, newUsername string) error
+	Backup(user *data.User) (string, error)
+	Restore(user *data.User, value string) error
 }
 
 type Services struct {

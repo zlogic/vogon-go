@@ -46,5 +46,7 @@ func CreateRouter(s *Services) (*mux.Router, error) {
 	if registrationAllowed {
 		api.HandleFunc("/register", RegisterHandler(s)).Methods("POST")
 	}
+	api.HandleFunc("/settings", SettingsHandler(s)).Methods("GET", "POST")
+	api.HandleFunc("/backup", BackupHandler(s)).Methods("POST")
 	return r, nil
 }
