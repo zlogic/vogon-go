@@ -27,8 +27,21 @@ func (account *Account) Encode() ([]byte, error) {
 	return value.Bytes(), nil
 }
 
+func (*DBService) createAccount(user *User, account *Account) func(*badger.Txn) error {
+	return func(txn *badger.Txn) error {
+		key := user.CreateAccountKey(account)
+		value, err := account.Encode()
+
+		if err != nil {
+			return errors.Wrap(err, "Cannot encode account")
+		}
+
+		return txn.Set(key, value)
+	}
+}
+
 func (s *DBService) CreateAccount(user *User, account *Account) error {
-	seq, err := s.db.GetSequence([]byte(CreateSequenceAccountKey(user)), 1)
+	seq, err := s.db.GetSequence([]byte(user.CreateSequenceAccountKey()), 1)
 	defer seq.Release()
 	if err != nil {
 		return errors.Wrap(err, "Cannot create account sequence object")
@@ -37,17 +50,12 @@ func (s *DBService) CreateAccount(user *User, account *Account) error {
 	if err != nil {
 		return errors.Wrap(err, "Cannot generate id for account")
 	}
+
 	account.ID = id
 	account.Balance = 0
 
-	key := user.CreateAccountKey(account)
-	value, err := account.Encode()
-	if err != nil {
-		return errors.Wrap(err, "Cannot encode account")
-	}
-
 	return s.db.Update(func(txn *badger.Txn) error {
-		return txn.Set(key, value)
+		return s.createAccount(user, account)(txn)
 	})
 }
 
@@ -85,7 +93,7 @@ func (s *DBService) UpdateAccount(user *User, account *Account) error {
 	})
 }
 
-func (s *DBService) updateAccountBalance(user *User, accountID uint64, deltaBalance int64) func(txn *badger.Txn) error {
+func (s *DBService) updateAccountBalance(user *User, accountID uint64, deltaBalance int64) func(*badger.Txn) error {
 	return func(txn *badger.Txn) error {
 		if deltaBalance == 0 {
 			return nil
@@ -119,9 +127,10 @@ func (s *DBService) updateAccountBalance(user *User, accountID uint64, deltaBala
 	}
 }
 
-func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
-	accounts := make([]*Account, 0)
-	err := s.db.View(func(txn *badger.Txn) error {
+func (s *DBService) getAccounts(user *User) func(*badger.Txn) ([]*Account, error) {
+	return func(txn *badger.Txn) ([]*Account, error) {
+		accounts := make([]*Account, 0)
+
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		prefix := []byte(user.CreateAccountKeyPrefix())
@@ -138,11 +147,20 @@ func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
 
 			if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(account); err != nil {
 				log.WithField("key", k).WithError(err).Error("Failed to decode value of account")
-				return err
+				return nil, err
 			}
 			accounts = append(accounts, account)
 		}
-		return nil
+		return accounts, nil
+	}
+}
+
+func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
+	var accounts []*Account
+	err := s.db.View(func(txn *badger.Txn) error {
+		var err error
+		accounts, err = s.getAccounts(user)(txn)
+		return err
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to get accounts")

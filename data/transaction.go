@@ -73,8 +73,23 @@ func (transaction *Transaction) Normalize() error {
 	return nil
 }
 
+func (s *DBService) createTransaction(user *User, transaction *Transaction) func(*badger.Txn) error {
+	return func(txn *badger.Txn) error {
+		key := user.CreateTransactionKey(transaction)
+		value, err := transaction.Encode()
+		if err != nil {
+			return errors.Wrap(err, "Cannot encode transaction")
+		}
+
+		if err := s.updateAccountsBalance(user, nil, &transaction.Components)(txn); err != nil {
+			return errors.Wrap(err, "Cannot update account balance")
+		}
+
+		return txn.Set(key, value)
+	}
+}
 func (s *DBService) CreateTransaction(user *User, transaction *Transaction) error {
-	seq, err := s.db.GetSequence([]byte(CreateSequenceTransactionKey(user)), 1)
+	seq, err := s.db.GetSequence([]byte(user.CreateSequenceTransactionKey()), 1)
 	defer seq.Release()
 	if err != nil {
 		return errors.Wrap(err, "Cannot create transaction sequence object")
@@ -85,18 +100,8 @@ func (s *DBService) CreateTransaction(user *User, transaction *Transaction) erro
 	}
 	transaction.ID = id
 
-	key := user.CreateTransactionKey(transaction)
-	value, err := transaction.Encode()
-	if err != nil {
-		return errors.Wrap(err, "Cannot encode transaction")
-	}
-
 	return s.db.Update(func(txn *badger.Txn) error {
-		if err := s.updateAccountsBalance(user, nil, &transaction.Components)(txn); err != nil {
-			return errors.Wrap(err, "Cannot update account balance")
-		}
-
-		return txn.Set(key, value)
+		return s.createTransaction(user, transaction)(txn)
 	})
 }
 
@@ -137,7 +142,7 @@ func (s *DBService) UpdateTransaction(user *User, transaction *Transaction) erro
 	})
 }
 
-func (s *DBService) updateAccountsBalance(user *User, previousComponents *[]TransactionComponent, newComponents *[]TransactionComponent) func(txn *badger.Txn) error {
+func (s *DBService) updateAccountsBalance(user *User, previousComponents *[]TransactionComponent, newComponents *[]TransactionComponent) func(*badger.Txn) error {
 	return func(txn *badger.Txn) error {
 		accountDeltas := make(map[uint64]int64)
 		if previousComponents != nil {
@@ -159,9 +164,10 @@ func (s *DBService) updateAccountsBalance(user *User, previousComponents *[]Tran
 	}
 }
 
-func (s *DBService) GetTransactions(user *User) ([]*Transaction, error) {
-	transactions := make([]*Transaction, 0)
-	err := s.db.View(func(txn *badger.Txn) error {
+func (s *DBService) getTransactions(user *User) func(*badger.Txn) ([]*Transaction, error) {
+	return func(txn *badger.Txn) ([]*Transaction, error) {
+		transactions := make([]*Transaction, 0)
+
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		prefix := []byte(user.CreateTransactionKeyPrefix())
@@ -178,11 +184,21 @@ func (s *DBService) GetTransactions(user *User) ([]*Transaction, error) {
 
 			if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(transaction); err != nil {
 				log.WithField("key", k).WithError(err).Error("Failed to decode value of transaction")
-				return err
+				return nil, err
 			}
 			transactions = append(transactions, transaction)
 		}
-		return nil
+		return transactions, nil
+	}
+}
+
+func (s *DBService) GetTransactions(user *User) ([]*Transaction, error) {
+	var transactions []*Transaction
+
+	err := s.db.View(func(txn *badger.Txn) error {
+		var err error
+		transactions, err = s.getTransactions(user)(txn)
+		return err
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to get transactions")

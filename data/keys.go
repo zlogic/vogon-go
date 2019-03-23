@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/base64"
+	"encoding/binary"
 	"strconv"
 	"strings"
 
@@ -47,7 +48,9 @@ func (user *User) CreateAccountKeyPrefix() string {
 }
 
 func (user *User) CreateAccountKeyFromID(accountID uint64) []byte {
-	return []byte(user.CreateAccountKeyPrefix() + strconv.FormatUint(accountID, 10))
+	id := make([]byte, 2^8)
+	binary.LittleEndian.PutUint64(id, accountID)
+	return append([]byte(user.CreateAccountKeyPrefix()), id...)
 }
 
 func (user *User) CreateAccountKey(account *Account) []byte {
@@ -61,7 +64,9 @@ func (user *User) CreateTransactionKeyPrefix() string {
 }
 
 func (user *User) CreateTransactionKey(transaction *Transaction) []byte {
-	return []byte(user.CreateTransactionKeyPrefix() + strconv.FormatUint(transaction.ID, 10))
+	id := make([]byte, 2^8)
+	binary.LittleEndian.PutUint64(id, transaction.ID)
+	return append([]byte(user.CreateTransactionKeyPrefix()), id...)
 }
 
 const ServerConfigKeyPrefix = "serverconfig" + separator
@@ -91,12 +96,12 @@ const SequenceUserKey = SequencePrefix + "user"
 
 const SequenceAccountPrefix = SequencePrefix + "account" + separator
 
-func CreateSequenceAccountKey(user *User) []byte {
+func (user *User) CreateSequenceAccountKey() []byte {
 	return []byte(SequenceAccountPrefix + strconv.FormatUint(user.ID, 10))
 }
 
 const SequenceTransactionPrefix = SequencePrefix + "transaction" + separator
 
-func CreateSequenceTransactionKey(user *User) []byte {
+func (user *User) CreateSequenceTransactionKey() []byte {
 	return []byte(SequenceTransactionPrefix + strconv.FormatUint(user.ID, 10))
 }
