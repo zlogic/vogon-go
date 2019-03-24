@@ -92,6 +92,48 @@ func TestCreateTransactionNoComponents(t *testing.T) {
 	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
 }
 
+func TestGetTransactionNoComponents(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	transaction1 := Transaction{
+		Description: "t1",
+		Date:        "2019-03-20",
+		Type:        TransactionTypeExpenseIncome,
+		Tags:        []string{"t1", "t2"},
+	}
+	transaction2 := Transaction{
+		Description: "t2",
+		Date:        "2019-03-21",
+		Type:        TransactionTypeTransfer,
+		Tags:        []string{"t1", "t3"},
+	}
+
+	err = dbService.CreateTransaction(&testUser, &transaction1)
+	assert.NoError(t, err)
+	err = dbService.CreateTransaction(&testUser, &transaction2)
+	assert.NoError(t, err)
+
+	transaction, err := dbService.GetTransaction(&testUser, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, &transaction1, transaction)
+
+	transaction, err = dbService.GetTransaction(&testUser, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, &transaction2, transaction)
+}
+
+func TestGetTransactionDoesNotExist(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	transaction, err := dbService.GetTransaction(&testUser, 0)
+	assert.Error(t, err)
+	assert.Nil(t, transaction)
+}
+
 func TestUpdateTransactionNoComponents(t *testing.T) {
 	dbService, cleanup, err := createDb()
 	assert.NoError(t, err)
@@ -160,14 +202,14 @@ func TestDeleteTransactionNoComponents(t *testing.T) {
 
 	transaction2.ID = 1
 
-	err = dbService.DeleteTransaction(&testUser, &transaction2)
+	err = dbService.DeleteTransaction(&testUser, transaction2.ID)
 	assert.NoError(t, err)
 
 	transactions, err := dbService.GetTransactions(&testUser)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Transaction{&transaction1}, transactions)
 
-	err = dbService.DeleteTransaction(&testUser, &transaction1)
+	err = dbService.DeleteTransaction(&testUser, transaction1.ID)
 	assert.NoError(t, err)
 
 	transactions, err = dbService.GetTransactions(&testUser)
@@ -194,7 +236,7 @@ func TestDeleteNonExistingTransaction(t *testing.T) {
 	deleteTransaction := transaction
 	deleteTransaction.ID = 1
 
-	err = dbService.DeleteTransaction(&testUser, &deleteTransaction)
+	err = dbService.DeleteTransaction(&testUser, deleteTransaction.ID)
 	assert.Error(t, err)
 
 	transactions, err := dbService.GetTransactions(&testUser)
@@ -374,7 +416,7 @@ func TestDeleteTransactionWithComponents(t *testing.T) {
 
 	transaction2.ID = 1
 
-	err = dbService.DeleteTransaction(&testUser, &transaction2)
+	err = dbService.DeleteTransaction(&testUser, transaction2.ID)
 	assert.NoError(t, err)
 
 	transactions, err := dbService.GetTransactions(&testUser)
@@ -389,7 +431,7 @@ func TestDeleteTransactionWithComponents(t *testing.T) {
 	expectedAccount2.Balance = 2
 	assert.Equal(t, []*Account{&expectedAccount1, &expectedAccount2}, accounts)
 
-	err = dbService.DeleteTransaction(&testUser, &transaction1)
+	err = dbService.DeleteTransaction(&testUser, transaction1.ID)
 	assert.NoError(t, err)
 
 	transactions, err = dbService.GetTransactions(&testUser)

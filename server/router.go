@@ -35,6 +35,7 @@ func CreateRouter(s *Services) (*mux.Router, error) {
 	}
 	r.HandleFunc("/logout", LogoutHandler(s)).Methods("GET")
 	r.HandleFunc("/transactions", HtmlUserPageHandler(s)).Methods("GET").Name("transactions")
+	r.HandleFunc("/transactioneditor", HtmlUserPageHandler(s)).Methods("GET").Name("transactioneditor")
 	r.HandleFunc("/accounts", HtmlUserPageHandler(s)).Methods("GET").Name("accounts")
 	r.HandleFunc("/settings", HtmlUserPageHandler(s)).Methods("GET").Name("settings")
 	r.HandleFunc("/favicon.ico", FaviconHandler)
@@ -49,6 +50,7 @@ func CreateRouter(s *Services) (*mux.Router, error) {
 	api.HandleFunc("/settings", SettingsHandler(s)).Methods("GET", "POST")
 	api.HandleFunc("/backup", BackupHandler(s)).Methods("POST")
 	api.HandleFunc("/transactions", TransactionsHandler(s)).Methods("GET")
+	api.HandleFunc("/transaction/{id}", TransactionHandler(s)).Methods("GET", "POST", "DELETE")
 	api.HandleFunc("/accounts", AccountsHandler(s)).Methods("GET")
 	return r, nil
 }

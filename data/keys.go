@@ -63,10 +63,14 @@ func (user *User) CreateTransactionKeyPrefix() string {
 	return TransactionKeyPrefix + strconv.FormatUint(user.ID, 10) + separator
 }
 
-func (user *User) CreateTransactionKey(transaction *Transaction) []byte {
+func (user *User) CreateTransactionKeyFromID(transactionID uint64) []byte {
 	id := make([]byte, 2^8)
-	binary.BigEndian.PutUint64(id, transaction.ID)
+	binary.BigEndian.PutUint64(id, transactionID)
 	return append([]byte(user.CreateTransactionKeyPrefix()), id...)
+}
+
+func (user *User) CreateTransactionKey(transaction *Transaction) []byte {
+	return user.CreateTransactionKeyFromID(transaction.ID)
 }
 
 const ServerConfigKeyPrefix = "serverconfig" + separator

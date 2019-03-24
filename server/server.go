@@ -15,6 +15,10 @@ type DB interface {
 
 	GetAccounts(user *data.User) ([]*data.Account, error)
 	GetTransactions(user *data.User) ([]*data.Transaction, error)
+	CreateTransaction(user *data.User, transaction *data.Transaction) error
+	UpdateTransaction(user *data.User, transaction *data.Transaction) error
+	GetTransaction(user *data.User, transactionID uint64) (*data.Transaction, error)
+	DeleteTransaction(user *data.User, transactionID uint64) error
 
 	Backup(user *data.User) (string, error)
 	Restore(user *data.User, value string) error

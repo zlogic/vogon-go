@@ -77,6 +77,31 @@ func (m *DBMock) GetTransactions(user *data.User) ([]*data.Transaction, error) {
 	return returnTransactions, args.Error(1)
 }
 
+func (m *DBMock) CreateTransaction(user *data.User, transaction *data.Transaction) error {
+	args := m.Called(user, transaction)
+	return args.Error(0)
+}
+
+func (m *DBMock) UpdateTransaction(user *data.User, transaction *data.Transaction) error {
+	args := m.Called(user, transaction)
+	return args.Error(0)
+}
+
+func (m *DBMock) GetTransaction(user *data.User, transactionID uint64) (*data.Transaction, error) {
+	args := m.Called(user, transactionID)
+	transaction := args.Get(0)
+	var returnTransaction *data.Transaction
+	if transaction != nil {
+		returnTransaction = transaction.(*data.Transaction)
+	}
+	return returnTransaction, args.Error(1)
+}
+
+func (m *DBMock) DeleteTransaction(user *data.User, transactionID uint64) error {
+	args := m.Called(user, transactionID)
+	return args.Error(0)
+}
+
 func (m *DBMock) Backup(user *data.User) (string, error) {
 	args := m.Called(user)
 	return args.Get(0).(string), args.Error(1)

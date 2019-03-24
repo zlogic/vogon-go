@@ -251,6 +251,33 @@ func (s *DBService) getTransactions(user *User) func(*badger.Txn) ([]*Transactio
 	}
 }
 
+func (s *DBService) GetTransaction(user *User, transactionID uint64) (*Transaction, error) {
+	var transaction *Transaction
+
+	key := user.CreateTransactionKeyFromID(transactionID)
+
+	err := s.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to get transaction %v", string(key))
+		}
+		v, err := item.Value()
+		if err != nil {
+			return errors.Wrapf(err, "Failed to get value for transaction %v", string(key))
+		}
+
+		transaction = &Transaction{}
+		if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(transaction); err != nil {
+			return errors.Wrapf(err, "Failed to decode value for transaction %v", string(key))
+		}
+		return err
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to get transaction %v", transactionID)
+	}
+	return transaction, nil
+}
+
 func (s *DBService) GetTransactions(user *User) ([]*Transaction, error) {
 	var transactions []*Transaction
 
@@ -265,8 +292,8 @@ func (s *DBService) GetTransactions(user *User) ([]*Transaction, error) {
 	return transactions, nil
 }
 
-func (s *DBService) DeleteTransaction(user *User, transaction *Transaction) error {
-	key := user.CreateTransactionKey(transaction)
+func (s *DBService) DeleteTransaction(user *User, transactionID uint64) error {
+	key := user.CreateTransactionKeyFromID(transactionID)
 	return s.db.Update(func(txn *badger.Txn) error {
 		previousValue, err := getPreviousValue(txn, key)
 		if err != nil {

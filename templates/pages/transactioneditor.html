@@ -1,0 +1,228 @@
+{{ define "content" }}
+<h2>Trasaction</h2>
+<form id="transactionForm" accept-charset="utf-8" autocomplete="off">
+  <div class="form-row">
+    <div class="form-group col-md-9">
+      <label for="editDescription">Description</label>
+      <input type="text" class="form-control" id="editDescription" placeholder="Enter transaction description" required>
+    </div>
+    <div class="form-group col-md-3">
+      <label for="editDate">Date</label>
+      <input type="date" class="form-control" id="editDate" placeholder="Enter transaction date" required>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group col-md-12">
+      <div class="custom-control custom-radio custom-control-inline">
+        <input type="radio" id="typeExpenseIncome" name="selectType" class="custom-control-input" value="0" required>
+        <label class="custom-control-label" for="typeExpenseIncome">Expense/Income</label>
+      </div>
+      <div class="custom-control custom-radio custom-control-inline">
+        <input type="radio" id="typeTransfer" name="selectType" class="custom-control-input" value="1">
+        <label class="custom-control-label" for="typeTransfer">Transfer</label>
+      </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="editTags">Tags</label>
+    <input type="text" class="form-control" id="editTags" placeholder="Enter transaction tags">
+  </div>
+  <div id="components"></div>
+  <div class="form-group">
+    <button id="addComponent" type="button" class="btn btn-outline-primary">Add component</button>
+  </div>
+  <div class="form-group">
+    <button type="submit" class="btn btn-primary">
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
+      Save</button>
+  </div>
+  <div class="row">
+    <div class="form-group col-md-12">
+      <div id="saveSuccessful" class="alert alert-success" role="alert" hidden>Saved successfully</div>
+      <div id="saveFailed" class="alert alert-danger" role="alert" hidden>Save failed</div>
+    </div>
+  </div>
+  <div class="form-group">
+    <button id="deleteButton" type="button" class="btn btn-danger">
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
+      Delete</button>
+  </div>
+  <div class="row">
+    <div class="form-group col-md-12">
+      <div id="deleteSuccessful" class="alert alert-success" role="alert" hidden>Deleted successfully</div>
+      <div id="deleteFailed" class="alert alert-danger" role="alert" hidden>Delete failed</div>
+    </div>
+  </div>
+</form>
+<script>
+  var transaction = null;
+  var accounts = null;
+  var componentsCounter = 0;
+
+  var urlParams = new URLSearchParams(window.location.search);
+
+  var description = $('input[id="editDescription"]');
+  var tags = $('input[id="editTags"]');
+  var date = $('input[id="editDate"]');
+  var submit = $('button[type="submit"]');
+  var deleteButton = $('button[id="deleteButton"]');
+  var spinner = $('button[type="submit"] span[role="status"]');
+  var deleteSpinner = $('button[id="deleteButton"] span[role="status"]');
+
+  var lockForm = function(lock) {
+     $("#transactionForm").find("input").prop("readonly", lock);
+     $("#transactionForm").find("select,button").prop("disabled", lock);
+  }
+
+  var updateCurrencyLabel = function(componentRow) {
+    var accountID = $(componentRow).find("select").val();
+    var currency = accountID ? accounts[accountID].Currency : "";
+    componentRow.find(".input-group-text").text(currency);
+  }
+
+  var showResultAlert = function(alertDiv){
+    alertDiv.hide();
+    alertDiv.prop("hidden", false);
+    alertDiv.slideDown();
+  }
+
+  var addComponent = function(component) {
+    var index = componentsCounter++;
+    var componentsTarget = $("#components");
+    var componentRow = $('<div class="form-row align-items-end"></div>');
+    var accountSelect = $('<select class="form-control custom-select" id="account' + index + '" required><option></option></select>');
+    for (var i in accounts) {
+      var account = accounts[i];
+      if (!account.ShowInList) continue;
+      var option = $('<option value="' + account.ID + '">' + account.Name + '</option>');
+      if (component.AccountID === account.ID)
+        option.prop("selected", true);
+      accountSelect.append(option);
+    }
+    componentRow.append($('<div class="form-group col-md-5"></div>')
+      .append('<label id="account' + index + '">Account</label>')
+      .append(accountSelect)
+    );
+    var amountInput = $('<input type="number" class="form-control text-right" id="amount' + index + '" step="0.01" required></input>');
+    amountInput.val(component.Amount/100);
+    componentRow.append($('<div class="form-group col-md-5"></div>')
+      .append('<label for="amount' + index + '">Amount</label>')
+      .append($('<div class="input-group"></div>').append(amountInput).append('<div class="input-group-append"><div class="input-group-text"></div></div>'))
+    );
+    componentRow.append($('<div class="form-group col-md-2"></div>')
+      .append('<button type="button" class="btn btn-outline-danger" data-delete="component">Delete</a>')
+    );
+    componentsTarget.append(componentRow);
+    updateCurrencyLabel(componentRow);
+    componentRow.hide().slideDown();
+  }
+
+  var updateIfReady = function() {
+    if (transaction === null || accounts === null) return;
+    description.val(transaction.Description);
+    $('input[name=selectType][value="' + transaction.Type +'"]').prop("checked", true);
+    tags.val(transaction.Tags);
+    date.val(transaction.Date);
+    lockForm(false);
+
+    var componentsTarget = $("#components");
+    componentsTarget.empty();
+    for (var i in transaction.Components) {
+      var component = transaction.Components[i];
+      addComponent(component);
+    }
+  }
+
+  //Add component button
+  $("#addComponent").click(function(e){
+    event.preventDefault();
+    addComponent({});
+  });
+
+  //Delete component button
+  $(document).on('click', 'button[data-delete="component"]', function(e) {
+    e.preventDefault();
+    var deleteButton = jQuery(this);
+    deleteButton.parent().parent().slideUp(function(){deleteButton.parent().parent().remove()});
+  });
+
+  //Account changed
+  $(document).on('change', 'select', function() {
+    var selectAccountElement = jQuery(this);
+    updateCurrencyLabel(selectAccountElement.parent().parent());
+  });
+  
+  // Submit handler
+  $("#transactionForm").submit(function(event) {
+    event.preventDefault();
+    lockForm(true);
+    $("#saveFailed").prop("hidden", true);
+    $("#saveSuccessful").prop("hidden", true);
+    spinner.prop("hidden", false);
+    transaction.Description = description.val();
+    transaction.Type = parseInt($('input[name=selectType]:checked').val())
+    transaction.Tags = tags.val().split(',');
+    transaction.Date = date.val();
+    transaction.Components = [];
+    $("#components").children("div").each(function(i, componentRow){
+      var accountID = parseInt($(componentRow).find('select').val());
+      var amount = parseFloat($(componentRow).find('input').val()) * 100;
+      transaction.Components.push({AccountID: accountID, Amount: amount});
+    });
+    var id = urlParams.has("edit") ? urlParams.get("id") : "new";
+    $.ajax("api/transaction/" + id, {
+      data : JSON.stringify(transaction),
+      contentType : 'application/json',
+      type : 'POST'
+    }).done(function() {
+      window.location.href = "transactions";
+      showResultAlert($("#saveSuccessful"));
+    }).fail(function(data){
+      showResultAlert($("#saveFailed"));
+      lockForm(false);
+    }).always(function(){
+      spinner.prop("hidden", true);
+    });
+  });
+
+  // Delete handler
+  $("#deleteButton").click(function(event) {
+    event.preventDefault();
+    lockForm(true);
+    $("#deleteFailed").prop("hidden", true);
+    $("#deleteSuccessful").prop("hidden", true);
+    deleteSpinner.prop("hidden", false);
+    $.ajax("api/transaction/" + urlParams.get("id"), {
+      type : 'DELETE'
+    }).done(function() {
+      window.location.href = "transactions";
+      showResultAlert($("#deleteSuccessful"));
+    }).fail(function(data){
+      showResultAlert($("#deleteFailed"));
+      lockForm(false);
+    }).always(function(){
+      deleteSpinner.prop("hidden", true);
+    });
+  })
+  if (!urlParams.has("edit"))
+    $("#deleteButton").remove();
+
+  var loadTransaction = function() {
+    lockForm(true);
+    if (urlParams.has("edit")) {
+      $.getJSON("api/transaction/" + urlParams.get("id")).done(function(data) {
+        transaction = data;
+        updateIfReady();
+      });
+    } else if (urlParams.has("new")) {
+      transaction = {Description: "", Type: 0, Date: new Date().toISOString().split("T")[0], Tags: [], Components: []};
+    }
+    $.getJSON("api/accounts").done(function(data) {
+      accounts = {};
+      data.forEach(function (account) { accounts[account.ID] = account; });
+      updateIfReady();
+    });
+  }
+  loadTransaction();
+</script>
+{{ end }}

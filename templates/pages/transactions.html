@@ -1,12 +1,17 @@
 {{ define "content" }}
+<h2>Transactions</h2>
+<div class="pb-3">
+  <a class="btn btn-outline-secondary" href="transactioneditor?new" role="button">Add transaction</a>
+</div>
 <div class="table-responsive">
   <table class="table">
     <thead>
       <tr class="d-flex">
         <th scope="col" class="col-6">Description</th>
-        <th scope="col" class="col-2">Date</th>
+        <th scope="col" class="col-1">Date</th>
         <th scope="col" class="col-2">Accounts</th>
         <th scope="col" class="col-2"><div class="text-right">Amount</div></th>
+        <th scope="col" class="col-1"></th>
       </tr>
     </thead>
     <tbody>
@@ -56,6 +61,7 @@
 
       var accountsColumn = $('<div></div>');
       var amountsColumn = $('<div class="text-right"></div>');
+      var editColumn = $('<a class="btn btn-outline-secondary" href="transactioneditor?edit&id=' + transaction.ID + '" role="button">Edit</a>');
       var incomeAccounts = [], expenseAccounts = [];
       var currencyAmounts = {};
       var amountOk = true;
@@ -112,9 +118,10 @@
 
       var transactionRow = $('<tr class="d-flex"></tr>')
         .append($('<td class="col-6"></td>').append(descriptionTagsColumn))
-        .append($('<td class="col-2"></td>').text(new Date(transaction.Date).toLocaleDateString()))
+        .append($('<td class="col-1"></td>').text(new Date(transaction.Date).toLocaleDateString()))
         .append($('<td class="col-2"></td>').append(accountsColumn))
-        .append($('<td class="col-2"></td>').append(amountsColumn));
+        .append($('<td class="col-2"></td>').append(amountsColumn))
+        .append($('<td class="col-1"></td>').append(editColumn));
       if (!amountOk) amountsColumn.parent().addClass("bg-danger").addClass("text-white");
       transactionsTarget.append(transactionRow);
     }
@@ -165,7 +172,8 @@
       setPage(currentPage+1);
     });
 
-    paginationTarget.append($('<nav aria-label="Transactions pagination"></nav>').append(paginationElement));
+    if (pagesCount > 0)
+      paginationTarget.append($('<nav aria-label="Transactions pagination"></nav>').append(paginationElement));
     setPage(0);
   }
   
