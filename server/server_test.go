@@ -57,6 +57,16 @@ func (m *DBMock) SetUsername(user *data.User, newUsername string) error {
 	return args.Error(0)
 }
 
+func (m *DBMock) GetAccounts(user *data.User) ([]*data.Account, error) {
+	args := m.Called(user)
+	accounts := args.Get(0)
+	var returnAccounts []*data.Account
+	if accounts != nil {
+		returnAccounts = accounts.([]*data.Account)
+	}
+	return returnAccounts, args.Error(1)
+}
+
 func (m *DBMock) Backup(user *data.User) (string, error) {
 	args := m.Called(user)
 	return args.Get(0).(string), args.Error(1)

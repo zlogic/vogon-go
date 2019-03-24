@@ -7,10 +7,14 @@ import (
 type DB interface {
 	GetOrCreateConfigVariable(varName string, generator func() (string, error)) (string, error)
 	CreateUser(username string) (*data.User, error)
+
 	GetUser(username string) (*data.User, error)
 	SaveUser(*data.User) error
 	SaveNewUser(*data.User) error
 	SetUsername(user *data.User, newUsername string) error
+
+	GetAccounts(user *data.User) ([]*data.Account, error)
+
 	Backup(user *data.User) (string, error)
 	Restore(user *data.User, value string) error
 }

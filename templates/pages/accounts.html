@@ -1,3 +1,84 @@
 {{ define "content" }}
-<div>Accounts for {{ .User }}</div>
+<div class="pb-3">
+  <div class="custom-control custom-switch">
+    <input type="checkbox" class="custom-control-input" id="showAllAccounts">
+    <label class="custom-control-label" for="showAllAccounts">Show all accounts</label>
+  </div>
+</div>
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr class="d-flex">
+        <th scope="col" class="col-8">Name</th>
+        <th scope="col" class="col-1">Currency</th>
+        <th scope="col" class="col-3"><div class="text-right">Balance</div></th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+</div>
+<script>
+  var accounts = [];
+  var showAllAccounts = false;
+  var addProgress = function() {
+    var progressRow = $('<tr></tr>')
+      .append($('<td class="col-12"></td>')
+        .append($('<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated w-100" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div>'))
+      );
+    var target = $("tbody");
+    target.empty().append(progressRow);
+  }
+  var updateVisibility = function() {
+    var progress = $(".progress");
+    if (!progress.prop("hidden")) {
+      progress.slideUp(function() { progress.parent().parent().remove(); });
+    }
+    var table = $(".table-responsive");
+    if (table.prop("hidden"))
+      table.hide().prop("hidden", false).slideDown();
+  }
+  var updateAccounts = function() {
+    var accountsTarget = $("tbody");
+    accountsTarget.empty();
+    for (i in accounts) {
+      var account = accounts[i];
+      if (!showAllAccounts && !account.ShowInList)
+        continue
+      var accountRow = $('<tr class="d-flex"></tr>')
+        .append($('<td class="col-8"></td>').text(account.Name))
+        .append($('<td class="col-1"></td>').text(account.Currency))
+        .append($('<td class="col-3"></td>')
+          .append($('<div class="text-right"></div>').text((account.Balance/100).toFixed(2)))
+        );
+      if (account.TotalAccount) 
+        accountRow.addClass("table-secondary");
+      accountsTarget.append(accountRow);
+    }
+  }
+  var createTotalAccounts = function() {
+    var accountTotals = {};
+    for (i in accounts) {
+      var account = accounts[i];
+      if (account.IncludeInTotal)
+        accountTotals[account.Currency] = (accountTotals[account.Currency] || 0) + account.Balance;
+    }
+    for(var currency in accountTotals)
+      accounts.push({Name: "Totals for "+ currency, Currency: currency, Balance: accountTotals[currency], ShowInList: true, TotalAccount: true});
+  }
+  $("#showAllAccounts").change(function() {
+    showAllAccounts = this.checked;
+    updateAccounts();
+  });
+  var loadAccounts = function() {
+    addProgress();
+    $.getJSON("api/accounts").done(function(data) {
+      accounts = data;
+      createTotalAccounts();
+      updateAccounts();
+      updateVisibility();
+    });
+  }
+  loadAccounts();
+</script>
 {{ end }}
