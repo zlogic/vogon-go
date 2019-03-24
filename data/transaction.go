@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"sort"
+	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger"
@@ -171,7 +172,53 @@ func (s *DBService) getTransactions(user *User) func(*badger.Txn) ([]*Transactio
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
 		prefix := []byte(user.CreateTransactionKeyPrefix())
+
+		type kv struct {
+			k []byte
+			v []byte
+		}
+
+		kvc := make(chan *kv, 16)
+		tc := make(chan *Transaction, 16)
+
+		var wg sync.WaitGroup
+		var failedErr error
+
+		for i := 0; i < 16; i++ {
+			go func() {
+				for kv := range kvc {
+					transaction := &Transaction{}
+					if err := gob.NewDecoder(bytes.NewBuffer(kv.v)).Decode(transaction); err != nil {
+						log.WithField("key", kv.k).WithError(err).Error("Failed to decode value of transaction")
+						failedErr = err
+						tc <- nil
+						return
+					}
+					tc <- transaction
+				}
+			}()
+		}
+
+		go func() {
+			for transaction := range tc {
+				transactions = append(transactions, transaction)
+				wg.Done()
+			}
+			close(tc)
+			close(kvc)
+		}()
+
+		clone := func(data []byte) []byte {
+			clone := make([]byte, len(data))
+			copy(clone, data)
+			return clone
+		}
+
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			if failedErr != nil {
+				break
+			}
+
 			item := it.Item()
 
 			k := item.Key()
@@ -180,14 +227,17 @@ func (s *DBService) getTransactions(user *User) func(*badger.Txn) ([]*Transactio
 				log.WithField("key", k).WithError(err).Error("Failed to read value of transaction")
 				continue
 			}
-			transaction := &Transaction{}
 
-			if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(transaction); err != nil {
-				log.WithField("key", k).WithError(err).Error("Failed to decode value of transaction")
-				return nil, err
-			}
-			transactions = append(transactions, transaction)
+			wg.Add(1)
+			kvc <- &kv{k: clone(k), v: clone(v)}
 		}
+
+		wg.Wait()
+		if failedErr != nil {
+			return nil, failedErr
+		}
+
+		sort.Slice(transactions, func(i, j int) bool { return transactions[i].ID < transactions[j].ID })
 		return transactions, nil
 	}
 }
