@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const backupData = `{
+const restoreData = `{
   "Accounts": [
     {
       "ID": 0,
@@ -137,6 +137,137 @@ const backupData = `{
   ]
 }`
 
+const backupData = `{
+  "Accounts": [
+    {
+      "ID": 0,
+      "Name": "Orange Bank",
+      "Balance": 99000,
+      "Currency": "PLN",
+      "IncludeInTotal": true,
+      "ShowInList": true
+    },
+    {
+      "ID": 1,
+      "Name": "Green Bank",
+      "Balance": 90000,
+      "Currency": "ALL",
+      "IncludeInTotal": true,
+      "ShowInList": false
+    },
+    {
+      "ID": 2,
+      "Name": "Purple Bank",
+      "Balance": 80000,
+      "Currency": "ZWL",
+      "IncludeInTotal": true,
+      "ShowInList": false
+    },
+    {
+      "ID": 3,
+      "Name": "Magical Credit Card",
+      "Balance": -8000,
+      "Currency": "PLN",
+      "IncludeInTotal": false,
+      "ShowInList": false
+    }
+  ],
+  "Transactions": [
+    {
+      "ID": 1,
+      "Description": "Salary",
+      "Type": 0,
+      "Tags": [
+        "Salary"
+      ],
+      "Date": "2015-11-01",
+      "Components": [
+        {
+          "Amount": 100000,
+          "AccountID": 0
+        },
+        {
+          "Amount": 100000,
+          "AccountID": 1
+        },
+        {
+          "Amount": 100000,
+          "AccountID": 2
+        }
+      ]
+    },
+    {
+      "ID": 0,
+      "Description": "Widgets",
+      "Type": 0,
+      "Tags": [
+        "Widgets"
+      ],
+      "Date": "2015-11-02",
+      "Components": [
+        {
+          "Amount": -10000,
+          "AccountID": 1
+        }
+      ]
+    },
+    {
+      "ID": 2,
+      "Description": "Gadgets",
+      "Type": 0,
+      "Tags": [
+        "Gadgets"
+      ],
+      "Date": "2015-11-03",
+      "Components": [
+        {
+          "Amount": -10000,
+          "AccountID": 3
+        }
+      ]
+    },
+    {
+      "ID": 4,
+      "Description": "Stuff",
+      "Type": 1,
+      "Tags": [
+        "Gadgets",
+        "Widgets"
+      ],
+      "Date": "2015-11-07",
+      "Components": [
+        {
+          "Amount": -1000,
+          "AccountID": 0
+        },
+        {
+          "Amount": -10000,
+          "AccountID": 2
+        }
+      ]
+    },
+    {
+      "ID": 3,
+      "Description": "Credit card payment",
+      "Type": 1,
+      "Tags": [
+        "Credit"
+      ],
+      "Date": "2015-11-09",
+      "Components": [
+        {
+          "Amount": -10000,
+          "AccountID": 2
+        },
+        {
+          "Amount": 2000,
+          "AccountID": 3
+        }
+      ]
+    }
+  ]
+}`
+
 func createBackupAccounts() []*Account {
 	return []*Account{&Account{
 		Name:           "Orange Bank",
@@ -236,7 +367,7 @@ func TestRestore(t *testing.T) {
 	assert.NoError(t, err)
 	defer cleanup()
 
-	err = dbService.Restore(&testUser, backupData)
+	err = dbService.Restore(&testUser, restoreData)
 	assert.NoError(t, err)
 
 	expectedAccounts := createBackupAccounts()
@@ -252,6 +383,7 @@ func TestRestore(t *testing.T) {
 	for i, transaction := range expectedTransactions {
 		transaction.ID = uint64(i)
 	}
+	sortTransactionsAsc(expectedTransactions)
 
 	dbAccounts, err := dbService.GetAccounts(&testUser)
 	assert.NoError(t, err)
@@ -259,6 +391,7 @@ func TestRestore(t *testing.T) {
 
 	dbTransactions, err := dbService.GetTransactions(&testUser)
 	assert.NoError(t, err)
+	sortTransactionsAsc(dbTransactions)
 	assert.Equal(t, expectedTransactions, dbTransactions)
 }
 
@@ -288,7 +421,7 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 		dbService.CreateTransaction(&testUser, transaction)
 	}
 
-	err = dbService.Restore(&testUser, backupData)
+	err = dbService.Restore(&testUser, restoreData)
 	assert.NoError(t, err)
 
 	expectedAccounts := createBackupAccounts()
@@ -304,6 +437,7 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 	for i, transaction := range expectedTransactions {
 		transaction.ID = uint64(len(transactions)) + uint64(i)
 	}
+	sortTransactionsAsc(expectedTransactions)
 
 	dbAccounts, err := dbService.GetAccounts(&testUser)
 	assert.NoError(t, err)
@@ -311,5 +445,6 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 
 	dbTransactions, err := dbService.GetTransactions(&testUser)
 	assert.NoError(t, err)
+	sortTransactionsAsc(dbTransactions)
 	assert.Equal(t, expectedTransactions, dbTransactions)
 }

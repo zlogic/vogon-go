@@ -1,3 +1,197 @@
 {{ define "content" }}
-<div>Transactions for {{ .User }}</div>
+<div class="table-responsive">
+  <table class="table">
+    <thead>
+      <tr class="d-flex">
+        <th scope="col" class="col-6">Description</th>
+        <th scope="col" class="col-2">Date</th>
+        <th scope="col" class="col-2">Accounts</th>
+        <th scope="col" class="col-2"><div class="text-right">Amount</div></th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+</div>
+<div id="pagination"></div>
+<script>
+  var isExpenseIncome = function(transaction) { return transaction.Type === 0; }
+  var isTransfer = function(transaction) { return transaction.Type === 1; }
+  var itemsPerPage = 100;
+  var setPage = null;
+  var currentPage = null;
+
+  var transactions = null;
+  var accounts = null;
+  var addProgress = function() {
+    var progressRow = $('<tr></tr>')
+      .append($('<td class="col-12"></td>')
+        .append($('<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated w-100" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div>'))
+      );
+    var target = $("tbody");
+    target.empty().append(progressRow);
+  }
+  var updateVisibility = function() {
+    var progress = $(".progress");
+    if (!progress.prop("hidden")) {
+      progress.slideUp(function() { progress.parent().parent().remove(); });
+    }
+    var table = $(".table-responsive");
+    if (table.prop("hidden"))
+      table.hide().prop("hidden", false).slideDown();
+  }
+  var updateTransactions = function() {
+    if (transactions === null || accounts === null) return;
+    var transactionsTarget = $("tbody");
+    transactionsTarget.empty();
+    for (var tr=currentPage*itemsPerPage;tr<(currentPage+1)*itemsPerPage&&tr<transactions.length;tr++) {
+      var transaction = transactions[tr];
+
+      var descriptionTagsColumn = $('<div></div>')
+        .append($('<div></div>').text(transaction.Description));
+      var tagsDiv = $('<div></div>')
+      for (i in transaction.Tags)
+        descriptionTagsColumn.append($('<span class="badge badge-light"></span>').text(transaction.Tags[i])).append(" ");
+      descriptionTagsColumn.append(tagsDiv);
+
+      var accountsColumn = $('<div></div>');
+      var amountsColumn = $('<div class="text-right"></div>');
+      var incomeAccounts = [], expenseAccounts = [];
+      var currencyAmounts = {};
+      var amountOk = true;
+      for (i in transaction.Components) {
+        var component = transaction.Components[i];
+        if (component.Amount >= 0 && !incomeAccounts.includes(component.AccountID))
+          incomeAccounts.push(component.AccountID);
+        if (component.Amount <= 0 && !expenseAccounts.includes(component.AccountID))
+          expenseAccounts.push(component.AccountID);
+        
+        var currency = accounts[component.AccountID].Currency;
+        currencyTotal = currencyAmounts[currency] || {negative: 0, positive: 0};
+        if (component.Amount > 0 || isExpenseIncome(transaction))
+          currencyTotal.positive += component.Amount;
+        else if (component.Amount < 0)
+          currencyTotal.negative -= component.Amount;
+        currencyAmounts[currency] = currencyTotal;
+      }
+      var appendAccount = function (accountID){
+        accountsColumn.append($('<div></div>').text(accounts[accountID].Name));
+      }
+      var appendCurrencyAmounts = function (){
+        var prefix = isTransfer(transaction) ? "&sum;" : "";
+        for (currency in currencyAmounts) {
+          var total = currencyAmounts[currency];
+          var getAmount = function() {
+            if (isExpenseIncome(transaction))
+              return total.positive;
+            if (isTransfer(transaction))
+              return total.positive > total.negative ? total.positive : total.negative;
+          }
+
+          if (isTransfer(transaction) && total.positive !== total.negative)
+            amountOk = false;
+
+          amountsColumn.append($('<div></div>').html(prefix + (getAmount()/100).toFixed(2) +" " + currency));
+        }
+      }
+      if (isExpenseIncome(transaction)) {
+        var mergedAccounts = [];
+        var appendUnique = function(accountID) { if (!mergedAccounts.includes(accountID)) mergedAccounts.push(accountID); };
+        incomeAccounts.forEach(appendUnique);
+        expenseAccounts.forEach(appendUnique);
+        mergedAccounts.forEach(appendAccount);
+        
+        appendCurrencyAmounts();
+      } else if (isTransfer(transaction)) {
+        incomeAccounts.forEach(appendAccount);
+        accountsColumn.append($('<div></div>').html('&darr;'));
+        expenseAccounts.forEach(appendAccount);
+        
+        appendCurrencyAmounts("&sum; ");
+      }
+
+      var transactionRow = $('<tr class="d-flex"></tr>')
+        .append($('<td class="col-6"></td>').append(descriptionTagsColumn))
+        .append($('<td class="col-2"></td>').text(new Date(transaction.Date).toLocaleDateString()))
+        .append($('<td class="col-2"></td>').append(accountsColumn))
+        .append($('<td class="col-2"></td>').append(amountsColumn));
+      if (!amountOk) amountsColumn.parent().addClass("bg-danger").addClass("text-white");
+      transactionsTarget.append(transactionRow);
+    }
+  }
+  var updatePagination = function() {
+    var paginationTarget = $("#pagination");
+    paginationTarget.empty();
+
+    var paginationElement = $('<ul class="pagination justify-content-center"></ul>');
+
+    var previousPageButton = $('<a class="page-link" href="#pagePrevious"><span aria-hidden="true">&laquo;</span></a>');
+    paginationElement.append($('<li class="page-item"></li>').append(previousPageButton));
+
+    var pageSelectionButton = $('<button class="page-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-flip="false"></button>');
+    var pageSelectionMenu = $('<div class="dropdown-menu"></div>');
+
+    paginationElement.append($('<li class="page-item"></li>')
+      .append($('<div class="btn-group dropup"></div>')
+        .append(pageSelectionButton).append(pageSelectionMenu))
+    );
+
+    var nextPageButton = $('<a class="page-link" href="#pageNext"><span aria-hidden="true">&raquo;</span></a>');
+    paginationElement.append($('<li class="page-item"></li>').append(nextPageButton));
+
+    var pagesCount = Math.ceil(transactions.length / itemsPerPage);
+    setPage = function(page) {
+      currentPage = page;
+      previousPageButton.parent().toggleClass("disabled", page === 0);
+      nextPageButton.parent().toggleClass("disabled", page === (pagesCount-1));
+      pageSelectionButton.text("Page " + (page + 1) + " of " + pagesCount);
+      $('a.dropdown-item').removeClass("active");
+      $('a.dropdown-item[data-page="' + page + '"]').addClass("active");
+      
+      updateTransactions();
+    }
+
+    for (var i=0;i<pagesCount;i++){
+      var pageButton = $('<a class="dropdown-item" href="#page' + (i+1) + '" data-page="' + i + '">' + (i+1) + '</a>');
+      pageSelectionMenu.append(pageButton);
+    }
+
+    previousPageButton.on('click', function(e){
+      e.preventDefault();
+      setPage(currentPage-1);
+    });
+    nextPageButton.on('click', function(e){
+      e.preventDefault();
+      setPage(currentPage+1);
+    });
+
+    paginationTarget.append($('<nav aria-label="Transactions pagination"></nav>').append(paginationElement));
+    setPage(0);
+  }
+  
+  $(document).on('click', 'a.dropdown-item', function(e) {
+    e.preventDefault();
+    var pageButton = jQuery(this);
+    var page = parseInt(pageButton.attr('data-page'));
+    setPage(page);
+  });
+  var loadTransactions = function() {
+    addProgress();
+    var updateIfReady = function() {
+      if (transactions === null || accounts === null) return;
+      updateVisibility();
+      updatePagination();
+    }
+    $.getJSON("api/transactions").done(function(data) {
+      transactions = data;
+      updateIfReady();
+    });
+    $.getJSON("api/accounts").done(function(data) {
+      accounts = {};
+      data.forEach(function (account) { accounts[account.ID] = account; });
+      updateIfReady();
+    });
+  }
+  loadTransactions();
+</script>
 {{ end }}

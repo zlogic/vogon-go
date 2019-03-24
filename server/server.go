@@ -14,6 +14,7 @@ type DB interface {
 	SetUsername(user *data.User, newUsername string) error
 
 	GetAccounts(user *data.User) ([]*data.Account, error)
+	GetTransactions(user *data.User) ([]*data.Transaction, error)
 
 	Backup(user *data.User) (string, error)
 	Restore(user *data.User, value string) error

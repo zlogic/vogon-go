@@ -28,6 +28,8 @@ func (s *DBService) Backup(user *User) (string, error) {
 			return errors.Wrap(err, "Failed to get transactions when backing up data")
 		}
 
+		sortTransactionsAsc(transactions)
+
 		data.Accounts = accounts
 		data.Transactions = transactions
 		return nil

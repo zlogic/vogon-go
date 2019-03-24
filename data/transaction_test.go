@@ -89,7 +89,7 @@ func TestCreateTransactionNoComponents(t *testing.T) {
 	transaction2.ID = 1
 	transactions, err = dbService.GetTransactions(&testUser)
 	assert.NoError(t, err)
-	assert.Equal(t, []*Transaction{&transaction1, &transaction2}, transactions)
+	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
 }
 
 func TestUpdateTransactionNoComponents(t *testing.T) {
@@ -129,7 +129,7 @@ func TestUpdateTransactionNoComponents(t *testing.T) {
 
 	transactions, err := dbService.GetTransactions(&testUser)
 	assert.NoError(t, err)
-	assert.Equal(t, []*Transaction{&transaction1, &transaction2}, transactions)
+	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
 }
 
 func TestDeleteTransactionNoComponents(t *testing.T) {
@@ -258,7 +258,7 @@ func TestCreateTransactionWithComponents(t *testing.T) {
 	transaction2.ID = 1
 	transactions, err = dbService.GetTransactions(&testUser)
 	assert.NoError(t, err)
-	assert.Equal(t, []*Transaction{&transaction1, &transaction2}, transactions)
+	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
 
 	accounts, err = dbService.GetAccounts(&testUser)
 	assert.NoError(t, err)
@@ -323,7 +323,7 @@ func TestUpdateTransactionWithComponents(t *testing.T) {
 
 	transactions, err := dbService.GetTransactions(&testUser)
 	assert.NoError(t, err)
-	assert.Equal(t, []*Transaction{&transaction1, &transaction2}, transactions)
+	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
 
 	accounts, err := dbService.GetAccounts(&testUser)
 	assert.NoError(t, err)

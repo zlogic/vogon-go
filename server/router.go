@@ -48,6 +48,7 @@ func CreateRouter(s *Services) (*mux.Router, error) {
 	}
 	api.HandleFunc("/settings", SettingsHandler(s)).Methods("GET", "POST")
 	api.HandleFunc("/backup", BackupHandler(s)).Methods("POST")
+	api.HandleFunc("/transactions", TransactionsHandler(s)).Methods("GET")
 	api.HandleFunc("/accounts", AccountsHandler(s)).Methods("GET")
 	return r, nil
 }

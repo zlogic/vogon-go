@@ -74,6 +74,16 @@ func (transaction *Transaction) Normalize() error {
 	return nil
 }
 
+func sortTransactionsAsc(transactions []*Transaction) {
+	sort.Slice(transactions, func(i, j int) bool {
+		if transactions[i].Date != transactions[j].Date {
+			return transactions[i].Date < transactions[j].Date
+		} else {
+			return transactions[i].ID < transactions[j].ID
+		}
+	})
+}
+
 func (s *DBService) createTransaction(user *User, transaction *Transaction) func(*badger.Txn) error {
 	return func(txn *badger.Txn) error {
 		key := user.CreateTransactionKey(transaction)
@@ -237,7 +247,6 @@ func (s *DBService) getTransactions(user *User) func(*badger.Txn) ([]*Transactio
 			return nil, failedErr
 		}
 
-		sort.Slice(transactions, func(i, j int) bool { return transactions[i].ID < transactions[j].ID })
 		return transactions, nil
 	}
 }
