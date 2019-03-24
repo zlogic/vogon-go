@@ -94,7 +94,7 @@
               return total.positive > total.negative ? total.positive : total.negative;
           }
 
-          if (isTransfer(transaction) && total.positive !== total.negative)
+          if (isTransfer(transaction) && Object.keys(currencyAmounts).length == 1 && total.positive !== total.negative)
             amountOk = false;
 
           amountsColumn.append($('<div></div>').html(prefix + (getAmount()/100).toFixed(2) +" " + currency));
