@@ -8,10 +8,10 @@
 <div class="table-responsive">
   <table class="table">
     <thead>
-      <tr class="d-flex">
-        <th scope="col" class="col-8">Name</th>
-        <th scope="col" class="col-1">Currency</th>
-        <th scope="col" class="col-3"><div class="text-right">Balance</div></th>
+      <tr>
+        <th scope="col">Name</th>
+        <th scope="col"><div class="text-right">Balance</div></th>
+        <th scope="col">Currency</th>
       </tr>
     </thead>
     <tbody>
@@ -45,12 +45,12 @@
       var account = accounts[i];
       if (!showAllAccounts && !account.ShowInList)
         continue
-      var accountRow = $('<tr class="d-flex"></tr>')
-        .append($('<td class="col-8"></td>').text(account.Name))
-        .append($('<td class="col-1"></td>').text(account.Currency))
-        .append($('<td class="col-3"></td>')
+      var accountRow = $('<tr></tr>')
+        .append($('<td></td>').text(account.Name))
+        .append($('<td></td>')
           .append($('<div class="text-right"></div>').text((account.Balance/100).toFixed(2)))
-        );
+        )
+        .append($('<td></td>').text(account.Currency));
       if (account.TotalAccount) 
         accountRow.addClass("table-secondary");
       accountsTarget.append(accountRow);

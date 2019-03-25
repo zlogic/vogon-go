@@ -6,12 +6,12 @@
 <div class="table-responsive">
   <table class="table">
     <thead>
-      <tr class="d-flex">
-        <th scope="col" class="col-6">Description</th>
-        <th scope="col" class="col-1">Date</th>
-        <th scope="col" class="col-2">Accounts</th>
-        <th scope="col" class="col-2"><div class="text-right">Amount</div></th>
-        <th scope="col" class="col-1"></th>
+      <tr>
+        <th scope="col">Description</th>
+        <th scope="col">Date</th>
+        <th scope="col">Accounts</th>
+        <th scope="col"><div class="text-right">Amount</div></th>
+        <th scope="col"></th>
       </tr>
     </thead>
     <tbody>
@@ -30,7 +30,7 @@
   var accounts = null;
   var addProgress = function() {
     var progressRow = $('<tr></tr>')
-      .append($('<td class="col-12"></td>')
+      .append($('<td colspan="5"></td>')
         .append($('<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated w-100" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div>'))
       );
     var target = $("tbody");
@@ -61,7 +61,15 @@
 
       var accountsColumn = $('<div></div>');
       var amountsColumn = $('<div class="text-right"></div>');
-      var editColumn = $('<a class="btn btn-outline-secondary" href="transactioneditor?edit&id=' + transaction.ID + '" role="button">Edit</a>');
+      var editButton = $('<a class="dropdown-item" href="transactioneditor?edit&id='+ transaction.ID +'">Edit</a>');
+      var duplicateButton = $('<a class="dropdown-item" href="transactioneditor?duplicate&id='+ transaction.ID +'">Duplicate</a>');
+      var actionsColumn = $('<div class="dropdown">' + 
+        '<button class="btn btn-outline-secondary btn-small dropdown-toggle" type="button" id="dropdownMenuButton' + transaction.ID + '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Tools</button>' +
+        '</div>');
+      actionsColumn.append($('<div class="dropdown-menu" aria-labelledby="dropdownMenuButton' + transaction.ID + '">')
+        .append(editButton)
+        .append(duplicateButton)
+      );
       var incomeAccounts = [], expenseAccounts = [];
       var currencyAmounts = {};
       var amountOk = true;
@@ -116,12 +124,12 @@
         appendCurrencyAmounts("&sum; ");
       }
 
-      var transactionRow = $('<tr class="d-flex"></tr>')
-        .append($('<td class="col-6"></td>').append(descriptionTagsColumn))
-        .append($('<td class="col-1"></td>').text(new Date(transaction.Date).toLocaleDateString()))
-        .append($('<td class="col-2"></td>').append(accountsColumn))
-        .append($('<td class="col-2"></td>').append(amountsColumn))
-        .append($('<td class="col-1"></td>').append(editColumn));
+      var transactionRow = $('<tr></tr>')
+        .append($('<td></td>').append(descriptionTagsColumn))
+        .append($('<td></td>').append(new Date(transaction.Date).toLocaleDateString()))
+        .append($('<td></td>').append(accountsColumn))
+        .append($('<td></td>').append(amountsColumn))
+        .append($('<td></td>').append(actionsColumn));
       if (!amountOk) amountsColumn.parent().addClass("bg-danger").addClass("text-white");
       transactionsTarget.append(transactionRow);
     }
@@ -177,7 +185,7 @@
     setPage(0);
   }
   
-  $(document).on('click', 'a.dropdown-item', function(e) {
+  $(document).on('click', 'a.dropdown-item[data-page]', function(e) {
     e.preventDefault();
     var pageButton = jQuery(this);
     var page = parseInt(pageButton.attr('data-page'));

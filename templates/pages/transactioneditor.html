@@ -169,7 +169,7 @@
       var amount = parseFloat($(componentRow).find('input').val()) * 100;
       transaction.Components.push({AccountID: accountID, Amount: amount});
     });
-    var id = urlParams.has("edit") ? urlParams.get("id") : "new";
+    var id = transaction.ID || "new";
     $.ajax("api/transaction/" + id, {
       data : JSON.stringify(transaction),
       contentType : 'application/json',
@@ -209,9 +209,11 @@
 
   var loadTransaction = function() {
     lockForm(true);
-    if (urlParams.has("edit")) {
+    if (urlParams.has("edit") || urlParams.has("duplicate")) {
       $.getJSON("api/transaction/" + urlParams.get("id")).done(function(data) {
         transaction = data;
+        if(urlParams.has("duplicate"))
+          delete transaction.ID;
         updateIfReady();
       });
     } else if (urlParams.has("new")) {
