@@ -13,10 +13,14 @@ type DB interface {
 	SaveNewUser(*data.User) error
 	SetUsername(user *data.User, newUsername string) error
 
-	GetAccounts(user *data.User) ([]*data.Account, error)
-	GetTransactions(user *data.User) ([]*data.Transaction, error)
-	CreateTransaction(user *data.User, transaction *data.Transaction) error
-	UpdateTransaction(user *data.User, transaction *data.Transaction) error
+	GetAccounts(*data.User) ([]*data.Account, error)
+	GetTransactions(*data.User) ([]*data.Transaction, error)
+	CreateAccount(*data.User, *data.Account) error
+	UpdateAccount(*data.User, *data.Account) error
+	GetAccount(user *data.User, accountID uint64) (*data.Account, error)
+	DeleteAccount(user *data.User, transactionID uint64) error
+	CreateTransaction(*data.User, *data.Transaction) error
+	UpdateTransaction(*data.User, *data.Transaction) error
 	GetTransaction(user *data.User, transactionID uint64) (*data.Transaction, error)
 	DeleteTransaction(user *data.User, transactionID uint64) error
 

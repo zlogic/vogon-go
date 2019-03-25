@@ -37,6 +37,7 @@ func CreateRouter(s *Services) (*mux.Router, error) {
 	r.HandleFunc("/transactions", HtmlUserPageHandler(s)).Methods("GET").Name("transactions")
 	r.HandleFunc("/transactioneditor", HtmlUserPageHandler(s)).Methods("GET").Name("transactioneditor")
 	r.HandleFunc("/accounts", HtmlUserPageHandler(s)).Methods("GET").Name("accounts")
+	r.HandleFunc("/accounteditor", HtmlUserPageHandler(s)).Methods("GET").Name("accounteditor")
 	r.HandleFunc("/settings", HtmlUserPageHandler(s)).Methods("GET").Name("settings")
 	r.HandleFunc("/favicon.ico", FaviconHandler)
 	fs := http.FileServer(staticResourceFileSystem{http.Dir("static")})
@@ -52,5 +53,6 @@ func CreateRouter(s *Services) (*mux.Router, error) {
 	api.HandleFunc("/transactions", TransactionsHandler(s)).Methods("GET")
 	api.HandleFunc("/transaction/{id}", TransactionHandler(s)).Methods("GET", "POST", "DELETE")
 	api.HandleFunc("/accounts", AccountsHandler(s)).Methods("GET")
+	api.HandleFunc("/account/{id}", AccountHandler(s)).Methods("GET", "POST", "DELETE")
 	return r, nil
 }

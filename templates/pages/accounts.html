@@ -5,6 +5,9 @@
     <label class="custom-control-label" for="showAllAccounts">Show all accounts</label>
   </div>
 </div>
+<div class="pb-3">
+  <a class="btn btn-outline-secondary" href="accounteditor?new" role="button">Add account</a>
+</div>
 <div class="table-responsive">
   <table class="table">
     <thead>
@@ -12,6 +15,7 @@
         <th scope="col">Name</th>
         <th scope="col"><div class="text-right">Balance</div></th>
         <th scope="col">Currency</th>
+        <th scope="col"></th>
       </tr>
     </thead>
     <tbody>
@@ -45,12 +49,14 @@
       var account = accounts[i];
       if (!showAllAccounts && !account.ShowInList)
         continue
+      var editColumn = $('<a class="btn btn-outline-secondary" href="accounteditor?edit&id=' + account.ID + '" role="button">Edit</a>');
       var accountRow = $('<tr></tr>')
         .append($('<td></td>').text(account.Name))
         .append($('<td></td>')
           .append($('<div class="text-right"></div>').text((account.Balance/100).toFixed(2)))
         )
-        .append($('<td></td>').text(account.Currency));
+        .append($('<td></td>').text(account.Currency))
+        .append($('<td></td>').append(editColumn));
       if (account.TotalAccount) 
         accountRow.addClass("table-secondary");
       accountsTarget.append(accountRow);

@@ -80,7 +80,7 @@
         if (component.Amount <= 0 && !expenseAccounts.includes(component.AccountID))
           expenseAccounts.push(component.AccountID);
         
-        var currency = accounts[component.AccountID].Currency;
+        var currency = (accounts[component.AccountID] || {Currency:""}).Currency;
         currencyTotal = currencyAmounts[currency] || {negative: 0, positive: 0};
         if (component.Amount > 0 || isExpenseIncome(transaction))
           currencyTotal.positive += component.Amount;
@@ -89,7 +89,7 @@
         currencyAmounts[currency] = currencyTotal;
       }
       var appendAccount = function (accountID){
-        accountsColumn.append($('<div></div>').text(accounts[accountID].Name));
+        accountsColumn.append($('<div></div>').text((accounts[component.AccountID] || {Name:""}).Name));
       }
       var appendCurrencyAmounts = function (){
         var prefix = isTransfer(transaction) ? "&sum;" : "";

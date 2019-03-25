@@ -1,0 +1,153 @@
+{{ define "content" }}
+<h2>Account</h2>
+<form id="accountForm" accept-charset="utf-8" autocomplete="off">
+  <div class="form-row">
+    <div class="form-group col-md-9">
+      <label for="editName">Name</label>
+      <input type="text" class="form-control" id="editName" placeholder="Enter account name" required>
+    </div>
+    <div class="form-group col-md-3">
+      <label for="editCurrency">Currency</label>
+      <input type="text" class="form-control" id="editCurrency" placeholder="Enter account currency" required>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group col-md-12">
+      <div class="custom-control custom-checkbox">
+        <input type="checkbox" class="custom-control-input" id="includeInTotal">
+        <label class="custom-control-label" for="includeInTotal">Include in total</label>
+      </div>
+      <div class="custom-control custom-checkbox">
+        <input type="checkbox" class="custom-control-input" id="showInList">
+        <label class="custom-control-label" for="showInList">Show in accounts list</label>
+      </div>
+    </div>
+  </div>
+  <div class="form-group">
+    <button type="submit" class="btn btn-primary">
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
+      Save</button>
+  </div>
+  <div class="row">
+    <div class="form-group col-md-12">
+      <div id="saveSuccessful" class="alert alert-success" role="alert" hidden>Saved successfully</div>
+      <div id="saveFailed" class="alert alert-danger" role="alert" hidden>Save failed</div>
+    </div>
+  </div>
+  <div class="form-group">
+    <button id="deleteButton" type="button" class="btn btn-danger">
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
+      Delete</button>
+  </div>
+  <div class="row">
+    <div class="form-group col-md-12">
+      <div id="deleteSuccessful" class="alert alert-success" role="alert" hidden>Deleted successfully</div>
+      <div id="deleteFailed" class="alert alert-danger" role="alert" hidden>Delete failed</div>
+    </div>
+  </div>
+</form>
+<script>
+  var account = null;
+  var componentsCounter = 0;
+
+  var urlParams = new URLSearchParams(window.location.search);
+
+  var nameEditor = $('input[id="editName"]');
+  var currencyEditor = $('input[id="editCurrency"]');
+  var includeInTotal = $('input[id="includeInTotal"]');
+  var showInList = $('input[id="showInList"]');
+  var submit = $('button[type="submit"]');
+  var deleteButton = $('button[id="deleteButton"]');
+  var spinner = $('button[type="submit"] span[role="status"]');
+  var deleteSpinner = $('button[id="deleteButton"] span[role="status"]');
+
+  var lockForm = function(lock) {
+     $("#accountForm").find("input").prop("readonly", lock);
+  }
+
+  var showResultAlert = function(alertDiv){
+    alertDiv.hide();
+    alertDiv.prop("hidden", false);
+    alertDiv.slideDown();
+  }
+
+  var updateForm = function() {
+    //$('input[name=selectType][value="' + transaction.Type +'"]').prop("checked", true);
+    nameEditor.val(account.Name);
+    currencyEditor.val(account.Currency);
+    includeInTotal.prop("checked", account.IncludeInTotal);
+    showInList.prop("checked", account.ShowInList);
+    lockForm(false);
+  }
+
+  //Delete component button
+  $(document).on('click', 'button[data-delete="component"]', function(e) {
+    e.preventDefault();
+    var deleteButton = jQuery(this);
+    deleteButton.parent().parent().slideUp(function(){deleteButton.parent().parent().remove()});
+  });
+  
+  // Submit handler
+  $("#accountForm").submit(function(event) {
+    event.preventDefault();
+    lockForm(true);
+    $("#saveFailed").prop("hidden", true);
+    $("#saveSuccessful").prop("hidden", true);
+    spinner.prop("hidden", false);
+    account.Name = nameEditor.val();
+    account.Currency = currencyEditor.val();
+    account.IncludeInTotal = includeInTotal.prop("checked");
+    account.ShowInList = showInList.prop("checked");
+    var id = account.ID || "new";
+    $.ajax("api/account/" + id, {
+      data : JSON.stringify(account),
+      contentType : 'application/json',
+      type : 'POST'
+    }).done(function() {
+      window.location.href = "accounts";
+      showResultAlert($("#saveSuccessful"));
+    }).fail(function(data){
+      showResultAlert($("#saveFailed"));
+      lockForm(false);
+    }).always(function(){
+      spinner.prop("hidden", true);
+    });
+  });
+
+  // Delete handler
+  $("#deleteButton").click(function(event) {
+    event.preventDefault();
+    lockForm(true);
+    $("#deleteFailed").prop("hidden", true);
+    $("#deleteSuccessful").prop("hidden", true);
+    deleteSpinner.prop("hidden", false);
+    $.ajax("api/account/" + urlParams.get("id"), {
+      type : 'DELETE'
+    }).done(function() {
+      window.location.href = "accounts";
+      showResultAlert($("#deleteSuccessful"));
+    }).fail(function(data){
+      showResultAlert($("#deleteFailed"));
+      lockForm(false);
+    }).always(function(){
+      deleteSpinner.prop("hidden", true);
+    });
+  })
+  if (!urlParams.has("edit"))
+    $("#deleteButton").remove();
+
+  var loadAccount = function() {
+    lockForm(true);
+    if (urlParams.has("edit")) {
+      $.getJSON("api/account/" + urlParams.get("id")).done(function(data) {
+        account = data;
+        updateForm();
+      });
+    } else if (urlParams.has("new")) {
+      account = {Name: "", Currency: "", IncludeInTotal: true, ShowInList: true};
+      updateForm();
+    }
+  }
+  loadAccount();
+</script>
+{{ end }}

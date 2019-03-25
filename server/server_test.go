@@ -77,6 +77,31 @@ func (m *DBMock) GetTransactions(user *data.User) ([]*data.Transaction, error) {
 	return returnTransactions, args.Error(1)
 }
 
+func (m *DBMock) CreateAccount(user *data.User, account *data.Account) error {
+	args := m.Called(user, account)
+	return args.Error(0)
+}
+
+func (m *DBMock) UpdateAccount(user *data.User, account *data.Account) error {
+	args := m.Called(user, account)
+	return args.Error(0)
+}
+
+func (m *DBMock) GetAccount(user *data.User, accountID uint64) (*data.Account, error) {
+	args := m.Called(user, accountID)
+	account := args.Get(0)
+	var returnAccount *data.Account
+	if account != nil {
+		returnAccount = account.(*data.Account)
+	}
+	return returnAccount, args.Error(1)
+}
+
+func (m *DBMock) DeleteAccount(user *data.User, accountID uint64) error {
+	args := m.Called(user, accountID)
+	return args.Error(0)
+}
+
 func (m *DBMock) CreateTransaction(user *data.User, transaction *data.Transaction) error {
 	args := m.Called(user, transaction)
 	return args.Error(0)

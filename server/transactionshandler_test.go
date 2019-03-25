@@ -282,7 +282,7 @@ func TestDeleteTransactionUserDoesNotExist(t *testing.T) {
 	dbMock.AssertExpectations(t)
 }
 
-func TestPostCrateTransactionAuthorized(t *testing.T) {
+func TestPostCreateTransactionAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)

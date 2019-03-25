@@ -160,7 +160,7 @@
     $("#saveSuccessful").prop("hidden", true);
     spinner.prop("hidden", false);
     transaction.Description = description.val();
-    transaction.Type = parseInt($('input[name=selectType]:checked').val())
+    transaction.Type = parseInt($('input[name=selectType]:checked').val());
     transaction.Tags = tags.val().split(',');
     transaction.Date = date.val();
     transaction.Components = [];

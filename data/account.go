@@ -108,7 +108,7 @@ func (s *DBService) updateAccountBalance(user *User, accountID uint64, deltaBala
 
 		if previousValue == nil {
 			log.WithField("key", key).Error("Cannot update account if it doesn't exist")
-			return fmt.Errorf("Cannot update account balance if it doesn't exist")
+			return nil
 		}
 
 		account := &Account{}
@@ -155,6 +155,33 @@ func (s *DBService) getAccounts(user *User) func(*badger.Txn) ([]*Account, error
 	}
 }
 
+func (s *DBService) GetAccount(user *User, accountID uint64) (*Account, error) {
+	var account *Account
+
+	key := user.CreateAccountKeyFromID(accountID)
+
+	err := s.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to get account %v", string(key))
+		}
+		v, err := item.Value()
+		if err != nil {
+			return errors.Wrapf(err, "Failed to get value for account %v", string(key))
+		}
+
+		account = &Account{}
+		if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(account); err != nil {
+			return errors.Wrapf(err, "Failed to decode value for account %v", string(key))
+		}
+		return err
+	})
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to get account %v", accountID)
+	}
+	return account, nil
+}
+
 func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
 	var accounts []*Account
 	err := s.db.View(func(txn *badger.Txn) error {
@@ -168,8 +195,8 @@ func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
 	return accounts, nil
 }
 
-func (s *DBService) DeleteAccount(user *User, account *Account) error {
-	key := user.CreateAccountKey(account)
+func (s *DBService) DeleteAccount(user *User, accountID uint64) error {
+	key := user.CreateAccountKeyFromID(accountID)
 	return s.db.Update(func(txn *badger.Txn) error {
 		if _, err := txn.Get(key); err != nil {
 			log.WithField("key", key).WithError(err).Error("Cannot delete account if it doesn't exist")

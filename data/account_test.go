@@ -111,16 +111,14 @@ func TestDeleteAccount(t *testing.T) {
 	err = dbService.CreateAccount(&testUser, &saveAccount)
 	assert.NoError(t, err)
 
-	account2.ID = 1
-
-	err = dbService.DeleteAccount(&testUser, &account2)
+	err = dbService.DeleteAccount(&testUser, uint64(1))
 	assert.NoError(t, err)
 
 	accounts, err := dbService.GetAccounts(&testUser)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Account{&account1}, accounts)
 
-	err = dbService.DeleteAccount(&testUser, &account1)
+	err = dbService.DeleteAccount(&testUser, uint64(0))
 	assert.NoError(t, err)
 
 	accounts, err = dbService.GetAccounts(&testUser)
@@ -144,10 +142,7 @@ func TestDeleteNonExistingAccount(t *testing.T) {
 	err = dbService.CreateAccount(&testUser, &saveAccount)
 	assert.NoError(t, err)
 
-	deleteAccount := account
-	deleteAccount.ID = 1
-
-	err = dbService.DeleteAccount(&testUser, &deleteAccount)
+	err = dbService.DeleteAccount(&testUser, uint64(1))
 	assert.Error(t, err)
 
 	accounts, err := dbService.GetAccounts(&testUser)
