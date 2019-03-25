@@ -209,15 +209,18 @@
 
   var loadTransaction = function() {
     lockForm(true);
+    var currentDate = new Date().toISOString().split("T")[0];
     if (urlParams.has("edit") || urlParams.has("duplicate")) {
       $.getJSON("api/transaction/" + urlParams.get("id")).done(function(data) {
         transaction = data;
-        if(urlParams.has("duplicate"))
+        if(urlParams.has("duplicate")){
           delete transaction.ID;
+          transaction.Date = currentDate;
+        }
         updateIfReady();
       });
     } else if (urlParams.has("new")) {
-      transaction = {Description: "", Type: 0, Date: new Date().toISOString().split("T")[0], Tags: [], Components: []};
+      transaction = {Description: "", Type: 0, Date: currentDate, Tags: [], Components: []};
     }
     $.getJSON("api/accounts").done(function(data) {
       accounts = {};
