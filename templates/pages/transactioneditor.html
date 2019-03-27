@@ -55,6 +55,7 @@
   </div>
 </form>
 <script>
+$(document).ready(function() {
   var transaction = null;
   var accounts = null;
   var componentsCounter = 0;
@@ -229,5 +230,6 @@
     });
   }
   loadTransaction();
+});
 </script>
 {{ end }}

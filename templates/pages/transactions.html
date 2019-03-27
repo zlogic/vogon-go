@@ -20,6 +20,7 @@
 </div>
 <div id="pagination"></div>
 <script>
+$(document).ready(function() {
   var isExpenseIncome = function(transaction) { return transaction.Type === 0; }
   var isTransfer = function(transaction) { return transaction.Type === 1; }
   var itemsPerPage = 100;
@@ -209,5 +210,6 @@
     });
   }
   loadTransactions();
+});
 </script>
 {{ end }}
