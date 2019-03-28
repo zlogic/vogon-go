@@ -12,3 +12,11 @@ input[type="number"] {
 .date-column {
     word-break: break-word;
 }
+
+/* Tag editor */
+.badge .badge-light .tag {
+	line-height: normal;
+}
+.tag > .close {
+	font-size: 100%;
+}

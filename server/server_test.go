@@ -127,6 +127,11 @@ func (m *DBMock) DeleteTransaction(user *data.User, transactionID uint64) error 
 	return args.Error(0)
 }
 
+func (m *DBMock) GetTags(user *data.User) ([]string, error) {
+	args := m.Called(user)
+	return args.Get(0).([]string), args.Error(1)
+}
+
 func (m *DBMock) Backup(user *data.User) (string, error) {
 	args := m.Called(user)
 	return args.Get(0).(string), args.Error(1)

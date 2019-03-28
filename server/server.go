@@ -24,6 +24,8 @@ type DB interface {
 	GetTransaction(user *data.User, transactionID uint64) (*data.Transaction, error)
 	DeleteTransaction(user *data.User, transactionID uint64) error
 
+	GetTags(user *data.User) ([]string, error)
+
 	Backup(user *data.User) (string, error)
 	Restore(user *data.User, value string) error
 }

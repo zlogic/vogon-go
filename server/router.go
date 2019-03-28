@@ -54,5 +54,6 @@ func CreateRouter(s *Services) (*mux.Router, error) {
 	api.HandleFunc("/transaction/{id}", TransactionHandler(s)).Methods("GET", "POST", "DELETE")
 	api.HandleFunc("/accounts", AccountsHandler(s)).Methods("GET")
 	api.HandleFunc("/account/{id}", AccountHandler(s)).Methods("GET", "POST", "DELETE")
+	api.HandleFunc("/tags", TagsHandler(s)).Methods("GET")
 	return r, nil
 }

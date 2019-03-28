@@ -24,8 +24,12 @@
     </div>
   </div>
   <div class="form-group">
-    <label for="editTags">Tags</label>
-    <input type="text" class="form-control" id="editTags" placeholder="Enter transaction tags">
+    <label for="addTag">Tags <div id="tagsList"></div></label>
+    <div class="dropdown">
+      <input type="text" class="form-control dropdown-toggle" id="addTag" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" placeholder="Enter a tag">
+      <div class="dropdown-menu" id="tagSuggestions"></div>
+    </div>
+    <small id="tagsHelp" class="form-text text-muted">Press Enter or the comma character to add the tag</small>
   </div>
   <div id="components"></div>
   <div class="form-group">
@@ -54,21 +58,35 @@
     </div>
   </div>
 </form>
+<script type="text/javascript" src="static/extras.js"></script>
 <script>
 $(document).ready(function() {
   var transaction = null;
   var accounts = null;
   var componentsCounter = 0;
+  var autocompleteTags = null;
 
   var urlParams = new URLSearchParams(window.location.search);
 
   var description = $('input[id="editDescription"]');
-  var tags = $('input[id="editTags"]');
   var date = $('input[id="editDate"]');
   var submit = $('button[type="submit"]');
   var deleteButton = $('button[id="deleteButton"]');
   var spinner = $('button[type="submit"] span[role="status"]');
   var deleteSpinner = $('button[id="deleteButton"] span[role="status"]');
+  
+	var tagsInput = $('input[id="addTag"]');
+	var tagsDropdown = $(".dropdown-menu#tagSuggestions");
+	var tagsList = $("#tagsList");
+
+  // Init tags input components
+  var suggestTags = function(currentInput) {
+    if (autocompleteTags === null) return [];
+    return autocompleteTags.filter(function(tag){
+			return currentInput === "" || tag.toLowerCase().startsWith(currentInput);
+		});
+  }
+  var tagsInputComponent = initTagsInput(tagsInput, tagsDropdown, tagsList, suggestTags);
 
   var lockForm = function(lock) {
      $("#transactionForm").find("input").prop("readonly", lock);
@@ -119,10 +137,10 @@ $(document).ready(function() {
   }
 
   var updateIfReady = function() {
-    if (transaction === null || accounts === null) return;
+    if (transaction === null || accounts === null || autocompleteTags === null) return;
     description.val(transaction.Description);
     $('input[name=selectType][value="' + transaction.Type +'"]').prop("checked", true);
-    tags.val(transaction.Tags);
+    transaction.Tags.forEach(tagsInputComponent.addTag);
     date.val(transaction.Date);
     lockForm(false);
 
@@ -152,7 +170,7 @@ $(document).ready(function() {
     var selectAccountElement = jQuery(this);
     updateCurrencyLabel(selectAccountElement.parent().parent());
   });
-  
+    
   // Submit handler
   $("#transactionForm").submit(function(event) {
     event.preventDefault();
@@ -162,7 +180,7 @@ $(document).ready(function() {
     spinner.prop("hidden", false);
     transaction.Description = description.val();
     transaction.Type = parseInt($('input[name=selectType]:checked').val());
-    transaction.Tags = tags.val().split(',');
+    transaction.Tags = tagsInputComponent.getTags();
     transaction.Date = date.val();
     transaction.Components = [];
     $("#components").children("div").each(function(i, componentRow){
@@ -204,10 +222,11 @@ $(document).ready(function() {
     }).always(function(){
       deleteSpinner.prop("hidden", true);
     });
-  })
+  });
   if (!urlParams.has("edit"))
     $("#deleteButton").remove();
 
+  // Load transaction details
   var loadTransaction = function() {
     lockForm(true);
     var currentDate = new Date().toISOString().split("T")[0];
@@ -226,6 +245,10 @@ $(document).ready(function() {
     $.getJSON("api/accounts").done(function(data) {
       accounts = {};
       data.forEach(function (account) { accounts[account.ID] = account; });
+      updateIfReady();
+    });
+    $.getJSON("api/tags").done(function(data) {
+      autocompleteTags = data;
       updateIfReady();
     });
   }
