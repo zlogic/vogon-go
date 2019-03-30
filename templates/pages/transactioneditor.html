@@ -123,7 +123,7 @@ $(document).ready(function() {
       .append(accountSelect)
     );
     var amountInput = $('<input type="number" class="form-control text-right" id="amount' + index + '" step="0.01" required></input>');
-    amountInput.val(component.Amount/100);
+    amountInput.val((component.Amount/100).toFixed(2));
     componentRow.append($('<div class="form-group col-md-5"></div>')
       .append('<label for="amount' + index + '">Amount</label>')
       .append($('<div class="input-group"></div>').append(amountInput).append('<div class="input-group-append"><div class="input-group-text"></div></div>'))
@@ -185,7 +185,7 @@ $(document).ready(function() {
     transaction.Components = [];
     $("#components").children("div").each(function(i, componentRow){
       var accountID = parseInt($(componentRow).find('select').val());
-      var amount = parseFloat($(componentRow).find('input').val()) * 100;
+      var amount = Math.trunc(parseFloat($(componentRow).find('input').val()) * 100);
       transaction.Components.push({AccountID: accountID, Amount: amount});
     });
     var id = transaction.ID || "new";
