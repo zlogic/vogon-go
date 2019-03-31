@@ -72,8 +72,8 @@ func (m *DBMock) CountTransactions(user *data.User) (uint64, error) {
 	return args.Get(0).(uint64), args.Error(1)
 }
 
-func (m *DBMock) GetTransactions(user *data.User) ([]*data.Transaction, error) {
-	args := m.Called(user)
+func (m *DBMock) GetTransactions(user *data.User, options data.GetTransactionOptions) ([]*data.Transaction, error) {
+	args := m.Called(user, options)
 	transactions := args.Get(0)
 	var returnTransactions []*data.Transaction
 	if transactions != nil {

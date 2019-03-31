@@ -23,7 +23,7 @@ func (s *DBService) Backup(user *User) (string, error) {
 			return errors.Wrap(err, "Failed to get accounts when backing up data")
 		}
 
-		transactions, err := s.getTransactions(user)(txn)
+		transactions, err := s.getTransactions(user, GetAllTransactionsOptions)(txn)
 		if err != nil {
 			return errors.Wrap(err, "Failed to get transactions when backing up data")
 		}
@@ -75,6 +75,9 @@ func (s *DBService) Restore(user *User, value string) error {
 		}
 		if err := deletePrefix([]byte(user.CreateTransactionKeyPrefix()))(txn); err != nil {
 			return errors.Wrap(err, "Failed to cleanup previous transactions")
+		}
+		if err := deletePrefix([]byte(user.CreateTransactionIndexKeyPrefix()))(txn); err != nil {
+			return errors.Wrap(err, "Failed to cleanup previous transactions index")
 		}
 
 		accountIDs := make(map[uint64]uint64)

@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"fmt"
 	"sort"
-	"sync"
 	"time"
 
 	"github.com/dgraph-io/badger"
@@ -32,9 +31,23 @@ type TransactionComponent struct {
 	AccountID uint64
 }
 
+type GetTransactionOptions struct {
+	Offset uint64
+	Limit  uint64
+}
+
+var GetAllTransactionsOptions = GetTransactionOptions{Offset: 0, Limit: ^uint64(0)}
+
 func IteratorDoNotPrefetchOptions() badger.IteratorOptions {
 	options := badger.DefaultIteratorOptions
 	options.PrefetchValues = false
+	return options
+}
+
+func IteratorIndexOptions() badger.IteratorOptions {
+	options := badger.DefaultIteratorOptions
+	options.PrefetchValues = false
+	options.Reverse = true
 	return options
 }
 
@@ -102,6 +115,11 @@ func (s *DBService) createTransaction(user *User, transaction *Transaction) func
 			return errors.Wrap(err, "Cannot update account balance")
 		}
 
+		index := user.CreateTransactionIndexKey(transaction)
+		if err := txn.Set(index, nil); err != nil {
+			return errors.Wrap(err, "Cannot create index for transaction")
+		}
+
 		return txn.Set(key, value)
 	}
 }
@@ -118,6 +136,11 @@ func (s *DBService) CreateTransaction(user *User, transaction *Transaction) erro
 	transaction.ID = id
 
 	return s.db.Update(func(txn *badger.Txn) error {
+		index := user.CreateTransactionIndexKey(transaction)
+		if err := txn.Set(index, nil); err != nil {
+			return errors.Wrap(err, "Cannot create index for transaction")
+		}
+
 		return s.createTransaction(user, transaction)(txn)
 	})
 }
@@ -151,6 +174,17 @@ func (s *DBService) UpdateTransaction(user *User, transaction *Transaction) erro
 			return errors.Wrap(err, "Cannot update account balance")
 		}
 
+		previousTransactionIndexKey := user.CreateTransactionIndexKey(previousTransaction)
+		transactionIndexKey := user.CreateTransactionIndexKey(transaction)
+		if !bytes.Equal(previousTransactionIndexKey, transactionIndexKey) {
+			if err := txn.Delete(previousTransactionIndexKey); err != nil {
+				return errors.Wrap(err, "Cannot delete previous index for transaction")
+			}
+			if err := txn.Set(transactionIndexKey, nil); err != nil {
+				return errors.Wrap(err, "Cannot create index for transaction")
+			}
+		}
+
 		value, err := transaction.Encode()
 		if err != nil {
 			return errors.Wrap(err, "Cannot encode transaction")
@@ -181,61 +215,34 @@ func (s *DBService) updateAccountsBalance(user *User, previousComponents *[]Tran
 	}
 }
 
-func (s *DBService) getTransactions(user *User) func(*badger.Txn) ([]*Transaction, error) {
+func (s *DBService) getTransactions(user *User, options GetTransactionOptions) func(*badger.Txn) ([]*Transaction, error) {
 	return func(txn *badger.Txn) ([]*Transaction, error) {
 		transactions := make([]*Transaction, 0)
 
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		it := txn.NewIterator(IteratorIndexOptions())
 		defer it.Close()
-		prefix := []byte(user.CreateTransactionKeyPrefix())
+		prefix := []byte(user.CreateTransactionIndexKeyPrefix())
+		reversePrefix := append([]byte(user.CreateTransactionIndexKeyPrefix()), 0xff)
 
-		type kv struct {
-			k []byte
-			v []byte
-		}
-
-		kvc := make(chan *kv, 16)
-		tc := make(chan *Transaction, 16)
-
-		var wg sync.WaitGroup
-		var failedErr error
-
-		for i := 0; i < 16; i++ {
-			go func() {
-				for kv := range kvc {
-					transaction := &Transaction{}
-					if err := gob.NewDecoder(bytes.NewBuffer(kv.v)).Decode(transaction); err != nil {
-						log.WithField("key", kv.k).WithError(err).Error("Failed to decode value of transaction")
-						failedErr = err
-						tc <- nil
-						return
-					}
-					tc <- transaction
-				}
-			}()
-		}
-
-		go func() {
-			for transaction := range tc {
-				transactions = append(transactions, transaction)
-				wg.Done()
-			}
-			close(tc)
-			close(kvc)
-		}()
-
-		clone := func(data []byte) []byte {
-			clone := make([]byte, len(data))
-			copy(clone, data)
-			return clone
-		}
-
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
-			if failedErr != nil {
-				break
+		var currentItem uint64
+		for it.Seek(reversePrefix); it.ValidForPrefix(prefix); it.Next() {
+			currentItem++
+			if currentItem < (options.Offset + 1) {
+				continue
 			}
 
-			item := it.Item()
+			transactionID, err := user.DecodeTransactionIndexKey(it.Item().Key())
+			if err != nil {
+				log.WithError(err).Error("Failed parse transaction index")
+				return nil, err
+			}
+
+			transactionKey := user.CreateTransactionKeyFromID(transactionID)
+			item, err := txn.Get(transactionKey)
+			if err != nil {
+				log.WithField("key", transactionKey).WithError(err).Error("Failed to get transaction")
+				return nil, err
+			}
 
 			k := item.Key()
 			v, err := item.Value()
@@ -244,13 +251,15 @@ func (s *DBService) getTransactions(user *User) func(*badger.Txn) ([]*Transactio
 				continue
 			}
 
-			wg.Add(1)
-			kvc <- &kv{k: clone(k), v: clone(v)}
-		}
-
-		wg.Wait()
-		if failedErr != nil {
-			return nil, failedErr
+			transaction := &Transaction{}
+			if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(transaction); err != nil {
+				log.WithField("key", k).WithError(err).Error("Failed to decode value of transaction")
+				return nil, err
+			}
+			transactions = append(transactions, transaction)
+			if uint64(len(transactions)) >= options.Limit {
+				break
+			}
 		}
 
 		return transactions, nil
@@ -284,12 +293,12 @@ func (s *DBService) GetTransaction(user *User, transactionID uint64) (*Transacti
 	return transaction, nil
 }
 
-func (s *DBService) GetTransactions(user *User) ([]*Transaction, error) {
+func (s *DBService) GetTransactions(user *User, options GetTransactionOptions) ([]*Transaction, error) {
 	var transactions []*Transaction
 
 	err := s.db.View(func(txn *badger.Txn) error {
 		var err error
-		transactions, err = s.getTransactions(user)(txn)
+		transactions, err = s.getTransactions(user, options)(txn)
 		return err
 	})
 	if err != nil {
@@ -339,6 +348,11 @@ func (s *DBService) DeleteTransaction(user *User, transactionID uint64) error {
 
 		if err := s.updateAccountsBalance(user, &deleteTransaction.Components, nil)(txn); err != nil {
 			return errors.Wrap(err, "Cannot update account balance")
+		}
+
+		transactionIndexKey := user.CreateTransactionIndexKey(deleteTransaction)
+		if err := txn.Delete(transactionIndexKey); err != nil {
+			return errors.Wrap(err, "Failed to delete transaction index")
 		}
 
 		return txn.Delete(key)

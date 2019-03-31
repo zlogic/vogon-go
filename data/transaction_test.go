@@ -1,6 +1,8 @@
 package data
 
 import (
+	"fmt"
+	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,7 +72,7 @@ func TestCreateTransactionNoComponents(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(0), saveTransaction.ID)
 
-	transactions, err := dbService.GetTransactions(&testUser)
+	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Transaction{&transaction1}, transactions)
 
@@ -87,42 +89,78 @@ func TestCreateTransactionNoComponents(t *testing.T) {
 	assert.Equal(t, uint64(1), saveTransaction.ID)
 
 	transaction2.ID = 1
-	transactions, err = dbService.GetTransactions(&testUser)
+	transactions, err = dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
+	assert.Equal(t, []*Transaction{&transaction2, &transaction1}, transactions)
 }
 
-func TestCountTransactions(t *testing.T) {
+func TestGetTransactionsPaging(t *testing.T) {
 	dbService, cleanup, err := createDb()
 	assert.NoError(t, err)
 	defer cleanup()
 
-	transaction := Transaction{
+	transaction1 := Transaction{
 		Description: "t1",
 		Date:        "2019-03-20",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"t1", "t2"},
 	}
-
-	for i := 0; i < 100; i++ {
-		saveTransaction := transaction
-		err = dbService.CreateTransaction(&testUser, &saveTransaction)
-		assert.NoError(t, err)
+	transaction2 := Transaction{
+		Description: "t2",
+		Date:        "2019-03-21",
+		Type:        TransactionTypeTransfer,
+		Tags:        []string{"t1", "t3"},
 	}
 
-	count, err := dbService.CountTransactions(&testUser)
+	saveTransaction := transaction1
+	err = dbService.CreateTransaction(&testUser, &saveTransaction)
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(100), count)
-}
 
-func TestCountTransactionsEmpty(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	saveTransaction = transaction2
+	err = dbService.CreateTransaction(&testUser, &saveTransaction)
 	assert.NoError(t, err)
-	defer cleanup()
 
-	count, err := dbService.CountTransactions(&testUser)
+	transaction2.ID = 1
+
+	saveTransactions := make([]*Transaction, 0, 5)
+	for i := 0; i < 5; i++ {
+		saveTransaction := Transaction{
+			Description: fmt.Sprintf("s%v", i),
+			Date:        "2019-03-19",
+			Type:        TransactionTypeTransfer,
+		}
+		err = dbService.CreateTransaction(&testUser, &saveTransaction)
+		assert.NoError(t, err)
+		saveTransactions = append(saveTransactions, &saveTransaction)
+	}
+	sort.Slice(saveTransactions, func(i, j int) bool { return saveTransactions[i].ID > saveTransactions[j].ID })
+
+	expectedTransactions := make([]*Transaction, 0)
+	expectedTransactions = append(expectedTransactions, &transaction2, &transaction1)
+	expectedTransactions = append(expectedTransactions, saveTransactions...)
+	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(0), count)
+	assert.Equal(t, expectedTransactions, transactions)
+
+	options := GetTransactionOptions{Offset: 0, Limit: 5}
+	expectedTransactions = make([]*Transaction, 0)
+	expectedTransactions = append(expectedTransactions, &transaction2, &transaction1)
+	expectedTransactions = append(expectedTransactions, saveTransactions[0:3]...)
+	transactions, err = dbService.GetTransactions(&testUser, options)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedTransactions, transactions)
+
+	options = GetTransactionOptions{Offset: 5, Limit: 5}
+	expectedTransactions = make([]*Transaction, 0)
+	expectedTransactions = append(expectedTransactions, saveTransactions[3:]...)
+	transactions, err = dbService.GetTransactions(&testUser, options)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedTransactions, transactions)
+
+	options = GetTransactionOptions{Offset: 10, Limit: 5}
+	transactions, err = dbService.GetTransactions(&testUser, options)
+	assert.NoError(t, err)
+	assert.Empty(t, transactions)
 }
 
 func TestGetTransactionNoComponents(t *testing.T) {
@@ -167,6 +205,39 @@ func TestGetTransactionDoesNotExist(t *testing.T) {
 	assert.Nil(t, transaction)
 }
 
+func TestCountTransactions(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	transaction := Transaction{
+		Description: "t1",
+		Date:        "2019-03-20",
+		Type:        TransactionTypeExpenseIncome,
+		Tags:        []string{"t1", "t2"},
+	}
+
+	for i := 0; i < 100; i++ {
+		saveTransaction := transaction
+		err = dbService.CreateTransaction(&testUser, &saveTransaction)
+		assert.NoError(t, err)
+	}
+
+	count, err := dbService.CountTransactions(&testUser)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(100), count)
+}
+
+func TestCountTransactionsEmpty(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	count, err := dbService.CountTransactions(&testUser)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(0), count)
+}
+
 func TestUpdateTransactionNoComponents(t *testing.T) {
 	dbService, cleanup, err := createDb()
 	assert.NoError(t, err)
@@ -193,7 +264,7 @@ func TestUpdateTransactionNoComponents(t *testing.T) {
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
 	assert.NoError(t, err)
 
-	transaction2.Date = "2019-03-22"
+	transaction2.Date = "2019-03-19"
 	transaction2.Description = "t2-"
 	transaction2.Tags = []string{"t1", "t3", "t4"}
 	transaction2.Type = TransactionTypeTransfer
@@ -202,9 +273,9 @@ func TestUpdateTransactionNoComponents(t *testing.T) {
 	err = dbService.UpdateTransaction(&testUser, &saveTransaction)
 	assert.NoError(t, err)
 
-	transactions, err := dbService.GetTransactions(&testUser)
+	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
+	assert.Equal(t, []*Transaction{&transaction1, &transaction2}, transactions)
 }
 
 func TestDeleteTransactionNoComponents(t *testing.T) {
@@ -238,14 +309,14 @@ func TestDeleteTransactionNoComponents(t *testing.T) {
 	err = dbService.DeleteTransaction(&testUser, transaction2.ID)
 	assert.NoError(t, err)
 
-	transactions, err := dbService.GetTransactions(&testUser)
+	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Transaction{&transaction1}, transactions)
 
 	err = dbService.DeleteTransaction(&testUser, transaction1.ID)
 	assert.NoError(t, err)
 
-	transactions, err = dbService.GetTransactions(&testUser)
+	transactions, err = dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Empty(t, transactions)
 }
@@ -272,7 +343,7 @@ func TestDeleteNonExistingTransaction(t *testing.T) {
 	err = dbService.DeleteTransaction(&testUser, deleteTransaction.ID)
 	assert.Error(t, err)
 
-	transactions, err := dbService.GetTransactions(&testUser)
+	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Transaction{&transaction}, transactions)
 }
@@ -301,7 +372,7 @@ func TestCreateTransactionWithComponents(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(0), saveTransaction.ID)
 
-	transactions, err := dbService.GetTransactions(&testUser)
+	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Transaction{&transaction1}, transactions)
 
@@ -331,9 +402,9 @@ func TestCreateTransactionWithComponents(t *testing.T) {
 	assert.Equal(t, uint64(1), saveTransaction.ID)
 
 	transaction2.ID = 1
-	transactions, err = dbService.GetTransactions(&testUser)
+	transactions, err = dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
+	assert.Equal(t, []*Transaction{&transaction2, &transaction1}, transactions)
 
 	accounts, err = dbService.GetAccounts(&testUser)
 	assert.NoError(t, err)
@@ -396,9 +467,9 @@ func TestUpdateTransactionWithComponents(t *testing.T) {
 	err = dbService.UpdateTransaction(&testUser, &saveTransaction)
 	assert.NoError(t, err)
 
-	transactions, err := dbService.GetTransactions(&testUser)
+	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
-	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
+	assert.Equal(t, []*Transaction{&transaction2, &transaction1}, transactions)
 
 	accounts, err := dbService.GetAccounts(&testUser)
 	assert.NoError(t, err)
@@ -452,7 +523,7 @@ func TestDeleteTransactionWithComponents(t *testing.T) {
 	err = dbService.DeleteTransaction(&testUser, transaction2.ID)
 	assert.NoError(t, err)
 
-	transactions, err := dbService.GetTransactions(&testUser)
+	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Transaction{&transaction1}, transactions)
 
@@ -467,7 +538,7 @@ func TestDeleteTransactionWithComponents(t *testing.T) {
 	err = dbService.DeleteTransaction(&testUser, transaction1.ID)
 	assert.NoError(t, err)
 
-	transactions, err = dbService.GetTransactions(&testUser)
+	transactions, err = dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Empty(t, transactions)
 

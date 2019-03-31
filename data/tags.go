@@ -10,7 +10,7 @@ func (s *DBService) GetTags(user *User) ([]string, error) {
 
 	err := s.db.View(func(txn *badger.Txn) error {
 		var err error
-		transactions, err = s.getTransactions(user)(txn)
+		transactions, err = s.getTransactions(user, GetAllTransactionsOptions)(txn)
 		return err
 	})
 	if err != nil {

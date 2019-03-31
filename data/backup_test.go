@@ -389,7 +389,7 @@ func TestRestore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedAccounts, dbAccounts)
 
-	dbTransactions, err := dbService.GetTransactions(&testUser)
+	dbTransactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	sortTransactionsAsc(dbTransactions)
 	assert.Equal(t, expectedTransactions, dbTransactions)
@@ -443,7 +443,7 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedAccounts, dbAccounts)
 
-	dbTransactions, err := dbService.GetTransactions(&testUser)
+	dbTransactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	sortTransactionsAsc(dbTransactions)
 	assert.Equal(t, expectedTransactions, dbTransactions)

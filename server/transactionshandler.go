@@ -5,23 +5,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"sort"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/zlogic/vogon-go/data"
 )
-
-func sortTransactions(transactions []*data.Transaction) {
-	sort.Slice(transactions, func(i, j int) bool {
-		if transactions[i].Date != transactions[j].Date {
-			return transactions[i].Date > transactions[j].Date
-		} else {
-			return transactions[i].ID > transactions[j].ID
-		}
-	})
-}
 
 func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -70,19 +59,14 @@ func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		transactions, err := s.db.GetTransactions(user)
+		options := data.GetTransactionOptions{Offset: offset, Limit: limit}
+		transactions, err := s.db.GetTransactions(user, options)
 		if err != nil {
 			handleError(w, r, err)
 			return
 		}
 
-		if offset+limit > uint64(len(transactions)) {
-			limit = uint64(len(transactions)) - offset
-		}
-
-		sortTransactions(transactions)
-
-		if err := json.NewEncoder(w).Encode(transactions[offset : offset+limit]); err != nil {
+		if err := json.NewEncoder(w).Encode(transactions); err != nil {
 			handleError(w, r, err)
 		}
 	}

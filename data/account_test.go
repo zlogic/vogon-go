@@ -45,6 +45,48 @@ func TestCreateAccount(t *testing.T) {
 	assert.Equal(t, []*Account{&account1, &account2}, accounts)
 }
 
+func TestGetAccount(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	account1 := Account{
+		Name:           "a1",
+		Currency:       "USD",
+		IncludeInTotal: false,
+		ShowInList:     true,
+	}
+	account2 := Account{
+		Name:           "a2",
+		Currency:       "EUR",
+		IncludeInTotal: true,
+		ShowInList:     false,
+	}
+
+	err = dbService.CreateAccount(&testUser, &account1)
+	assert.NoError(t, err)
+	err = dbService.CreateAccount(&testUser, &account2)
+	assert.NoError(t, err)
+
+	account, err := dbService.GetAccount(&testUser, 0)
+	assert.NoError(t, err)
+	assert.Equal(t, &account1, account)
+
+	account, err = dbService.GetAccount(&testUser, 1)
+	assert.NoError(t, err)
+	assert.Equal(t, &account2, account)
+}
+
+func TestGetAccountDoesNotExist(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	account, err := dbService.GetAccount(&testUser, 0)
+	assert.Error(t, err)
+	assert.Nil(t, account)
+}
+
 func TestUpdateAccount(t *testing.T) {
 	dbService, cleanup, err := createDb()
 	assert.NoError(t, err)
