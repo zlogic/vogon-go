@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"sort"
@@ -22,10 +23,50 @@ func sortTransactions(transactions []*data.Transaction) {
 	})
 }
 
+func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := validateUserForAPI(w, r, s)
+		if user == nil {
+			return
+		}
+
+		count, err := s.db.CountTransactions(user)
+		if err != nil {
+			handleError(w, r, err)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(count); err != nil {
+			handleError(w, r, err)
+		}
+	}
+}
+
 func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
 		if user == nil {
+			return
+		}
+
+		queryValues := r.URL.Query()
+		parseQueryValueInt := func(name string) (uint64, error) {
+			value := queryValues.Get(name)
+			if value == "" {
+				return 0, fmt.Errorf("Query parameter %v is empty", name)
+			}
+			return strconv.ParseUint(value, 10, 64)
+		}
+
+		offset, err := parseQueryValueInt("offset")
+		if err != nil {
+			handleError(w, r, err)
+			return
+		}
+
+		limit, err := parseQueryValueInt("limit")
+		if err != nil {
+			handleError(w, r, err)
 			return
 		}
 
@@ -35,9 +76,13 @@ func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
+		if offset+limit > uint64(len(transactions)) {
+			limit = uint64(len(transactions)) - offset
+		}
+
 		sortTransactions(transactions)
 
-		if err := json.NewEncoder(w).Encode(transactions); err != nil {
+		if err := json.NewEncoder(w).Encode(transactions[offset : offset+limit]); err != nil {
 			handleError(w, r, err)
 		}
 	}

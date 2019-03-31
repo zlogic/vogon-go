@@ -3,31 +3,47 @@
 <div class="pb-3">
   <a class="btn btn-outline-secondary" href="transactioneditor?new" role="button">Add transaction</a>
 </div>
-<div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th scope="col">Description</th>
-        <th scope="col">Date</th>
-        <th scope="col">Accounts</th>
-        <th scope="col"><div class="text-right">Amount</div></th>
-        <th scope="col"></th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
+<div class="transactions-table-container">
+  <div class="transactions-loading-shade" hidden>
+    <div class="transactions-loading-spinner">
+      <div class="spinner-border" role="status">
+        <span class="sr-only">Loading transactions...</span>
+      </div>
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Description</th>
+          <th scope="col">Date</th>
+          <th scope="col">Accounts</th>
+          <th scope="col"><div class="text-right">Amount</div></th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+  <div id="pagination"></div>
 </div>
-<div id="pagination"></div>
 <script>
 $(document).ready(function() {
   var isExpenseIncome = function(transaction) { return transaction.Type === 0; }
   var isTransfer = function(transaction) { return transaction.Type === 1; }
   var itemsPerPage = 100;
-  var setPage = null;
-  var currentPage = null;
 
-  var transactions = null;
+  var table = $(".table-responsive");
+  var progress = $(".progress");
+  var transactionsTarget = $("tbody");
+  var paginationTarget = $("#pagination");
+  var transactionsLoadingShade = $(".transactions-loading-shade");
+
+  var setPage = null;
+
+  var currentPage = null;
+  var count = null;
   var accounts = null;
   var addProgress = function() {
     var progressRow = $('<tr></tr>')
@@ -38,19 +54,16 @@ $(document).ready(function() {
     target.empty().append(progressRow);
   }
   var updateVisibility = function() {
-    var progress = $(".progress");
     if (!progress.prop("hidden")) {
       progress.slideUp(function() { progress.parent().parent().remove(); });
     }
-    var table = $(".table-responsive");
     if (table.prop("hidden"))
       table.hide().prop("hidden", false).slideDown();
   }
-  var updateTransactions = function() {
+  var updateTransactions = function(transactions) {
     if (transactions === null || accounts === null) return;
-    var transactionsTarget = $("tbody");
     transactionsTarget.empty();
-    for (var tr=currentPage*itemsPerPage;tr<(currentPage+1)*itemsPerPage&&tr<transactions.length;tr++) {
+    for (var tr in transactions) {
       var transaction = transactions[tr];
 
       var descriptionTagsColumn = $('<div></div>')
@@ -136,7 +149,6 @@ $(document).ready(function() {
     }
   }
   var updatePagination = function() {
-    var paginationTarget = $("#pagination");
     paginationTarget.empty();
 
     var paginationElement = $('<ul class="pagination justify-content-center"></ul>');
@@ -155,7 +167,7 @@ $(document).ready(function() {
     var nextPageButton = $('<a class="page-link" href="#pageNext"><span aria-hidden="true">&raquo;</span></a>');
     paginationElement.append($('<li class="page-item"></li>').append(nextPageButton));
 
-    var pagesCount = Math.ceil(transactions.length / itemsPerPage);
+    var pagesCount = Math.ceil(count / itemsPerPage);
     setPage = function(page) {
       currentPage = page;
       previousPageButton.parent().toggleClass("disabled", page === 0);
@@ -164,7 +176,13 @@ $(document).ready(function() {
       $('a.dropdown-item').removeClass("active");
       $('a.dropdown-item[data-page="' + page + '"]').addClass("active");
       
-      updateTransactions();
+      var offset = Math.trunc(page*itemsPerPage);
+      transactionsLoadingShade.prop("hidden", false);
+      $.getJSON("api/transactions?offset=" + offset + "&limit=" + itemsPerPage).done(function(data) {
+        var transactions = data;
+        transactionsLoadingShade.prop("hidden", true);
+        updateTransactions(transactions);
+      });
     }
 
     for (var i=0;i<pagesCount;i++){
@@ -195,12 +213,12 @@ $(document).ready(function() {
   var loadTransactions = function() {
     addProgress();
     var updateIfReady = function() {
-      if (transactions === null || accounts === null) return;
+      if (accounts === null || count === null) return;
       updateVisibility();
       updatePagination();
     }
-    $.getJSON("api/transactions").done(function(data) {
-      transactions = data;
+    $.getJSON("api/transactions/count").done(function(data) {
+      count = data;
       updateIfReady();
     });
     $.getJSON("api/accounts").done(function(data) {

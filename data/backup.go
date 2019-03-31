@@ -48,9 +48,7 @@ func (s *DBService) Backup(user *User) (string, error) {
 
 func deletePrefix(prefix []byte) func(txn *badger.Txn) error {
 	return func(txn *badger.Txn) error {
-		iteratorOptions := badger.DefaultIteratorOptions
-		iteratorOptions.PrefetchValues = false
-		it := txn.NewIterator(iteratorOptions)
+		it := txn.NewIterator(IteratorDoNotPrefetchOptions())
 		defer it.Close()
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 			item := it.Item()

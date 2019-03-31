@@ -32,6 +32,12 @@ type TransactionComponent struct {
 	AccountID uint64
 }
 
+func IteratorDoNotPrefetchOptions() badger.IteratorOptions {
+	options := badger.DefaultIteratorOptions
+	options.PrefetchValues = false
+	return options
+}
+
 func (transaction *Transaction) Encode() ([]byte, error) {
 	var value bytes.Buffer
 	if err := gob.NewEncoder(&value).Encode(transaction); err != nil {
@@ -290,6 +296,25 @@ func (s *DBService) GetTransactions(user *User) ([]*Transaction, error) {
 		return nil, errors.Wrapf(err, "Failed to get transactions")
 	}
 	return transactions, nil
+}
+
+func (s *DBService) CountTransactions(user *User) (uint64, error) {
+	var count uint64
+
+	err := s.db.View(func(txn *badger.Txn) error {
+		it := txn.NewIterator(IteratorDoNotPrefetchOptions())
+		defer it.Close()
+		prefix := []byte(user.CreateTransactionKeyPrefix())
+
+		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			count++
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, errors.Wrapf(err, "Failed to count transactions")
+	}
+	return count, nil
 }
 
 func (s *DBService) DeleteTransaction(user *User, transactionID uint64) error {

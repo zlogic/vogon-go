@@ -59,7 +59,8 @@ func createTestTransaction() *data.Transaction {
 		},
 	}
 }
-func TestGetTransactionsAuthorized(t *testing.T) {
+
+func TestGetTransactionsAuthorizedUnderLimit(t *testing.T) {
 	dbMock := new(DBMock)
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
@@ -71,7 +72,7 @@ func TestGetTransactionsAuthorized(t *testing.T) {
 	user := testUser
 	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
-	req, _ := http.NewRequest("GET", "/api/transactions", nil)
+	req, _ := http.NewRequest("GET", "/api/transactions?offset=0&limit=10", nil)
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
@@ -93,6 +94,70 @@ func TestGetTransactionsAuthorized(t *testing.T) {
 	dbMock.AssertExpectations(t)
 }
 
+func TestGetTransactionsAuthorizedOverLimit(t *testing.T) {
+	dbMock := new(DBMock)
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	user := testUser
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+
+	req, _ := http.NewRequest("GET", "/api/transactions?offset=0&limit=2", nil)
+	res := httptest.NewRecorder()
+
+	cookie := cookieHandler.NewCookie()
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
+
+	transactions := createTestTransactions()
+	dbMock.On("GetTransactions", &user).Return(transactions, nil).Once()
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusOK, res.Code)
+	assert.Equal(t, "["+
+		`{"ID":3,"Description":"Gadgets 2","Type":1,"Tags":["Gadgets"],"Date":"2015-11-03","Components":[]}`+","+
+		`{"ID":2,"Description":"Gadgets","Type":0,"Tags":["Gadgets","Widgets"],"Date":"2015-11-03","Components":[]}`+
+		"]\n", string(res.Body.Bytes()))
+
+	dbMock.AssertExpectations(t)
+}
+
+func TestGetTransactionsAuthorizedOffsetOverLimit(t *testing.T) {
+	dbMock := new(DBMock)
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	user := testUser
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+
+	req, _ := http.NewRequest("GET", "/api/transactions?offset=1&limit=2", nil)
+	res := httptest.NewRecorder()
+
+	cookie := cookieHandler.NewCookie()
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
+
+	transactions := createTestTransactions()
+	dbMock.On("GetTransactions", &user).Return(transactions, nil).Once()
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusOK, res.Code)
+	assert.Equal(t, "["+
+		`{"ID":2,"Description":"Gadgets","Type":0,"Tags":["Gadgets","Widgets"],"Date":"2015-11-03","Components":[]}`+","+
+		`{"ID":0,"Description":"Widgets","Type":0,"Tags":["Widgets"],"Date":"2015-11-02","Components":[{"Amount":-10000,"AccountID":1}]}`+
+		"]\n", string(res.Body.Bytes()))
+
+	dbMock.AssertExpectations(t)
+}
+
 func TestGetTransactionsUnauthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	cookieHandler, err := createTestCookieHandler()
@@ -102,7 +167,7 @@ func TestGetTransactionsUnauthorized(t *testing.T) {
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	req, _ := http.NewRequest("GET", "/api/transactions", nil)
+	req, _ := http.NewRequest("GET", "/api/transactions?offset=0&limit=0", nil)
 	res := httptest.NewRecorder()
 
 	router.ServeHTTP(res, req)
@@ -123,7 +188,7 @@ func TestGetTransactionsUserDoesNotExist(t *testing.T) {
 
 	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
 
-	req, _ := http.NewRequest("GET", "/api/transactions", nil)
+	req, _ := http.NewRequest("GET", "/api/transactions?offset=0&limit=0", nil)
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
@@ -137,6 +202,77 @@ func TestGetTransactionsUserDoesNotExist(t *testing.T) {
 	dbMock.AssertExpectations(t)
 }
 
+func TestGetTransactionsCountAuthorized(t *testing.T) {
+	dbMock := new(DBMock)
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	user := testUser
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+
+	req, _ := http.NewRequest("GET", "/api/transactions/count", nil)
+	res := httptest.NewRecorder()
+
+	cookie := cookieHandler.NewCookie()
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
+
+	dbMock.On("CountTransactions", &user).Return(uint64(123), nil).Once()
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusOK, res.Code)
+	assert.Equal(t, "123\n", string(res.Body.Bytes()))
+
+	dbMock.AssertExpectations(t)
+}
+
+func TestGetTransactionsCountUnauthorized(t *testing.T) {
+	dbMock := new(DBMock)
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("GET", "/api/transactions/count", nil)
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusUnauthorized, res.Code)
+	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
+
+	dbMock.AssertExpectations(t)
+}
+
+func TestGetTransactionsCountUserDoesNotExist(t *testing.T) {
+	dbMock := new(DBMock)
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
+
+	req, _ := http.NewRequest("GET", "/api/transactions/count", nil)
+	res := httptest.NewRecorder()
+
+	cookie := cookieHandler.NewCookie()
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusUnauthorized, res.Code)
+	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
+
+	dbMock.AssertExpectations(t)
+}
 func TestGetTransactionAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	cookieHandler, err := createTestCookieHandler()

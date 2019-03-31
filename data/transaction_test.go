@@ -92,6 +92,39 @@ func TestCreateTransactionNoComponents(t *testing.T) {
 	assert.ElementsMatch(t, []*Transaction{&transaction1, &transaction2}, transactions)
 }
 
+func TestCountTransactions(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	transaction := Transaction{
+		Description: "t1",
+		Date:        "2019-03-20",
+		Type:        TransactionTypeExpenseIncome,
+		Tags:        []string{"t1", "t2"},
+	}
+
+	for i := 0; i < 100; i++ {
+		saveTransaction := transaction
+		err = dbService.CreateTransaction(&testUser, &saveTransaction)
+		assert.NoError(t, err)
+	}
+
+	count, err := dbService.CountTransactions(&testUser)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(100), count)
+}
+
+func TestCountTransactionsEmpty(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	count, err := dbService.CountTransactions(&testUser)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(0), count)
+}
+
 func TestGetTransactionNoComponents(t *testing.T) {
 	dbService, cleanup, err := createDb()
 	assert.NoError(t, err)
