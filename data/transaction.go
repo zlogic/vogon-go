@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/dgraph-io/badger"
@@ -31,9 +32,18 @@ type TransactionComponent struct {
 	AccountID uint64
 }
 
+type TransactionFilterOptions struct {
+	FilterDescription string
+	FilterFromDate    string
+	FilterToDate      string
+	FilterTags        []string
+	FilterAccounts    []uint64
+}
+
 type GetTransactionOptions struct {
 	Offset uint64
 	Limit  uint64
+	TransactionFilterOptions
 }
 
 var GetAllTransactionsOptions = GetTransactionOptions{Offset: 0, Limit: ^uint64(0)}
@@ -215,6 +225,67 @@ func (s *DBService) updateAccountsBalance(user *User, previousComponents *[]Tran
 	}
 }
 
+func (options *TransactionFilterOptions) isEmpty() bool {
+	return options.FilterDescription == "" &&
+		options.FilterFromDate == "" &&
+		options.FilterToDate == "" &&
+		len(options.FilterTags) == 0 &&
+		len(options.FilterAccounts) == 0
+}
+
+func (options *TransactionFilterOptions) matches(transaction *Transaction) bool {
+	containsTag := func(searchIn []string, searchFor []string) bool {
+		for _, a := range searchIn {
+			for _, b := range searchFor {
+				if a == b {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	containsAccount := func(searchIn *Transaction, searchFor []uint64) bool {
+		for _, a := range searchIn.Components {
+			for _, b := range searchFor {
+				if a.AccountID == b {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	return (options.FilterDescription == "" || strings.Contains(strings.ToLower(transaction.Description), strings.ToLower(options.FilterDescription))) &&
+		(options.FilterFromDate == "" || options.FilterFromDate <= transaction.Date) &&
+		(options.FilterToDate == "" || transaction.Date <= options.FilterToDate) &&
+		(len(options.FilterTags) == 0 || containsTag(transaction.Tags, options.FilterTags)) &&
+		(len(options.FilterAccounts) == 0 || containsAccount(transaction, options.FilterAccounts))
+}
+
+func (s *DBService) getTransaction(user *User, transactionID uint64) func(*badger.Txn) (*Transaction, error) {
+	return func(txn *badger.Txn) (*Transaction, error) {
+		transactionKey := user.CreateTransactionKeyFromID(transactionID)
+		item, err := txn.Get(transactionKey)
+		if err != nil {
+			log.WithField("key", transactionKey).WithError(err).Error("Failed to get transaction")
+			return nil, err
+		}
+
+		k := item.Key()
+		v, err := item.Value()
+		if err != nil {
+			log.WithField("key", k).WithError(err).Error("Failed to read value of transaction")
+			return nil, err
+		}
+
+		transaction := &Transaction{}
+		if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(transaction); err != nil {
+			log.WithField("key", k).WithError(err).Error("Failed to decode value of transaction")
+			return nil, err
+		}
+		return transaction, nil
+	}
+}
+
 func (s *DBService) getTransactions(user *User, options GetTransactionOptions) func(*badger.Txn) ([]*Transaction, error) {
 	return func(txn *badger.Txn) ([]*Transaction, error) {
 		transactions := make([]*Transaction, 0)
@@ -225,37 +296,35 @@ func (s *DBService) getTransactions(user *User, options GetTransactionOptions) f
 		reversePrefix := append([]byte(user.CreateTransactionIndexKeyPrefix()), 0xff)
 
 		var currentItem uint64
-		for it.Seek(reversePrefix); it.ValidForPrefix(prefix); it.Next() {
+		skipItem := func() bool {
 			currentItem++
-			if currentItem < (options.Offset + 1) {
+			return currentItem < (options.Offset + 1)
+		}
+		emptyFilter := options.TransactionFilterOptions.isEmpty()
+		for it.Seek(reversePrefix); it.ValidForPrefix(prefix); it.Next() {
+			if emptyFilter && skipItem() {
 				continue
 			}
-
 			transactionID, err := user.DecodeTransactionIndexKey(it.Item().Key())
 			if err != nil {
 				log.WithError(err).Error("Failed parse transaction index")
 				return nil, err
 			}
 
-			transactionKey := user.CreateTransactionKeyFromID(transactionID)
-			item, err := txn.Get(transactionKey)
+			transaction, err := s.getTransaction(user, transactionID)(txn)
 			if err != nil {
-				log.WithField("key", transactionKey).WithError(err).Error("Failed to get transaction")
 				return nil, err
 			}
 
-			k := item.Key()
-			v, err := item.Value()
-			if err != nil {
-				log.WithField("key", k).WithError(err).Error("Failed to read value of transaction")
-				continue
+			if !emptyFilter {
+				if !options.TransactionFilterOptions.matches(transaction) {
+					continue
+				}
+				if skipItem() {
+					continue
+				}
 			}
 
-			transaction := &Transaction{}
-			if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(transaction); err != nil {
-				log.WithField("key", k).WithError(err).Error("Failed to decode value of transaction")
-				return nil, err
-			}
 			transactions = append(transactions, transaction)
 			if uint64(len(transactions)) >= options.Limit {
 				break
@@ -269,22 +338,9 @@ func (s *DBService) getTransactions(user *User, options GetTransactionOptions) f
 func (s *DBService) GetTransaction(user *User, transactionID uint64) (*Transaction, error) {
 	var transaction *Transaction
 
-	key := user.CreateTransactionKeyFromID(transactionID)
-
 	err := s.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(key)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to get transaction %v", string(key))
-		}
-		v, err := item.Value()
-		if err != nil {
-			return errors.Wrapf(err, "Failed to get value for transaction %v", string(key))
-		}
-
-		transaction = &Transaction{}
-		if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(transaction); err != nil {
-			return errors.Wrapf(err, "Failed to decode value for transaction %v", string(key))
-		}
+		var err error
+		transaction, err = s.getTransaction(user, transactionID)(txn)
 		return err
 	})
 	if err != nil {
@@ -307,15 +363,32 @@ func (s *DBService) GetTransactions(user *User, options GetTransactionOptions) (
 	return transactions, nil
 }
 
-func (s *DBService) CountTransactions(user *User) (uint64, error) {
+func (s *DBService) CountTransactions(user *User, options TransactionFilterOptions) (uint64, error) {
 	var count uint64
 
+	emptyFilter := options.isEmpty()
 	err := s.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(IteratorDoNotPrefetchOptions())
 		defer it.Close()
-		prefix := []byte(user.CreateTransactionKeyPrefix())
+		prefix := []byte(user.CreateTransactionIndexKeyPrefix())
 
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			if !emptyFilter {
+				transactionID, err := user.DecodeTransactionIndexKey(it.Item().Key())
+				if err != nil {
+					log.WithError(err).Error("Failed to parse transaction index")
+					return err
+				}
+
+				transaction, err := s.getTransaction(user, transactionID)(txn)
+				if err != nil {
+					return err
+				}
+
+				if !options.matches(transaction) {
+					continue
+				}
+			}
 			count++
 		}
 		return nil

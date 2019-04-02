@@ -6,11 +6,43 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/zlogic/vogon-go/data"
 )
+
+func parseFilterForm(r *http.Request) (data.TransactionFilterOptions, error) {
+	parseFormValueSet := func(name string) []string {
+		value := r.Form.Get(name)
+		if value == "" {
+			return nil
+		}
+		return strings.Split(value, ",")
+	}
+
+	filterAccountsStr := parseFormValueSet("filterAccounts")
+	var filterAccountIDs []uint64
+	if len(filterAccountsStr) > 0 {
+		filterAccountIDs = make([]uint64, len(filterAccountsStr))
+		for i, idStr := range filterAccountsStr {
+			accountID, err := strconv.ParseUint(idStr, 10, 64)
+			if err != nil {
+				return data.TransactionFilterOptions{}, err
+			}
+			filterAccountIDs[i] = accountID
+		}
+	}
+
+	return data.TransactionFilterOptions{
+		FilterDescription: r.Form.Get("filterDescription"),
+		FilterFromDate:    r.Form.Get("filterFrom"),
+		FilterToDate:      r.Form.Get("filterTo"),
+		FilterTags:        parseFormValueSet("filterTags"),
+		FilterAccounts:    filterAccountIDs,
+	}, nil
+}
 
 func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +51,18 @@ func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		count, err := s.db.CountTransactions(user)
+		if err := r.ParseForm(); err != nil {
+			handleError(w, r, err)
+			return
+		}
+
+		options, err := parseFilterForm(r)
+		if err != nil {
+			handleError(w, r, err)
+			return
+		}
+
+		count, err := s.db.CountTransactions(user, options)
 		if err != nil {
 			handleError(w, r, err)
 			return
@@ -38,28 +81,41 @@ func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		queryValues := r.URL.Query()
-		parseQueryValueInt := func(name string) (uint64, error) {
-			value := queryValues.Get(name)
+		if err := r.ParseForm(); err != nil {
+			handleError(w, r, err)
+			return
+		}
+
+		parseFormValueInt := func(name string) (uint64, error) {
+			value := r.Form.Get(name)
 			if value == "" {
-				return 0, fmt.Errorf("Query parameter %v is empty", name)
+				return 0, fmt.Errorf("Form parameter %v is empty", name)
 			}
 			return strconv.ParseUint(value, 10, 64)
 		}
 
-		offset, err := parseQueryValueInt("offset")
+		offset, err := parseFormValueInt("offset")
 		if err != nil {
 			handleError(w, r, err)
 			return
 		}
 
-		limit, err := parseQueryValueInt("limit")
+		limit, err := parseFormValueInt("limit")
 		if err != nil {
 			handleError(w, r, err)
 			return
 		}
 
-		options := data.GetTransactionOptions{Offset: offset, Limit: limit}
+		filterOptions, err := parseFilterForm(r)
+		if err != nil {
+			handleError(w, r, err)
+			return
+		}
+		options := data.GetTransactionOptions{
+			Offset:                   offset,
+			Limit:                    limit,
+			TransactionFilterOptions: filterOptions,
+		}
 		transactions, err := s.db.GetTransactions(user, options)
 		if err != nil {
 			handleError(w, r, err)

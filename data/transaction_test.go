@@ -223,7 +223,8 @@ func TestCountTransactions(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	count, err := dbService.CountTransactions(&testUser)
+	filterOptions := TransactionFilterOptions{}
+	count, err := dbService.CountTransactions(&testUser, filterOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(100), count)
 }
@@ -233,7 +234,8 @@ func TestCountTransactionsEmpty(t *testing.T) {
 	assert.NoError(t, err)
 	defer cleanup()
 
-	count, err := dbService.CountTransactions(&testUser)
+	filterOptions := TransactionFilterOptions{}
+	count, err := dbService.CountTransactions(&testUser, filterOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(0), count)
 }

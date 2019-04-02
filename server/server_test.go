@@ -67,8 +67,8 @@ func (m *DBMock) GetAccounts(user *data.User) ([]*data.Account, error) {
 	return returnAccounts, args.Error(1)
 }
 
-func (m *DBMock) CountTransactions(user *data.User) (uint64, error) {
-	args := m.Called(user)
+func (m *DBMock) CountTransactions(user *data.User, options data.TransactionFilterOptions) (uint64, error) {
+	args := m.Called(user, options)
 	return args.Get(0).(uint64), args.Error(1)
 }
 

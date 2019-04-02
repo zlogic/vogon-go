@@ -50,8 +50,8 @@ func CreateRouter(s *Services) (*mux.Router, error) {
 	}
 	api.HandleFunc("/settings", SettingsHandler(s)).Methods("GET", "POST")
 	api.HandleFunc("/backup", BackupHandler(s)).Methods("POST")
-	api.HandleFunc("/transactions/count", TransactionsCountHandler(s)).Methods("GET")
-	api.HandleFunc("/transactions", TransactionsHandler(s)).Methods("GET").Queries("offset", "{offset}", "limit", "{limit}")
+	api.HandleFunc("/transactions/getcount", TransactionsCountHandler(s)).Methods("POST")
+	api.HandleFunc("/transactions/getpage", TransactionsHandler(s)).Methods("POST")
 	api.HandleFunc("/transaction/{id}", TransactionHandler(s)).Methods("GET", "POST", "DELETE")
 	api.HandleFunc("/accounts", AccountsHandler(s)).Methods("GET")
 	api.HandleFunc("/account/{id}", AccountHandler(s)).Methods("GET", "POST", "DELETE")

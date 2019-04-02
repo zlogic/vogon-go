@@ -15,7 +15,7 @@ type DB interface {
 
 	GetAccounts(*data.User) ([]*data.Account, error)
 	GetTransactions(*data.User, data.GetTransactionOptions) ([]*data.Transaction, error)
-	CountTransactions(user *data.User) (uint64, error)
+	CountTransactions(*data.User, data.TransactionFilterOptions) (uint64, error)
 	CreateAccount(*data.User, *data.Account) error
 	UpdateAccount(*data.User, *data.Account) error
 	GetAccount(user *data.User, accountID uint64) (*data.Account, error)

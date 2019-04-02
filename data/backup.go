@@ -29,6 +29,9 @@ func (s *DBService) Backup(user *User) (string, error) {
 		}
 
 		sortTransactionsAsc(transactions)
+		for i, transaction := range transactions {
+			transaction.ID = uint64(i)
+		}
 
 		data.Accounts = accounts
 		data.Transactions = transactions

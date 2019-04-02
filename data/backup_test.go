@@ -174,7 +174,7 @@ const backupData = `{
   ],
   "Transactions": [
     {
-      "ID": 1,
+      "ID": 0,
       "Description": "Salary",
       "Type": 0,
       "Tags": [
@@ -197,7 +197,7 @@ const backupData = `{
       ]
     },
     {
-      "ID": 0,
+      "ID": 1,
       "Description": "Widgets",
       "Type": 0,
       "Tags": [
@@ -227,7 +227,7 @@ const backupData = `{
       ]
     },
     {
-      "ID": 4,
+      "ID": 3,
       "Description": "Stuff",
       "Type": 1,
       "Tags": [
@@ -247,7 +247,7 @@ const backupData = `{
       ]
     },
     {
-      "ID": 3,
+      "ID": 4,
       "Description": "Credit card payment",
       "Type": 1,
       "Tags": [
