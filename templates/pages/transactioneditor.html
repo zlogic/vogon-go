@@ -185,7 +185,7 @@ $(document).ready(function() {
     transaction.Components = [];
     $("#components").children("div").each(function(i, componentRow){
       var accountID = parseInt($(componentRow).find('select').val());
-      var amount = Math.trunc(parseFloat($(componentRow).find('input').val()) * 100);
+      var amount = Math.round(parseFloat($(componentRow).find('input').val()) * 100);
       transaction.Components.push({AccountID: accountID, Amount: amount});
     });
     var id = transaction.ID || "new";

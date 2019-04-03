@@ -18,7 +18,7 @@
 
         //Convert data
         data.accounts.forEach(account => {
-          account.balance = Math.trunc(account.balance * 100);
+          account.balance = Math.round(account.balance * 100);
         });
         data.transactions.forEach(transaction => {
           switch(transaction.type) {
@@ -30,7 +30,7 @@
               break;
           }
           transaction.components.forEach(component => {
-            component.amount = Math.trunc(component.amount * 100);
+            component.amount = Math.round(component.amount * 100);
           })
         });
 
