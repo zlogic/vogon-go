@@ -108,7 +108,7 @@ func TestGetTransactionsFilterAuthorized(t *testing.T) {
 	user := testUser
 	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
-	req, _ := http.NewRequest("POST", "/api/transactions/getpage", strings.NewReader("offset=0&limit=10&filterDescription=d1&filterFrom=f1&filterTo=t1&filterTags=s1,s2&filterAccounts=1,2"))
+	req, _ := http.NewRequest("POST", "/api/transactions/getpage", strings.NewReader("offset=0&limit=10&filterDescription=d1&filterFrom=f1&filterTo=t1&filterTags=s1,s2&filterAccounts=1,2&filterIncludeExpenseIncome=false&filterIncludeTransfer=false"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
@@ -121,11 +121,13 @@ func TestGetTransactionsFilterAuthorized(t *testing.T) {
 		Offset: 0,
 		Limit:  10,
 		TransactionFilterOptions: data.TransactionFilterOptions{
-			FilterDescription: "d1",
-			FilterFromDate:    "f1",
-			FilterToDate:      "t1",
-			FilterTags:        []string{"s1", "s2"},
-			FilterAccounts:    []uint64{1, 2},
+			FilterDescription:    "d1",
+			FilterFromDate:       "f1",
+			FilterToDate:         "t1",
+			FilterTags:           []string{"s1", "s2"},
+			FilterAccounts:       []uint64{1, 2},
+			ExcludeExpenseIncome: true,
+			ExcludeTransfer:      true,
 		},
 	}
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
@@ -229,7 +231,7 @@ func TestGetTransactionsCountFilterAuthorized(t *testing.T) {
 	user := testUser
 	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
-	req, _ := http.NewRequest("POST", "/api/transactions/getcount", strings.NewReader("filterDescription=d1&filterFrom=f1&filterTo=t1&filterTags=s1,s2&filterAccounts=1,2"))
+	req, _ := http.NewRequest("POST", "/api/transactions/getcount", strings.NewReader("filterDescription=d1&filterFrom=f1&filterTo=t1&filterTags=s1,s2&filterAccounts=1,2&filterIncludeExpenseIncome=false&filterIncludeTransfer=false"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
@@ -238,11 +240,13 @@ func TestGetTransactionsCountFilterAuthorized(t *testing.T) {
 	req.AddCookie(cookie)
 
 	options := data.TransactionFilterOptions{
-		FilterDescription: "d1",
-		FilterFromDate:    "f1",
-		FilterToDate:      "t1",
-		FilterTags:        []string{"s1", "s2"},
-		FilterAccounts:    []uint64{1, 2},
+		FilterDescription:    "d1",
+		FilterFromDate:       "f1",
+		FilterToDate:         "t1",
+		FilterTags:           []string{"s1", "s2"},
+		FilterAccounts:       []uint64{1, 2},
+		ExcludeExpenseIncome: true,
+		ExcludeTransfer:      true,
 	}
 	dbMock.On("CountTransactions", &user, options).Return(uint64(123), nil).Once()
 

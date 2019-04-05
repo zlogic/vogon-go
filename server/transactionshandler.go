@@ -22,6 +22,14 @@ func parseFilterForm(r *http.Request) (data.TransactionFilterOptions, error) {
 		return strings.Split(value, ",")
 	}
 
+	parseFormValueBool := func(name string, defaultValue bool) (bool, error) {
+		value := r.Form.Get(name)
+		if value == "" {
+			return defaultValue, nil
+		}
+		return strconv.ParseBool(value)
+	}
+
 	filterAccountsStr := parseFormValueSet("filterAccounts")
 	var filterAccountIDs []uint64
 	if len(filterAccountsStr) > 0 {
@@ -35,12 +43,23 @@ func parseFilterForm(r *http.Request) (data.TransactionFilterOptions, error) {
 		}
 	}
 
+	includeExpenseIncome, err := parseFormValueBool("filterIncludeExpenseIncome", true)
+	if err != nil {
+		return data.TransactionFilterOptions{}, err
+	}
+	includeTransfer, err := parseFormValueBool("filterIncludeTransfer", true)
+	if err != nil {
+		return data.TransactionFilterOptions{}, err
+	}
+
 	return data.TransactionFilterOptions{
-		FilterDescription: r.Form.Get("filterDescription"),
-		FilterFromDate:    r.Form.Get("filterFrom"),
-		FilterToDate:      r.Form.Get("filterTo"),
-		FilterTags:        parseFormValueSet("filterTags"),
-		FilterAccounts:    filterAccountIDs,
+		FilterDescription:    r.Form.Get("filterDescription"),
+		FilterFromDate:       r.Form.Get("filterFrom"),
+		FilterToDate:         r.Form.Get("filterTo"),
+		FilterTags:           parseFormValueSet("filterTags"),
+		FilterAccounts:       filterAccountIDs,
+		ExcludeExpenseIncome: !includeExpenseIncome,
+		ExcludeTransfer:      !includeTransfer,
 	}, nil
 }
 

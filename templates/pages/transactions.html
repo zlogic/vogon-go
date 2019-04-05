@@ -28,19 +28,23 @@
         <div class="form-row">
           <div class="form-group col">
             <label for="filterTransactionTags">Tags</label>
-            <select class="custom-select" id="filterTransactionTags" multiple>
-              <option value="1" selected>One</option>
-              <option value="2" selected>Two</option>
-              <option value="3" selected>Three</option>
-            </select>
+            <select class="custom-select" id="filterTransactionTags" multiple></select>
           </div>
           <div class="form-group col">
             <label for="filterTransactionAccounts">Accounts</label>
-            <select class="custom-select" id="filterTransactionAccounts" multiple>
-              <option value="1" selected>One</option>
-              <option value="2" selected>Two</option>
-              <option value="3" selected>Three</option>
-            </select>
+            <select class="custom-select" id="filterTransactionAccounts" multiple></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group col">
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input" id="filterIncludeExpenseIncome">
+              <label class="custom-control-label" for="filterIncludeExpenseIncome">Include expense/income transactions</label>
+            </div>
+            <div class="custom-control custom-checkbox">
+              <input type="checkbox" class="custom-control-input" id="filterIncludeTransfer">
+              <label class="custom-control-label" for="filterIncludeTransfer">Include transfer transactions</label>
+            </div>
           </div>
         </div>
         <button type="submit" class="btn btn-primary" id="applyButton">
@@ -278,6 +282,7 @@ $(document).ready(function() {
     filterButton.addClass("active");
     form.find("input,select,button").prop("disabled", true);
     form.find("select").empty();
+    form.find("#filterIncludeExpenseIncome,#filterIncludeTransfer").prop("checked", true);
 
     var tagsSelectElement = form.find('#filterTransactionTags');
     var accountsSelectElement = form.find('#filterTransactionAccounts');
@@ -302,6 +307,7 @@ $(document).ready(function() {
     form.find("input,select,button").prop("disabled", true);
     form.find("select").empty();
     form.find("input").val("");
+    form.find("#filterIncludeExpenseIncome,#filterIncludeTransfer").prop("checked", true);
     filterParams = {};
     updateTransactionsForFilter();
   });
@@ -325,6 +331,8 @@ $(document).ready(function() {
     filterParams.filterTo = form.find('#inputFilterTo').val();
     filterParams.filterTags = form.find('#filterTransactionTags').val().join(",");
     filterParams.filterAccounts = form.find('#filterTransactionAccounts').val().join(",");
+    filterParams.filterIncludeExpenseIncome = form.find('#filterIncludeExpenseIncome').prop("checked");
+    filterParams.filterIncludeTransfer = form.find('#filterIncludeTransfer').prop("checked");
     updateTransactionsForFilter().always(function() {
       applyButton.prop("disabled", false);
       applyButtonSpinner.prop("hidden", true);

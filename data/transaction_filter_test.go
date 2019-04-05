@@ -178,6 +178,51 @@ func TestGetTransactionsFilterAccounts(t *testing.T) {
 	assert.Empty(t, dbTransactions)
 }
 
+func TestGetTransactionsFilterType(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	transaction := Transaction{
+		Description: "t1",
+		Date:        "2019-03-20",
+	}
+
+	transactions := make([]*Transaction, 4)
+	for i := 0; i < 4; i++ {
+		saveTransaction := transaction
+		if i%2 == 0 {
+			saveTransaction.Type = TransactionTypeExpenseIncome
+		} else if i%2 == 1 {
+			saveTransaction.Type = TransactionTypeTransfer
+		}
+		err = dbService.CreateTransaction(&testUser, &saveTransaction)
+		assert.NoError(t, err)
+		transactions[i] = &saveTransaction
+	}
+
+	getTransactionOptions := GetAllTransactionsOptions
+	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{}
+	dbTransactions, err := dbService.GetTransactions(&testUser, getTransactionOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, []*Transaction{transactions[3], transactions[2], transactions[1], transactions[0]}, dbTransactions)
+
+	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{ExcludeExpenseIncome: true}
+	dbTransactions, err = dbService.GetTransactions(&testUser, getTransactionOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, []*Transaction{transactions[3], transactions[1]}, dbTransactions)
+
+	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{ExcludeTransfer: true}
+	dbTransactions, err = dbService.GetTransactions(&testUser, getTransactionOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, []*Transaction{transactions[2], transactions[0]}, dbTransactions)
+
+	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{ExcludeExpenseIncome: true, ExcludeTransfer: true}
+	dbTransactions, err = dbService.GetTransactions(&testUser, getTransactionOptions)
+	assert.NoError(t, err)
+	assert.Empty(t, dbTransactions)
+}
+
 func TestCountTransactionsFilterDescription(t *testing.T) {
 	dbService, cleanup, err := createDb()
 	assert.NoError(t, err)
@@ -332,6 +377,48 @@ func TestCountTransactionsFilterAccounts(t *testing.T) {
 	assert.Equal(t, uint64(2), count)
 
 	filterOptions = TransactionFilterOptions{FilterAccounts: []uint64{88}}
+	count, err = dbService.CountTransactions(&testUser, filterOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(0), count)
+}
+
+func TestCountTransactionsFilterType(t *testing.T) {
+	dbService, cleanup, err := createDb()
+	assert.NoError(t, err)
+	defer cleanup()
+
+	transaction := Transaction{
+		Description: "t1",
+		Date:        "2019-03-20",
+	}
+
+	for i := 0; i < 4; i++ {
+		saveTransaction := transaction
+		if i%2 == 0 {
+			saveTransaction.Type = TransactionTypeExpenseIncome
+		} else if i%2 == 1 {
+			saveTransaction.Type = TransactionTypeTransfer
+		}
+		err = dbService.CreateTransaction(&testUser, &saveTransaction)
+		assert.NoError(t, err)
+	}
+
+	filterOptions := TransactionFilterOptions{}
+	count, err := dbService.CountTransactions(&testUser, filterOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(4), count)
+
+	filterOptions = TransactionFilterOptions{ExcludeExpenseIncome: true}
+	count, err = dbService.CountTransactions(&testUser, filterOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(2), count)
+
+	filterOptions = TransactionFilterOptions{ExcludeTransfer: true}
+	count, err = dbService.CountTransactions(&testUser, filterOptions)
+	assert.NoError(t, err)
+	assert.Equal(t, uint64(2), count)
+
+	filterOptions = TransactionFilterOptions{ExcludeExpenseIncome: true, ExcludeTransfer: true}
 	count, err = dbService.CountTransactions(&testUser, filterOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(0), count)

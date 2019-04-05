@@ -33,11 +33,13 @@ type TransactionComponent struct {
 }
 
 type TransactionFilterOptions struct {
-	FilterDescription string
-	FilterFromDate    string
-	FilterToDate      string
-	FilterTags        []string
-	FilterAccounts    []uint64
+	FilterDescription    string
+	FilterFromDate       string
+	FilterToDate         string
+	FilterTags           []string
+	FilterAccounts       []uint64
+	ExcludeExpenseIncome bool
+	ExcludeTransfer      bool
 }
 
 type GetTransactionOptions struct {
@@ -230,7 +232,9 @@ func (options *TransactionFilterOptions) isEmpty() bool {
 		options.FilterFromDate == "" &&
 		options.FilterToDate == "" &&
 		len(options.FilterTags) == 0 &&
-		len(options.FilterAccounts) == 0
+		len(options.FilterAccounts) == 0 &&
+		options.ExcludeExpenseIncome == false &&
+		options.ExcludeTransfer == false
 }
 
 func (options *TransactionFilterOptions) matches(transaction *Transaction) bool {
@@ -254,11 +258,18 @@ func (options *TransactionFilterOptions) matches(transaction *Transaction) bool 
 		}
 		return false
 	}
-	return (options.FilterDescription == "" || strings.Contains(strings.ToLower(transaction.Description), strings.ToLower(options.FilterDescription))) &&
-		(options.FilterFromDate == "" || options.FilterFromDate <= transaction.Date) &&
-		(options.FilterToDate == "" || transaction.Date <= options.FilterToDate) &&
-		(len(options.FilterTags) == 0 || containsTag(transaction.Tags, options.FilterTags)) &&
-		(len(options.FilterAccounts) == 0 || containsAccount(transaction, options.FilterAccounts))
+	matchesDescription := options.FilterDescription == "" || strings.Contains(strings.ToLower(transaction.Description), strings.ToLower(options.FilterDescription))
+	matchedFromDate := options.FilterFromDate == "" || options.FilterFromDate <= transaction.Date
+	matchedToDate := options.FilterToDate == "" || transaction.Date <= options.FilterToDate
+	matchesTags := len(options.FilterTags) == 0 || containsTag(transaction.Tags, options.FilterTags)
+	matchesAccounts := len(options.FilterAccounts) == 0 || containsAccount(transaction, options.FilterAccounts)
+	matchesType := (transaction.Type == TransactionTypeExpenseIncome && !options.ExcludeExpenseIncome) ||
+		(transaction.Type == TransactionTypeTransfer && !options.ExcludeTransfer)
+	return matchesDescription &&
+		matchedFromDate && matchedToDate &&
+		matchesTags &&
+		matchesAccounts &&
+		matchesType
 }
 
 func (s *DBService) getTransaction(user *User, transactionID uint64) func(*badger.Txn) (*Transaction, error) {
