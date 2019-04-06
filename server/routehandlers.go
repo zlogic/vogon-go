@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"net/url"
 	"path"
 	"text/template"
 
@@ -31,6 +32,7 @@ type viewData struct {
 	User     *data.User
 	Username string
 	Name     string
+	Form     url.Values
 }
 
 func RootHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
@@ -113,6 +115,12 @@ func HtmlUserPageHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 			handleError(w, r, err)
 			return
 		}
-		t.ExecuteTemplate(w, "layout", &viewData{User: user, Username: username, Name: templateName})
+
+		if err := r.ParseForm(); err != nil {
+			handleError(w, r, err)
+			return
+		}
+
+		t.ExecuteTemplate(w, "layout", &viewData{User: user, Username: username, Name: templateName, Form: r.Form})
 	}
 }

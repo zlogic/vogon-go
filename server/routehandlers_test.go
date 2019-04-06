@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -211,7 +212,7 @@ func TestHtmlRegisterHandlerRegistrationNotAllowed(t *testing.T) {
 	assert.Empty(t, res.Result().Cookies())
 }
 
-func TestTransactionsHandlerLoggedIn(t *testing.T) {
+func TestHtmlTransactionsHandlerLoggedIn(t *testing.T) {
 	transactionsTemplate := []byte(`{{ define "content" }}transactionspage{{ end }}`)
 	tempDir, recover, err := prepareTempDir()
 	defer func() {
@@ -266,7 +267,157 @@ func TestHtmlTransactionsHandlerNotLoggedIn(t *testing.T) {
 	assert.Equal(t, "/login", res.Header().Get("Location"))
 }
 
-func TestAccountsHandlerLoggedIn(t *testing.T) {
+func TestHtmlTransactionEditorHandlerLoggedInEmptyValues(t *testing.T) {
+	transactionEditorTemplate := []byte(`{{ define "content" }}transactioneditor{{ if .Form }}values{{ end }}{{ end }}`)
+	tempDir, recover, err := prepareTempDir()
+	defer func() {
+		if recover != nil {
+			recover()
+		}
+	}()
+	assert.NoError(t, err)
+	err = prepareLayoutTemplateTestFile(tempDir)
+	assert.NoError(t, err)
+	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "transactioneditor.html", []byte(transactionEditorTemplate))
+	assert.NoError(t, err)
+
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	dbMock := new(DBMock)
+	dbMock.On("GetUser", "user01").Return(&data.User{}, nil).Once()
+
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("GET", "/transactioneditor", nil)
+	res := httptest.NewRecorder()
+
+	cookie := cookieHandler.NewCookie()
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
+
+	router.ServeHTTP(res, req)
+
+	assert.Equal(t, http.StatusOK, res.Code)
+	assert.Equal(t, "User { 0 }\nName transactioneditor\nContent transactioneditor", string(res.Body.Bytes()))
+
+	dbMock.AssertExpectations(t)
+}
+
+func TestHtmlTransactionEditorHandlerLoggedInWithValues(t *testing.T) {
+	transactionEditorTemplate := []byte(`{{ define "content" }}transactioneditor{{ if .Form }} {{ index .Form "id" 0 }} {{ index .Form "action" 0 }}{{ end }}{{ end }}`)
+	tempDir, recover, err := prepareTempDir()
+	defer func() {
+		if recover != nil {
+			recover()
+		}
+	}()
+	assert.NoError(t, err)
+	err = prepareLayoutTemplateTestFile(tempDir)
+	assert.NoError(t, err)
+	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "transactioneditor.html", []byte(transactionEditorTemplate))
+	assert.NoError(t, err)
+
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	dbMock := new(DBMock)
+	dbMock.On("GetUser", "user01").Return(&data.User{}, nil).Once()
+
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("GET", "/transactioneditor?id=1&action=duplicate", nil)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	res := httptest.NewRecorder()
+
+	cookie := cookieHandler.NewCookie()
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
+
+	router.ServeHTTP(res, req)
+
+	assert.Equal(t, http.StatusOK, res.Code)
+	assert.Equal(t, "User { 0 }\nName transactioneditor\nContent transactioneditor 1 duplicate", string(res.Body.Bytes()))
+
+	dbMock.AssertExpectations(t)
+}
+func TestHtmlTransactionEditorHandlerNotLoggedIn(t *testing.T) {
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	services := &Services{cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("GET", "/transactioneditor", nil)
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusSeeOther, res.Code)
+	assert.Equal(t, "/login", res.Header().Get("Location"))
+}
+
+func TestHtmlReportHandlerLoggedIn(t *testing.T) {
+	reportTemplate := []byte(`{{ define "content" }}report {{ index .Form "filterDescription" 0 }} {{ index .Form "filterAccounts" 0 }}{{ end }}`)
+	tempDir, recover, err := prepareTempDir()
+	defer func() {
+		if recover != nil {
+			recover()
+		}
+	}()
+	assert.NoError(t, err)
+	err = prepareLayoutTemplateTestFile(tempDir)
+	assert.NoError(t, err)
+	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "report.html", []byte(reportTemplate))
+	assert.NoError(t, err)
+
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	dbMock := new(DBMock)
+	dbMock.On("GetUser", "user01").Return(&data.User{}, nil).Once()
+
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("POST", "/report", strings.NewReader("filterDescription=test&filterAccounts=1,2"))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	res := httptest.NewRecorder()
+
+	cookie := cookieHandler.NewCookie()
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
+
+	router.ServeHTTP(res, req)
+
+	assert.Equal(t, http.StatusOK, res.Code)
+	assert.Equal(t, "User { 0 }\nName report\nContent report test 1,2", string(res.Body.Bytes()))
+
+	dbMock.AssertExpectations(t)
+}
+
+func TestHtmlReportHandlerNotLoggedIn(t *testing.T) {
+	cookieHandler, err := createTestCookieHandler()
+	assert.NoError(t, err)
+
+	services := &Services{cookieHandler: cookieHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("POST", "/report", nil)
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusSeeOther, res.Code)
+	assert.Equal(t, "/login", res.Header().Get("Location"))
+}
+
+func TestHtmlAccountsHandlerLoggedIn(t *testing.T) {
 	transactionsTemplate := []byte(`{{ define "content" }}accountspage{{ end }}`)
 	tempDir, recover, err := prepareTempDir()
 	defer func() {

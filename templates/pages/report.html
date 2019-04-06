@@ -1,0 +1,173 @@
+{{ define "content" }}
+<h2>Report</h2>
+<div id="reportTarget"></div>
+<script type="text/javascript" src="static/Chart.bundle.min.js"></script>
+<script>
+  // Load CSS
+  Chart.platform.disableCSSInjection = true;
+  $('head').append('<link rel="stylesheet" type="text/css" href="static/Chart.min.css">');
+</script>
+<script>
+  var params = {
+    filterDescription: '{{ index .Form "filterDescription" 0 }}',
+    filterFrom: '{{ index .Form "filterFrom" 0 }}',
+    filterTo: '{{ index .Form "filterTo" 0 }}',
+    filterTags: '{{ index .Form "filterTags" 0 }}',
+    filterAccounts: '{{ index .Form "filterAccounts" 0 }}',
+    filterIncludeExpenseIncome: '{{ index .Form "filterIncludeExpenseIncome" 0 }}',
+    filterIncludeTransfer: '{{ index .Form "filterIncludeTransfer" 0 }}'
+  };
+</script>
+<script>
+$(document).ready(function() {
+  var reportTarget = $('#reportTarget');
+  var balanceChartOptions = {
+    responsive: true,
+    tooltips: {
+      mode: 'index',
+      intersect: false,
+    },
+    legend: {
+      display: false,
+    },
+    hover: {
+      mode: 'nearest',
+      intersect: true
+    },
+    scales: {
+      xAxes: [{
+        type: 'time',
+        distribution: 'series',
+        time: {
+          unit: 'day',
+          minUnit: 'day'
+        },
+        ticks: {
+          source: 'data',
+          autoSkip: true
+        }
+      }],
+      yAxes: [{
+        scaleLabel: {
+          display: true,
+          labelString: 'value'
+        }
+      }]
+    }
+  };
+  var tagsChartOptions = {
+    responsive: true,
+    tooltips: {
+      mode: 'point',
+      intersect: false
+    },
+    legend: {
+      display: false,
+    },
+    scales: {
+      xAxes: [{
+        stacked: true,
+      }],
+      yAxes: [{
+        stacked: true
+      }]
+    }
+  };
+  var colors = [
+		'#4dc9f6',
+		'#f67019',
+		'#f53794',
+		'#537bc4',
+		'#acc236',
+		'#166a8f',
+		'#00a950',
+		'#58595b',
+		'#8549ba'
+	];
+
+  var addProgress = function() {
+    var progressRow = $('<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated w-100" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div>')
+    reportTarget.empty().append(progressRow);
+  }
+  var updateReport = function(report) {
+    reportTarget.empty();
+    for (var currency in report.BalanceChart) {
+      var ctx = $('<canvas></canvas>');
+      reportTarget.append($('<div></div>').append($('<h3></h3>').text("Balance for "+ currency)).append(ctx));
+      var currencyChart = report.BalanceChart[currency];
+      var data = [];
+      for (var date in currencyChart)
+        data.push({t: date, y: (currencyChart[date]/100).toFixed(2)});
+      var dataset = {
+        datasets: [{
+          radius: 0,
+          data: data,
+          backgroundColor: colors[0]
+        }]
+      }
+      var balanceChart = new Chart(ctx, {
+        type: 'line',
+        data: dataset,
+        options: balanceChartOptions
+      });
+    }
+    for (var currency in report.TagsChart) {
+      var ctx = $('<canvas></canvas>');
+      reportTarget.append($('<div></div>').append($('<h3></h3>').text("Tags for "+ currency)).append(ctx));
+      var tagsChart = report.TagsChart[currency];
+      var tags = {};
+      var appendTag = function(tag){
+        tags[tag] = null;
+      };
+      Object.keys(tagsChart.Positive).forEach(appendTag);
+      Object.keys(tagsChart.Negative).forEach(appendTag);
+      Object.keys(tagsChart.Transfer).forEach(appendTag);
+      tags = Object.keys(tags);
+      var incomeData = [];
+      var expenseData = [];
+      var transferData = [];
+      var convertAmount = function(amount) {
+        if (amount !== null && amount !== undefined) {
+          return (amount/100).toFixed(2);
+        }
+        return 0.00;
+      }
+      var tagDatasets = [];
+      var getColor = function(i){
+        var colorIndex = i % colors.length;
+        return colors[colorIndex];
+      }
+      for (var i in tags) {
+        var tag = tags[i];
+        tagDatasets.push({
+          label: tags[i],
+          data: [
+            convertAmount(tagsChart.Positive[tag]),
+            convertAmount(tagsChart.Negative[tag]),
+            convertAmount(tagsChart.Transfer[tag])
+          ],
+          backgroundColor: getColor(i)
+        });
+      }
+      var dataset = {
+        labels: ['Income','Expense','Transfer'],
+        datasets: tagDatasets
+      };
+      var tagsChart = new Chart(ctx, {
+        type: 'horizontalBar',
+        data: dataset,
+        options: tagsChartOptions
+      });
+    }
+  }
+
+  var loadData = function() {
+    addProgress();
+    $.post("api/report", params, null, "json").done(function(data) {
+      updateReport(data);
+    });
+  }
+  loadData();
+});
+</script>
+{{ end }}

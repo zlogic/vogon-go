@@ -227,7 +227,7 @@ func (s *DBService) updateAccountsBalance(user *User, previousComponents *[]Tran
 	}
 }
 
-func (options *TransactionFilterOptions) isEmpty() bool {
+func (options *TransactionFilterOptions) IsEmpty() bool {
 	return options.FilterDescription == "" &&
 		options.FilterFromDate == "" &&
 		options.FilterToDate == "" &&
@@ -237,7 +237,7 @@ func (options *TransactionFilterOptions) isEmpty() bool {
 		options.ExcludeTransfer == false
 }
 
-func (options *TransactionFilterOptions) matches(transaction *Transaction) bool {
+func (options *TransactionFilterOptions) Matches(transaction *Transaction) bool {
 	containsTag := func(searchIn []string, searchFor []string) bool {
 		for _, a := range searchIn {
 			for _, b := range searchFor {
@@ -311,7 +311,7 @@ func (s *DBService) getTransactions(user *User, options GetTransactionOptions) f
 			currentItem++
 			return currentItem < (options.Offset + 1)
 		}
-		emptyFilter := options.TransactionFilterOptions.isEmpty()
+		emptyFilter := options.TransactionFilterOptions.IsEmpty()
 		for it.Seek(reversePrefix); it.ValidForPrefix(prefix); it.Next() {
 			if emptyFilter && skipItem() {
 				continue
@@ -328,7 +328,7 @@ func (s *DBService) getTransactions(user *User, options GetTransactionOptions) f
 			}
 
 			if !emptyFilter {
-				if !options.TransactionFilterOptions.matches(transaction) {
+				if !options.TransactionFilterOptions.Matches(transaction) {
 					continue
 				}
 				if skipItem() {
@@ -377,7 +377,7 @@ func (s *DBService) GetTransactions(user *User, options GetTransactionOptions) (
 func (s *DBService) CountTransactions(user *User, options TransactionFilterOptions) (uint64, error) {
 	var count uint64
 
-	emptyFilter := options.isEmpty()
+	emptyFilter := options.IsEmpty()
 	err := s.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(IteratorDoNotPrefetchOptions())
 		defer it.Close()
@@ -396,7 +396,7 @@ func (s *DBService) CountTransactions(user *User, options TransactionFilterOptio
 					return err
 				}
 
-				if !options.matches(transaction) {
+				if !options.Matches(transaction) {
 					continue
 				}
 			}

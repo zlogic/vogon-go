@@ -59,14 +59,23 @@
   </div>
 </form>
 <script type="text/javascript" src="static/extras.js"></script>
+{{ if .Form }}
+<script>
+  var transactionID = parseInt('{{ index .Form "id" 0 }}');
+  var action = '{{ index .Form "action" 0 }}';
+</script>
+{{ else }}
+<script>
+  var action = "new";
+</script>
+{{ end }}
 <script>
 $(document).ready(function() {
-  var transaction = null;
+  var currentDate = new Date().toISOString().split("T")[0];
+  var transaction = {Description: "", Type: 0, Date: currentDate, Tags: [], Components: []};
   var accounts = null;
   var componentsCounter = 0;
   var autocompleteTags = null;
-
-  var urlParams = new URLSearchParams(window.location.search);
 
   var description = $('input[id="editDescription"]');
   var date = $('input[id="editDate"]');
@@ -211,7 +220,7 @@ $(document).ready(function() {
     $("#deleteFailed").prop("hidden", true);
     $("#deleteSuccessful").prop("hidden", true);
     deleteSpinner.prop("hidden", false);
-    $.ajax("api/transaction/" + urlParams.get("id"), {
+    $.ajax("api/transaction/" + transactionID, {
       type : 'DELETE'
     }).done(function() {
       window.location.href = "transactions";
@@ -223,24 +232,22 @@ $(document).ready(function() {
       deleteSpinner.prop("hidden", true);
     });
   });
-  if (!urlParams.has("edit"))
+  if (action !== "edit")
     $("#deleteButton").remove();
 
   // Load transaction details
   var loadTransaction = function() {
     lockForm(true);
-    var currentDate = new Date().toISOString().split("T")[0];
-    if (urlParams.has("edit") || urlParams.has("duplicate")) {
-      $.getJSON("api/transaction/" + urlParams.get("id")).done(function(data) {
+    if (action === "edit" || action === "duplicate") {
+      transaction = null;
+      $.getJSON("api/transaction/" + transactionID).done(function(data) {
         transaction = data;
-        if(urlParams.has("duplicate")){
+        if(action === "duplicate"){
           delete transaction.ID;
           transaction.Date = currentDate;
         }
         updateIfReady();
       });
-    } else if (urlParams.has("new")) {
-      transaction = {Description: "", Type: 0, Date: currentDate, Tags: [], Components: []};
     }
     $.getJSON("api/accounts").done(function(data) {
       accounts = {};

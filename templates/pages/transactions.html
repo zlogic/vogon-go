@@ -3,7 +3,7 @@
 <div class="pb-3">
   <button class="btn btn-outline-primary" data-toggle="collapse" type="button" id="filterButton" data-target="#transactionsFilterComponents" aria-expanded="false" aria-controls="transactionsFilterComponents" disabled>
     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
-    Filter
+    Advanced
   </button>
   <a class="btn btn-secondary float-right" href="transactioneditor?new" role="button">Add transaction</a>
 </div>
@@ -50,7 +50,10 @@
         <button type="submit" class="btn btn-primary" id="applyButton">
           <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
           Apply
-        </a>
+        </button>
+        <button class="btn btn-outline-info" id="createReportButton">
+          Create report
+        </button>
       </form>
     </div>
   </div>
@@ -112,6 +115,14 @@ $(document).ready(function() {
     }
     if (table.prop("hidden"))
       table.hide().prop("hidden", false).slideDown();
+  }
+  var postHiddenForm = function(destination, values) {
+    var hiddenForm = $('<form id="hiddenForm" method="post" action="' + destination + '" hidden></form>');
+    for (var name in values)
+      hiddenForm.append($('<input type="hidden" name="' + name + '"></input>').val(values[name]));
+    $("body").append(hiddenForm);
+    hiddenForm.submit();
+    hiddenForm.remove();
   }
   var updateTransactions = function(transactions) {
     if (transactions === null || accounts === null) return;
@@ -318,6 +329,18 @@ $(document).ready(function() {
     if (accounts === null) return;
     $("#filterButton").prop("disabled", false);
   }
+  var getFilterFormValues = function() {
+    var form = $('#filterForm');
+    return {
+      filterDescription: form.find('#inputFilterDescription').val(),
+      filterFrom: form.find('#inputFilterFrom').val(),
+      filterTo: form.find('#inputFilterTo').val(),
+      filterTags: form.find('#filterTransactionTags').val().join(","),
+      filterAccounts: form.find('#filterTransactionAccounts').val().join(","),
+      filterIncludeExpenseIncome: form.find('#filterIncludeExpenseIncome').prop("checked"),
+      filterIncludeTransfer: form.find('#filterIncludeTransfer').prop("checked")
+    }
+  }
   $('#filterForm').submit(function(event) {
     event.preventDefault();
     var applyButton = $("#applyButton");
@@ -325,19 +348,16 @@ $(document).ready(function() {
     applyButton.prop("disabled", true);
     applyButtonSpinner.prop("hidden", false);
     var form = $(this);
-    filterParams = {};
-    filterParams.filterDescription = form.find('#inputFilterDescription').val();
-    filterParams.filterFrom = form.find('#inputFilterFrom').val();
-    filterParams.filterTo = form.find('#inputFilterTo').val();
-    filterParams.filterTags = form.find('#filterTransactionTags').val().join(",");
-    filterParams.filterAccounts = form.find('#filterTransactionAccounts').val().join(",");
-    filterParams.filterIncludeExpenseIncome = form.find('#filterIncludeExpenseIncome').prop("checked");
-    filterParams.filterIncludeTransfer = form.find('#filterIncludeTransfer').prop("checked");
+    filterParams = getFilterFormValues();
     updateTransactionsForFilter().always(function() {
       applyButton.prop("disabled", false);
       applyButtonSpinner.prop("hidden", true);
     });
-  })
+  });
+  $('#createReportButton').click(function(event){
+    var params = getFilterFormValues();
+    postHiddenForm("report", params);
+  });
 
   var loadTransactions = function() {
     addProgress();
