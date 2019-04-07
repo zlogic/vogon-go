@@ -59,16 +59,14 @@
   </div>
 </form>
 <script type="text/javascript" src="static/extras.js"></script>
-{{ if .Form }}
+{{ if .Form.id }}
 <script>
   var transactionID = parseInt('{{ index .Form "id" 0 }}');
-  var action = '{{ index .Form "action" 0 }}';
-</script>
-{{ else }}
-<script>
-  var action = "new";
 </script>
 {{ end }}
+<script>
+  var action = '{{ index .Form "action" 0 }}';
+</script>
 <script>
 $(document).ready(function() {
   var currentDate = new Date().toISOString().split("T")[0];

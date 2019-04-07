@@ -5,7 +5,7 @@
     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
     Advanced
   </button>
-  <a class="btn btn-secondary float-right" href="transactioneditor?new" role="button">Add transaction</a>
+  <a class="btn btn-secondary float-right" href="transactioneditor?action=new" role="button">Add transaction</a>
 </div>
 <div id="transactionsFilterComponents" class="collapse pb-3 container">
   <div class="card">
@@ -139,8 +139,8 @@ $(document).ready(function() {
 
       var accountsColumn = $('<div></div>');
       var amountsColumn = $('<div class="text-right"></div>');
-      var editButton = $('<a class="dropdown-item" href="transactioneditor?edit&id='+ transaction.ID +'">Edit</a>');
-      var duplicateButton = $('<a class="dropdown-item" href="transactioneditor?duplicate&id='+ transaction.ID +'">Duplicate</a>');
+      var editButton = $('<a class="dropdown-item" href="transactioneditor?action=edit&id='+ transaction.ID +'">Edit</a>');
+      var duplicateButton = $('<a class="dropdown-item" href="transactioneditor?action=duplicate&id='+ transaction.ID +'">Duplicate</a>');
       var actionsColumn = $('<div class="dropdown text-right">' + 
         '<button class="btn btn-outline-secondary btn-small dropdown-toggle" type="button" id="dropdownMenuButton' + transaction.ID + '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Tools</button>' +
         '</div>');

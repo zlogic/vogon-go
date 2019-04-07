@@ -7,7 +7,7 @@
   </div>
 </div>
 <div class="pb-3">
-  <a class="btn btn-outline-secondary" href="accounteditor?new" role="button">Add account</a>
+  <a class="btn btn-outline-secondary" href="accounteditor?action=new" role="button">Add account</a>
 </div>
 <div class="table-responsive">
   <table class="table">
@@ -51,7 +51,7 @@ $(document).ready(function() {
       var account = accounts[i];
       if (!showAllAccounts && !account.ShowInList)
         continue
-      var editColumn = $('<a class="btn btn-outline-secondary" href="accounteditor?edit&id=' + account.ID + '" role="button">Edit</a>');
+      var editColumn = $('<a class="btn btn-outline-secondary" href="accounteditor?action=edit&id=' + account.ID + '" role="button">Edit</a>');
       var accountRow = $('<tr></tr>')
         .append($('<td></td>').text(account.Name))
         .append($('<td></td>')

@@ -46,12 +46,18 @@
     </div>
   </div>
 </form>
+{{ if .Form.id }}
+<script>
+  var accountID = parseInt('{{ index .Form "id" 0 }}');
+</script>
+{{ end }} 
+<script>
+  var action = '{{ index .Form "action" 0 }}';
+</script>
 <script>
 $(document).ready(function() {
   var account = null;
   var componentsCounter = 0;
-
-  var urlParams = new URLSearchParams(window.location.search);
 
   var nameEditor = $('input[id="editName"]');
   var currencyEditor = $('input[id="editCurrency"]');
@@ -73,7 +79,6 @@ $(document).ready(function() {
   }
 
   var updateForm = function() {
-    //$('input[name=selectType][value="' + transaction.Type +'"]').prop("checked", true);
     nameEditor.val(account.Name);
     currencyEditor.val(account.Currency);
     includeInTotal.prop("checked", account.IncludeInTotal);
@@ -122,7 +127,7 @@ $(document).ready(function() {
     $("#deleteFailed").prop("hidden", true);
     $("#deleteSuccessful").prop("hidden", true);
     deleteSpinner.prop("hidden", false);
-    $.ajax("api/account/" + urlParams.get("id"), {
+    $.ajax("api/account/" + accountID, {
       type : 'DELETE'
     }).done(function() {
       window.location.href = "accounts";
@@ -134,17 +139,17 @@ $(document).ready(function() {
       deleteSpinner.prop("hidden", true);
     });
   })
-  if (!urlParams.has("edit"))
+  if (action !== "edit")
     $("#deleteButton").remove();
 
   var loadAccount = function() {
     lockForm(true);
-    if (urlParams.has("edit")) {
-      $.getJSON("api/account/" + urlParams.get("id")).done(function(data) {
+    if (action === "edit") {
+      $.getJSON("api/account/" + accountID).done(function(data) {
         account = data;
         updateForm();
       });
-    } else if (urlParams.has("new")) {
+    } else if (action === "new") {
       account = {Name: "", Currency: "", IncludeInTotal: true, ShowInList: true};
       updateForm();
     }
