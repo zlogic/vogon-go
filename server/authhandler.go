@@ -35,6 +35,7 @@ func validateUserForAPI(w http.ResponseWriter, r *http.Request, s *Services) *da
 	return user
 }
 
+// LoginHandler authenticates the user and sets the encrypted session cookie if the user provided valid credentials.
 func LoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
@@ -79,6 +80,7 @@ func LoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// RegisterHandler creates and logs in a new user.
 func RegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()

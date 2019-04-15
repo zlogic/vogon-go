@@ -147,6 +147,7 @@ func createTagsChart(transactions []*data.Transaction, accounts []*data.Account)
 	return chart
 }
 
+// ReportHandler generates data for a report.
 func ReportHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)

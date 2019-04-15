@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Account keeps the balance and other details for an account.
 type Account struct {
 	ID             uint64
 	Name           string
@@ -19,6 +20,7 @@ type Account struct {
 	ShowInList     bool
 }
 
+// Encode serializes an Account.
 func (account *Account) Encode() ([]byte, error) {
 	var value bytes.Buffer
 	if err := gob.NewEncoder(&value).Encode(account); err != nil {
@@ -40,6 +42,8 @@ func (*DBService) createAccount(user *User, account *Account) func(*badger.Txn) 
 	}
 }
 
+// CreateAccount creates and saves the specified account.
+// It generates sets the ID to the generated account ID.
 func (s *DBService) CreateAccount(user *User, account *Account) error {
 	seq, err := s.db.GetSequence([]byte(user.CreateSequenceAccountKey()), 1)
 	defer seq.Release()
@@ -59,6 +63,8 @@ func (s *DBService) CreateAccount(user *User, account *Account) error {
 	})
 }
 
+// UpdateAccount saves an already existing account.
+// If the account doesn't exist, it returns an error.
 func (s *DBService) UpdateAccount(user *User, account *Account) error {
 	return s.db.Update(func(txn *badger.Txn) error {
 		key := user.CreateAccountKey(account)
@@ -155,6 +161,8 @@ func (s *DBService) getAccounts(user *User) func(*badger.Txn) ([]*Account, error
 	}
 }
 
+// GetAccount returns an Account by its ID.
+// If the Account doesn't exist, it returns an error.
 func (s *DBService) GetAccount(user *User, accountID uint64) (*Account, error) {
 	var account *Account
 
@@ -182,6 +190,7 @@ func (s *DBService) GetAccount(user *User, accountID uint64) (*Account, error) {
 	return account, nil
 }
 
+// GetAccounts returns all accounts for user.
 func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
 	var accounts []*Account
 	err := s.db.View(func(txn *badger.Txn) error {
@@ -195,6 +204,8 @@ func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
 	return accounts, nil
 }
 
+// DeleteAccount deletes an account by its ID.
+// If the account doesn't exist, it returns an error.
 func (s *DBService) DeleteAccount(user *User, accountID uint64) error {
 	key := user.CreateAccountKeyFromID(accountID)
 	return s.db.Update(func(txn *badger.Txn) error {

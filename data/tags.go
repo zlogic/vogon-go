@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetTags returns an unsorted (but deduplicated) list of tags for user.
 func (s *DBService) GetTags(user *User) ([]string, error) {
 	var transactions []*Transaction
 

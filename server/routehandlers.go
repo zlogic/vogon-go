@@ -35,6 +35,8 @@ type viewData struct {
 	Form     url.Values
 }
 
+// RootHandler handles the root url.
+// It redirects authenticated users to the default page and unauthenticated users to the login page.
 func RootHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
@@ -48,6 +50,7 @@ func RootHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// LogoutHandler logs out the user.
 func LogoutHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie := s.cookieHandler.NewCookie()
@@ -56,11 +59,13 @@ func LogoutHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// FaviconHandler serves the favicon.
 func FaviconHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, path.Join("static", "favicon.ico"))
 }
 
-func HtmlLoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+// HTMLLoginHandler serves the login page.
+func HTMLLoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
 		if username != "" {
@@ -80,7 +85,8 @@ func HtmlLoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func HtmlRegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+// HTMLRegisterHandler serves the register page.
+func HTMLRegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
 		if username != "" {
@@ -96,7 +102,8 @@ func HtmlRegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func HtmlUserPageHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+// HTMLUserPageHandler serves a user-specific page.
+func HTMLUserPageHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := validateUser(w, r, s)
 		if username == "" {

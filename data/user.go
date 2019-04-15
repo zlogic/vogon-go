@@ -11,14 +11,17 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// User keeps configuration for a user and information used to link a user with their data.
 type User struct {
 	username string
 	ID       uint64
 	Password string
 }
 
+// ErrUserAlreadyExists is an error when a user cannot be renamed because their username is already in use.
 var ErrUserAlreadyExists = errors.New("id conflicts with existing user")
 
+// CreateUser creates a User with the provided username and a generated ID.
 func (s *DBService) CreateUser(username string) (*User, error) {
 	seq, err := s.db.GetSequence([]byte(SequenceUserKey), 1)
 	defer seq.Release()
@@ -32,6 +35,8 @@ func (s *DBService) CreateUser(username string) (*User, error) {
 	return &User{username: username, ID: id}, nil
 }
 
+// GetUser returns the User by username.
+// If user doesn't exist, returns nil.
 func (s *DBService) GetUser(username string) (*User, error) {
 	user := &User{username: username}
 	err := s.db.View(func(txn *badger.Txn) error {
@@ -57,10 +62,12 @@ func (s *DBService) GetUser(username string) (*User, error) {
 	return user, nil
 }
 
+// SaveUser saves updates an existing user in the database.
 func (s *DBService) SaveUser(user *User) (err error) {
 	return s.saveUser(user, false)
 }
 
+// SaveNewUser saves saves a new user into the database.
 func (s *DBService) SaveNewUser(user *User) (err error) {
 	return s.saveUser(user, true)
 }
@@ -98,6 +105,7 @@ func (s *DBService) saveUser(user *User, newUser bool) (err error) {
 	})
 }
 
+// SetPassword sets a new password for user. The password is hashed and salted with bcrypt.
 func (user *User) SetPassword(newPassword string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
@@ -107,6 +115,8 @@ func (user *User) SetPassword(newPassword string) error {
 	return nil
 }
 
+// SetUsername sets a new username for user.
+// If newUsername is already in use, returns an error.
 func (s *DBService) SetUsername(user *User, newUsername string) error {
 	newUsername = strings.TrimSpace(newUsername)
 	if newUsername == "" {
@@ -141,6 +151,7 @@ func (s *DBService) SetUsername(user *User, newUsername string) error {
 	return err
 }
 
+// ValidatePassword checks if password matches the user's password.
 func (user *User) ValidatePassword(password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 }

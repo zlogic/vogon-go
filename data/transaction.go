@@ -14,10 +14,13 @@ import (
 )
 
 const (
+	// TransactionTypeExpenseIncome is an Expense/Income transaction (totals do not have to be equal).
 	TransactionTypeExpenseIncome = iota
-	TransactionTypeTransfer      = iota
+	// TransactionTypeTransfer is a Transfer transaction (totals for each currency should be zero).
+	TransactionTypeTransfer = iota
 )
 
+// Transaction saves details for one expense item.
 type Transaction struct {
 	ID          uint64
 	Description string
@@ -27,11 +30,13 @@ type Transaction struct {
 	Components  []TransactionComponent
 }
 
+// TransactionComponent contains details for a part of a Transaction.
 type TransactionComponent struct {
 	Amount    int64
 	AccountID uint64
 }
 
+// TransactionFilterOptions specifies filter parameters for Transactions.
 type TransactionFilterOptions struct {
 	FilterDescription    string
 	FilterFromDate       string
@@ -42,20 +47,24 @@ type TransactionFilterOptions struct {
 	ExcludeTransfer      bool
 }
 
+// GetTransactionOptions specifies paging and filtering options for retrieving transactions.
 type GetTransactionOptions struct {
 	Offset uint64
 	Limit  uint64
 	TransactionFilterOptions
 }
 
+// GetAllTransactionsOptions is a GetTransactionOptions which returns all transactions in one page.
 var GetAllTransactionsOptions = GetTransactionOptions{Offset: 0, Limit: ^uint64(0)}
 
+// IteratorDoNotPrefetchOptions returns Badger iterator options with PrefetchValues = false.
 func IteratorDoNotPrefetchOptions() badger.IteratorOptions {
 	options := badger.DefaultIteratorOptions
 	options.PrefetchValues = false
 	return options
 }
 
+// IteratorIndexOptions returns optimal Badger iterator options for use when iterating through an index.
 func IteratorIndexOptions() badger.IteratorOptions {
 	options := badger.DefaultIteratorOptions
 	options.PrefetchValues = false
@@ -63,6 +72,7 @@ func IteratorIndexOptions() badger.IteratorOptions {
 	return options
 }
 
+// Encode serializes a Transaction.
 func (transaction *Transaction) Encode() ([]byte, error) {
 	var value bytes.Buffer
 	if err := gob.NewEncoder(&value).Encode(transaction); err != nil {
@@ -71,9 +81,11 @@ func (transaction *Transaction) Encode() ([]byte, error) {
 	return value.Bytes(), nil
 }
 
+// DateFormat is the format used to serialize the Transaction Date.
 const DateFormat = "2006-01-02"
 const inputDateFormat = "2006-1-2"
 
+// Normalize reformats the date to a common format and sorts/deduplicates transaction tags.
 func (transaction *Transaction) Normalize() error {
 	date, err := time.Parse(inputDateFormat, transaction.Date)
 	if err != nil {
@@ -109,9 +121,8 @@ func sortTransactionsAsc(transactions []*Transaction) {
 	sort.Slice(transactions, func(i, j int) bool {
 		if transactions[i].Date != transactions[j].Date {
 			return transactions[i].Date < transactions[j].Date
-		} else {
-			return transactions[i].ID < transactions[j].ID
 		}
+		return transactions[i].ID < transactions[j].ID
 	})
 }
 
@@ -135,6 +146,8 @@ func (s *DBService) createTransaction(user *User, transaction *Transaction) func
 		return txn.Set(key, value)
 	}
 }
+
+// CreateTransaction saves a new Transaction into the database.
 func (s *DBService) CreateTransaction(user *User, transaction *Transaction) error {
 	seq, err := s.db.GetSequence([]byte(user.CreateSequenceTransactionKey()), 1)
 	defer seq.Release()
@@ -157,6 +170,7 @@ func (s *DBService) CreateTransaction(user *User, transaction *Transaction) erro
 	})
 }
 
+// UpdateTransaction updates an existing Transaction in the database.
 func (s *DBService) UpdateTransaction(user *User, transaction *Transaction) error {
 	return s.db.Update(func(txn *badger.Txn) error {
 		key := user.CreateTransactionKey(transaction)
@@ -227,6 +241,7 @@ func (s *DBService) updateAccountsBalance(user *User, previousComponents *[]Tran
 	}
 }
 
+// IsEmpty returns if options do not apply any filtering (all transactions match this filter).
 func (options *TransactionFilterOptions) IsEmpty() bool {
 	return options.FilterDescription == "" &&
 		options.FilterFromDate == "" &&
@@ -237,6 +252,7 @@ func (options *TransactionFilterOptions) IsEmpty() bool {
 		options.ExcludeTransfer == false
 }
 
+// Matches returns true if transaction is accepted by the filter.
 func (options *TransactionFilterOptions) Matches(transaction *Transaction) bool {
 	containsTag := func(searchIn []string, searchFor []string) bool {
 		for _, a := range searchIn {
@@ -346,6 +362,8 @@ func (s *DBService) getTransactions(user *User, options GetTransactionOptions) f
 	}
 }
 
+// GetTransaction returns a Transaction by its ID.
+// If the Transaction doesn't exist, it returns an error.
 func (s *DBService) GetTransaction(user *User, transactionID uint64) (*Transaction, error) {
 	var transaction *Transaction
 
@@ -360,6 +378,8 @@ func (s *DBService) GetTransaction(user *User, transactionID uint64) (*Transacti
 	return transaction, nil
 }
 
+// GetTransactions returns transactions for user matching the filter and paging options.
+// Returns an empty list if no transactions match the options.
 func (s *DBService) GetTransactions(user *User, options GetTransactionOptions) ([]*Transaction, error) {
 	var transactions []*Transaction
 
@@ -374,6 +394,7 @@ func (s *DBService) GetTransactions(user *User, options GetTransactionOptions) (
 	return transactions, nil
 }
 
+// CountTransactions returns the number of transactions matching the filter options.
 func (s *DBService) CountTransactions(user *User, options TransactionFilterOptions) (uint64, error) {
 	var count uint64
 
@@ -410,6 +431,9 @@ func (s *DBService) CountTransactions(user *User, options TransactionFilterOptio
 	return count, nil
 }
 
+// DeleteTransaction deletes a Transaction and its sort index key by its ID.
+// Deleting a transaction also updates the affected Account balance.
+// If transaction doesn't exist, returns an error.
 func (s *DBService) DeleteTransaction(user *User, transactionID uint64) error {
 	key := user.CreateTransactionKeyFromID(transactionID)
 	return s.db.Update(func(txn *badger.Txn) error {

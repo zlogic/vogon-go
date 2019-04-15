@@ -8,6 +8,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// DefaultOptions returns default options for the database, customized based on environment variables.
 func DefaultOptions() badger.Options {
 	opts := badger.DefaultOptions
 	dbPath, ok := os.LookupEnv("DATABASE_DIR")
@@ -21,10 +22,12 @@ func DefaultOptions() badger.Options {
 	return opts
 }
 
+// DBService provides services for reading and writing structs in the database.
 type DBService struct {
 	db *badger.DB
 }
 
+// Open opens the database with options and returns a DBService instance.
 func Open(options badger.Options) (*DBService, error) {
 	log.WithField("dir", options.Dir).Info("Opening database")
 	db, err := badger.Open(options)
@@ -34,11 +37,7 @@ func Open(options badger.Options) (*DBService, error) {
 	return &DBService{db: db}, nil
 }
 
-func (service *DBService) GC() {
-	err := service.db.RunValueLogGC(0.5)
-	log.WithField("result", err).Info("Cleaned up database")
-}
-
+// Close closes the underlying database.
 func (service *DBService) Close() {
 	log.Info("Closing database")
 	if service != nil && service.db != nil {

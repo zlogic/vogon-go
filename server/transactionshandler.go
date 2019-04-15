@@ -63,6 +63,7 @@ func parseFilterForm(r *http.Request) (data.TransactionFilterOptions, error) {
 	}, nil
 }
 
+// TransactionsCountHandler returns the number of transactions for an authenticated user.
 func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
@@ -93,6 +94,7 @@ func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.R
 	}
 }
 
+// TransactionsHandler returns a filtered, pages list of transactions for an authenticated user.
 func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
@@ -147,6 +149,7 @@ func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// TransactionHandler gets, updates or deletes a Transaction.
 func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)

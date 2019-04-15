@@ -11,6 +11,7 @@ import (
 	"github.com/zlogic/vogon-go/data"
 )
 
+// AccountsHandler returns all Accounts for an authenticated user.
 func AccountsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
@@ -30,6 +31,7 @@ func AccountsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// AccountHandler gets, updates or deletes an Account.
 func AccountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)

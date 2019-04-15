@@ -24,22 +24,23 @@ func registrationAllowed() bool {
 	return allowRegistration
 }
 
+// CreateRouter returns a router and all handlers.
 func CreateRouter(s *Services) (*mux.Router, error) {
 	registrationAllowed := registrationAllowed()
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", RootHandler(s)).Methods("GET")
-	r.HandleFunc("/login", HtmlLoginHandler(s)).Methods("GET")
+	r.HandleFunc("/login", HTMLLoginHandler(s)).Methods("GET")
 	if registrationAllowed {
-		r.HandleFunc("/register", HtmlRegisterHandler(s)).Methods("GET")
+		r.HandleFunc("/register", HTMLRegisterHandler(s)).Methods("GET")
 	}
 	r.HandleFunc("/logout", LogoutHandler(s)).Methods("GET")
-	r.HandleFunc("/transactions", HtmlUserPageHandler(s)).Methods("GET").Name("transactions")
-	r.HandleFunc("/transactioneditor", HtmlUserPageHandler(s)).Methods("GET").Name("transactioneditor")
-	r.HandleFunc("/report", HtmlUserPageHandler(s)).Methods("POST").Name("report")
-	r.HandleFunc("/accounts", HtmlUserPageHandler(s)).Methods("GET").Name("accounts")
-	r.HandleFunc("/accounteditor", HtmlUserPageHandler(s)).Methods("GET").Name("accounteditor")
-	r.HandleFunc("/settings", HtmlUserPageHandler(s)).Methods("GET").Name("settings")
+	r.HandleFunc("/transactions", HTMLUserPageHandler(s)).Methods("GET").Name("transactions")
+	r.HandleFunc("/transactioneditor", HTMLUserPageHandler(s)).Methods("GET").Name("transactioneditor")
+	r.HandleFunc("/report", HTMLUserPageHandler(s)).Methods("POST").Name("report")
+	r.HandleFunc("/accounts", HTMLUserPageHandler(s)).Methods("GET").Name("accounts")
+	r.HandleFunc("/accounteditor", HTMLUserPageHandler(s)).Methods("GET").Name("accounteditor")
+	r.HandleFunc("/settings", HTMLUserPageHandler(s)).Methods("GET").Name("settings")
 	r.HandleFunc("/favicon.ico", FaviconHandler)
 	fs := http.FileServer(staticResourceFileSystem{http.Dir("static")})
 	r.PathPrefix("/static/").Handler(http.StripPrefix(strings.TrimRight("/static", "/"), fs))

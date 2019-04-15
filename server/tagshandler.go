@@ -6,6 +6,7 @@ import (
 	"sort"
 )
 
+// TagsHandler returns a sorted, deduplicated list of tags for an authenticated user.
 func TagsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)

@@ -8,11 +8,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+// BackupData is the toplevel structure exported in a backup.
 type BackupData struct {
 	Accounts     []*Account
 	Transactions []*Transaction
 }
 
+// Backup returns a serialized copy of all data for user.
 func (s *DBService) Backup(user *User) (string, error) {
 	data := BackupData{}
 
@@ -65,6 +67,7 @@ func deletePrefix(prefix []byte) func(txn *badger.Txn) error {
 	}
 }
 
+// Restore replaces all data for user with the provided serialized backup.
 func (s *DBService) Restore(user *User, value string) error {
 	data := BackupData{}
 	if err := json.Unmarshal([]byte(value), &data); err != nil {

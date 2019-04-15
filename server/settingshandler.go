@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SettingsHandler gets or updates settings for an authenticated user.
 func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
@@ -111,6 +112,7 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// BackupHandler returns a serialized backup of all data for an authenticated user.
 func BackupHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)

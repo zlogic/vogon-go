@@ -4,6 +4,7 @@ import (
 	"github.com/zlogic/vogon-go/data"
 )
 
+// DB provides functions to read and write items in the database.
 type DB interface {
 	GetOrCreateConfigVariable(varName string, generator func() (string, error)) (string, error)
 	CreateUser(username string) (*data.User, error)
@@ -31,11 +32,13 @@ type DB interface {
 	Restore(user *data.User, value string) error
 }
 
+// Services keeps references to all services needed by handlers.
 type Services struct {
 	db            DB
 	cookieHandler *CookieHandler
 }
 
+// CreateServices creates a Services instance with db and default implementations of other services.
 func CreateServices(db *data.DBService) (*Services, error) {
 	cookieHandler, err := NewCookieHandler(db)
 	if err != nil {
