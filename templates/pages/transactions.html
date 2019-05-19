@@ -167,7 +167,7 @@ $(document).ready(function() {
         currencyAmounts[currency] = currencyTotal;
       }
       var appendAccount = function (accountID){
-        accountsColumn.append($('<div></div>').text((accounts[component.AccountID] || {Name:""}).Name));
+        accountsColumn.append($('<div></div>').text((accounts[accountID] || {Name:""}).Name));
       }
       var appendCurrencyAmounts = function (){
         var prefix = isTransfer(transaction) ? "&sum;" : "";
@@ -195,9 +195,9 @@ $(document).ready(function() {
         
         appendCurrencyAmounts();
       } else if (isTransfer(transaction)) {
-        incomeAccounts.forEach(appendAccount);
-        accountsColumn.append($('<div></div>').html('&darr;'));
         expenseAccounts.forEach(appendAccount);
+        accountsColumn.append($('<div></div>').html('&darr;'));
+        incomeAccounts.forEach(appendAccount);
         
         appendCurrencyAmounts("&sum; ");
       }

@@ -19,6 +19,9 @@ func DefaultOptions() badger.Options {
 	opts.ValueDir = dbPath
 	// Optimize options for low memory and disk usage
 	opts.MaxTableSize = 1 << 24
+	// Allow GC of value log
+	opts.ValueLogFileSize = 4 << 20
+	opts.ValueLogMaxEntries = 10000
 	return opts
 }
 
@@ -37,10 +40,23 @@ func Open(options badger.Options) (*DBService, error) {
 	return &DBService{db: db}, nil
 }
 
+// GC deletes expired items and attempts to perform a database cleanup.
+func (service *DBService) GC() {
+	for {
+		if err := service.db.RunValueLogGC(0.5); err != nil {
+			log.WithField("result", err).Info("Cleanup completed")
+			break
+		}
+		log.Info("Cleanup reclaimed space")
+		break
+	}
+}
+
 // Close closes the underlying database.
 func (service *DBService) Close() {
 	log.Info("Closing database")
 	if service != nil && service.db != nil {
+		service.GC()
 		err := service.db.Close()
 		if err != nil {
 			log.Fatal(err)
