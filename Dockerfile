@@ -14,16 +14,14 @@ RUN apk add --no-cache --update build-base git
 RUN go test ./...
 
 # Build app
-RUN go build -ldflags="-s -w" && \
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" && \
   mkdir /usr/src/vogon/dist && \
   cp -r vogon-go static templates /usr/src/vogon/dist
 
 # Copy into a fresh image
-FROM alpine:3.9
+FROM scratch
 
 COPY --from=builder /usr/src/vogon/dist /usr/local/vogon
-
-RUN apk --no-cache add ca-certificates tzdata
 
 WORKDIR /usr/local/vogon
 
