@@ -148,6 +148,11 @@ $(document).ready(function() {
       $.getJSON("api/account/" + accountID).done(function(data) {
         account = data;
         updateForm();
+      }).fail(function() {
+        var alertDiv = $('<div class="alert alert-danger" role="alert">Failed to fetch account details.</div>');
+        $("#accountForm").empty().append(alertDiv);
+        alertDiv.hide();
+        alertDiv.slideDown();
       });
     } else if (action === "new") {
       account = {Name: "", Currency: "", IncludeInTotal: true, ShowInList: true};

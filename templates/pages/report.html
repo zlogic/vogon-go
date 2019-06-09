@@ -165,6 +165,11 @@ $(document).ready(function() {
     addProgress();
     $.post("api/report", params, null, "json").done(function(data) {
       updateReport(data);
+    }).fail(function() {
+      var alertDiv = $('<div class="alert alert-danger" role="alert">Failed to generate report.</div>');
+      $("#reportTarget").empty().append(alertDiv);
+      alertDiv.hide();
+      alertDiv.slideDown();
     });
   }
   loadData();

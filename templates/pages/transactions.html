@@ -1,6 +1,7 @@
 {{ define "content" }}
 <h2>Transactions</h2>
-<div class="pb-3">
+<div id="loadAlerts"></div>
+<div id="transactionControls" class="pb-3">
   <button class="btn btn-outline-primary" data-toggle="collapse" type="button" id="filterButton" data-target="#transactionsFilterComponents" aria-expanded="false" aria-controls="transactionsFilterComponents" disabled>
     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
     Advanced
@@ -95,6 +96,9 @@ $(document).ready(function() {
   var paginationTarget = $("#pagination");
   var transactionsLoadingShade = $(".transactions-loading-shade");
 
+  var loadAlerts = $('#loadAlerts')
+  var loadFailed = false;
+
   var setPage = null;
 
   var currentPage = null;
@@ -116,6 +120,17 @@ $(document).ready(function() {
     if (table.prop("hidden"))
       table.hide().prop("hidden", false).slideDown();
   }
+  
+  var loadFailedAlert = function(msg) {
+    $("#transactionControls").empty();
+    $("#transactionsFilterComponents").empty();
+    $(".transactions-table-container").empty()
+    var alertDiv = $('<div class="alert alert-danger" role="alert"></div>').text(msg);
+    loadAlerts.append(alertDiv);
+    alertDiv.hide();
+    alertDiv.slideDown();
+  }
+
   var postHiddenForm = function(destination, values) {
     var hiddenForm = $('<form id="hiddenForm" method="post" action="' + destination + '" hidden></form>');
     for (var name in values)
@@ -249,6 +264,8 @@ $(document).ready(function() {
         var transactions = data;
         transactionsLoadingShade.prop("hidden", true);
         updateTransactions(transactions);
+      }).fail(function() {
+        loadFailedAlert("Failed to load transactions page.")
       });
     }
 
@@ -282,6 +299,8 @@ $(document).ready(function() {
     return $.post("api/transactions/getcount", filterParams).done(function(data) {
       count = data;
       updatePagination();
+    }).fail(function() {
+      loadFailedAlert("Failed to load transactions count.")
     });
   }
 
@@ -311,6 +330,8 @@ $(document).ready(function() {
         var tagItem = $('<option selected></option>').text(tag).prop("value", tag);
         tagsSelectElement.append(tagItem);
       }
+    }).fail(function() {
+      loadFailedAlert("Failed to load tags.")
     });
   });
   $('#transactionsFilterComponents').on('hide.bs.collapse', function(){
@@ -370,11 +391,15 @@ $(document).ready(function() {
     $.post("api/transactions/getcount").done(function(data) {
       count = data;
       updateIfReady();
+    }).fail(function() {
+      loadFailedAlert("Failed to load transactions count.")
     });
     $.getJSON("api/accounts").done(function(data) {
       accounts = {};
       data.forEach(function (account) { accounts[account.ID] = account; });
       updateIfReady();
+    }).fail(function() {
+      loadFailedAlert("Failed to load accounts.")
     });
   }
   loadTransactions();

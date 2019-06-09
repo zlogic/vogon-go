@@ -96,6 +96,12 @@ $(document).ready(function() {
     $.getJSON("api/settings").done(function(settings) {
       lockConfiguration(false);
       updateFormValues(settings);
+    }).fail(function() {
+      var alertDiv = $('<div class="alert alert-danger" role="alert">Failed to fetch current settings.</div>');
+      var form = $("#configurationForm");
+      form.empty().append(alertDiv);
+      alertDiv.hide();
+      alertDiv.slideDown();
     });
   }
   loadItems();

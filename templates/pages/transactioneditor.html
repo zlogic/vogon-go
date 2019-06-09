@@ -1,5 +1,6 @@
 {{ define "content" }}
 <h2>Trasaction</h2>
+<div id="loadAlerts"></div>
 <form id="transactionForm" accept-charset="utf-8" autocomplete="off">
   <div class="form-row">
     <div class="form-group col-md-9">
@@ -74,6 +75,9 @@ $(document).ready(function() {
   var accounts = null;
   var componentsCounter = 0;
   var autocompleteTags = null;
+
+  var loadAlerts = $('#loadAlerts')
+  var loadFailed = false;
 
   var description = $('input[id="editDescription"]');
   var date = $('input[id="editDate"]');
@@ -157,6 +161,14 @@ $(document).ready(function() {
       var component = transaction.Components[i];
       addComponent(component);
     }
+  }
+
+  var loadFailedAlert = function(msg) {
+    $("#transactionForm").empty();
+    var alertDiv = $('<div class="alert alert-danger" role="alert"></div>').text(msg);
+    loadAlerts.append(alertDiv);
+    alertDiv.hide();
+    alertDiv.slideDown();
   }
 
   //Add component button
@@ -245,16 +257,22 @@ $(document).ready(function() {
           transaction.Date = currentDate;
         }
         updateIfReady();
+      }).fail(function() {
+        loadFailedAlert("Failed to load transaction.");
       });
     }
     $.getJSON("api/accounts").done(function(data) {
       accounts = {};
       data.forEach(function (account) { accounts[account.ID] = account; });
       updateIfReady();
+    }).fail(function() {
+      loadFailedAlert("Failed to load accounts.");
     });
     $.getJSON("api/tags").done(function(data) {
       autocompleteTags = data;
       updateIfReady();
+    }).fail(function() {
+      loadFailedAlert("Failed to load tags.");
     });
   }
   loadTransaction();

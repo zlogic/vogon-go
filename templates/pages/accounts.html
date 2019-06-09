@@ -85,6 +85,11 @@ $(document).ready(function() {
       createTotalAccounts();
       updateAccounts();
       updateVisibility();
+    }).fail(function() {
+      var alertDiv = $('<div class="alert alert-danger" role="alert">Failed to fetch accounts.</div>');
+      $(".table-responsive").empty().append(alertDiv);
+      alertDiv.hide();
+      alertDiv.slideDown();
     });
   }
   loadAccounts();
