@@ -6,12 +6,15 @@ import (
 	"os"
 	"path"
 
+	"github.com/dgraph-io/badger"
 	"github.com/gorilla/securecookie"
 	"github.com/stretchr/testify/mock"
 	"github.com/zlogic/vogon-go/data"
 )
 
 var testUser = data.User{ID: 11}
+
+var testExistingUsers = make(map[string]data.User)
 
 type DBMock struct {
 	mock.Mock
@@ -20,16 +23,6 @@ type DBMock struct {
 func (m *DBMock) GetOrCreateConfigVariable(varName string, generator func() (string, error)) (string, error) {
 	args := m.Called(varName, generator)
 	return args.Get(0).(string), args.Error(1)
-}
-
-func (m *DBMock) CreateUser(username string) (*data.User, error) {
-	args := m.Called(username)
-	user := args.Get(0)
-	var returnUser *data.User
-	if user != nil {
-		returnUser = user.(*data.User)
-	}
-	return returnUser, args.Error(1)
 }
 
 func (m *DBMock) GetUser(username string) (*data.User, error) {
@@ -44,16 +37,6 @@ func (m *DBMock) GetUser(username string) (*data.User, error) {
 
 func (m *DBMock) SaveUser(user *data.User) error {
 	args := m.Called(user)
-	return args.Error(0)
-}
-
-func (m *DBMock) SaveNewUser(user *data.User) error {
-	args := m.Called(user)
-	return args.Error(0)
-}
-
-func (m *DBMock) SetUsername(user *data.User, newUsername string) error {
-	args := m.Called(user, newUsername)
 	return args.Error(0)
 }
 
@@ -183,4 +166,39 @@ func prepareTestFile(dir, fileName string, data []byte) error {
 		return err
 	}
 	return ioutil.WriteFile(path.Join(dir, fileName), data, 0644)
+}
+
+func prepareExistingUser(username string) *data.User {
+	existingUser, ok := testExistingUsers[username]
+	if ok {
+		user := existingUser
+		return &user
+	}
+
+	tempDir, recover, err := prepareTempDir()
+	defer func() {
+		if recover != nil {
+			recover()
+		}
+	}()
+
+	var opts = badger.DefaultOptions
+	opts.ValueLogFileSize = 1 << 20
+	opts.SyncWrites = false
+	opts.Dir = tempDir
+	opts.ValueDir = tempDir
+
+	dbService, err := data.Open(opts)
+	if err != nil {
+		return nil
+	}
+
+	user := data.NewUser(username)
+	err = dbService.SaveUser(user)
+	dbService.Close()
+	if err != nil {
+		return nil
+	}
+	testExistingUsers[username] = *user
+	return user
 }

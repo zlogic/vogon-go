@@ -7,12 +7,9 @@ import (
 // DB provides functions to read and write items in the database.
 type DB interface {
 	GetOrCreateConfigVariable(varName string, generator func() (string, error)) (string, error)
-	CreateUser(username string) (*data.User, error)
 
 	GetUser(username string) (*data.User, error)
 	SaveUser(*data.User) error
-	SaveNewUser(*data.User) error
-	SetUsername(user *data.User, newUsername string) error
 
 	GetAccounts(*data.User) ([]*data.Account, error)
 	GetTransactions(*data.User, data.GetTransactionOptions) ([]*data.Transaction, error)

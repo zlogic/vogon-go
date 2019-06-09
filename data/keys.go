@@ -28,9 +28,14 @@ func decodePart(part string) (string, error) {
 // UserKeyPrefix is the key prefix for User entries.
 const UserKeyPrefix = "user" + separator
 
+// CreateUserKey creates a key for user.
+func CreateUserKey(username string) []byte {
+	return []byte(UserKeyPrefix + encodePart(username))
+}
+
 // CreateKey creates a key for user.
 func (user *User) CreateKey() []byte {
-	return []byte(UserKeyPrefix + user.username)
+	return CreateUserKey(user.username)
 }
 
 // DecodeUserKey decodes the username from a user key.
@@ -43,7 +48,11 @@ func DecodeUserKey(key []byte) (*string, error) {
 	if len(parts) != 2 {
 		return nil, errors.Errorf("Invalid format of user key: %v", keyString)
 	}
-	return &parts[1], nil
+	username, err := decodePart(parts[1])
+	if err != nil {
+		return nil, errors.Errorf("Failed to decode username: %v because of %v", keyString, err)
+	}
+	return &username, nil
 }
 
 // AccountKeyPrefix is the key prefix for Account.

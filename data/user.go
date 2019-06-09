@@ -8,31 +8,24 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // User keeps configuration for a user and information used to link a user with their data.
 type User struct {
-	username string
-	ID       uint64
-	Password string
+	username    string
+	newUsername string
+	ID          uint64
+	Password    string
 }
 
 // ErrUserAlreadyExists is an error when a user cannot be renamed because their username is already in use.
 var ErrUserAlreadyExists = errors.New("id conflicts with existing user")
 
-// CreateUser creates a User with the provided username and a generated ID.
-func (s *DBService) CreateUser(username string) (*User, error) {
-	seq, err := s.db.GetSequence([]byte(SequenceUserKey), 1)
-	defer seq.Release()
-	if err != nil {
-		return nil, errors.Wrap(err, "Cannot create user sequence object")
-	}
-	id, err := seq.Next()
-	if err != nil {
-		return nil, errors.Wrap(err, "Cannot generate id for user")
-	}
-	return &User{username: username, ID: id}, nil
+// NewUser creates a User with the provided username and a generated ID.
+func NewUser(username string) *User {
+	return &User{newUsername: username}
 }
 
 // GetUser returns the User by username.
@@ -63,19 +56,27 @@ func (s *DBService) GetUser(username string) (*User, error) {
 }
 
 // SaveUser saves updates an existing user in the database.
-func (s *DBService) SaveUser(user *User) (err error) {
-	return s.saveUser(user, false)
-}
+func (s *DBService) SaveUser(user *User) error {
+	if user.newUsername == "" {
+		user.newUsername = user.username
+	}
+	key := CreateUserKey(user.newUsername)
 
-// SaveNewUser saves saves a new user into the database.
-func (s *DBService) SaveNewUser(user *User) (err error) {
-	return s.saveUser(user, true)
-}
+	newUser := user.username == ""
+	if newUser {
+		seq, err := s.db.GetSequence([]byte(SequenceUserKey), 1)
+		defer seq.Release()
+		if err != nil {
+			return errors.Wrap(err, "Cannot create user sequence object")
+		}
+		id, err := seq.Next()
+		if err != nil {
+			return errors.Wrap(err, "Cannot generate id for user")
+		}
+		user.ID = id
+	}
 
-func (s *DBService) saveUser(user *User, newUser bool) (err error) {
-	key := user.CreateKey()
-
-	return s.db.Update(func(txn *badger.Txn) error {
+	err := s.db.Update(func(txn *badger.Txn) error {
 		// Check for username/id conflicts
 		_, err := txn.Get(key)
 		existingItem, err := txn.Get(key)
@@ -84,25 +85,60 @@ func (s *DBService) saveUser(user *User, newUser bool) (err error) {
 			return ErrUserAlreadyExists
 		}
 
+		existingUser := &User{}
 		if existingItem != nil || (err != nil && err != badger.ErrKeyNotFound) {
 			value, err := existingItem.Value()
 			if err != nil {
 				return errors.Wrap(err, "Cannot get existing value")
 			}
-			existingUser := &User{}
 			if err := gob.NewDecoder(bytes.NewBuffer(value)).Decode(existingUser); err != nil {
 				return errors.Wrap(err, "Cannot unmarshal user")
 			}
+			if user.newUsername != user.username {
+				log.WithField("key", key).Error("New username already in use")
+				return ErrUserAlreadyExists
+			}
 			if existingUser.ID != user.ID {
-				return fmt.Errorf("ID conflict with existing user %v", existingUser)
+				log.WithField("key", key).WithField("existingID", existingUser.ID).WithField("ID", user.ID).Error("ID conflict with existing user")
+				return ErrUserAlreadyExists
 			}
 		}
+
+		// In case of rename, delete old username key
+		if !newUser && user.newUsername != user.username {
+			oldUserKey := CreateUserKey(user.username)
+			if err := txn.Delete(oldUserKey); err != nil {
+				return err
+			}
+		}
+
 		var value bytes.Buffer
 		if err := gob.NewEncoder(&value).Encode(user); err != nil {
 			return errors.Wrap(err, "Cannot marshal user")
 		}
 		return txn.Set(key, value.Bytes())
 	})
+
+	if err == nil {
+		user.username = user.newUsername
+		user.newUsername = ""
+	}
+	return err
+}
+
+// GetUsername returns the user's current username.
+func (user *User) GetUsername() string {
+	return user.username
+}
+
+// SetUsername sets a new username for User which will be updated when SaveUser is called.
+func (user *User) SetUsername(newUsername string) error {
+	newUsername = strings.TrimSpace(newUsername)
+	if newUsername == "" {
+		return fmt.Errorf("Cannot set username to an empty string")
+	}
+	user.newUsername = newUsername
+	return nil
 }
 
 // SetPassword sets a new password for user. The password is hashed and salted with bcrypt.
@@ -113,42 +149,6 @@ func (user *User) SetPassword(newPassword string) error {
 	}
 	user.Password = string(hash)
 	return nil
-}
-
-// SetUsername sets a new username for user.
-// If newUsername is already in use, returns an error.
-func (s *DBService) SetUsername(user *User, newUsername string) error {
-	newUsername = strings.TrimSpace(newUsername)
-	if newUsername == "" {
-		return fmt.Errorf("Cannot set username to an empty string")
-	}
-	newUser := *user
-	newUser.username = newUsername
-	err := s.db.Update(func(txn *badger.Txn) error {
-		oldUserKey := user.CreateKey()
-		item, err := txn.Get(oldUserKey)
-		if err != nil {
-			return err
-		}
-		value, err := item.Value()
-		if err != nil {
-			return err
-		}
-		newUserKey := newUser.CreateKey()
-		existingUser, err := txn.Get(newUserKey)
-		if existingUser != nil || (err != nil && err != badger.ErrKeyNotFound) {
-			return fmt.Errorf("New username %v is already in use", newUsername)
-		}
-		err = txn.Set(newUserKey, value)
-		if err != nil {
-			return err
-		}
-		return txn.Delete(oldUserKey)
-	})
-	if err == nil {
-		user.username = newUser.username
-	}
-	return err
 }
 
 // ValidatePassword checks if password matches the user's password.

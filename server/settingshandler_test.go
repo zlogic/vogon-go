@@ -91,9 +91,10 @@ func TestSaveSettingsNoChangesAuthorized(t *testing.T) {
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	user := testUser
+	user := prepareExistingUser("user01")
+	assert.NotNil(t, user)
 	user.SetPassword("pass")
-	dbMock.On("GetUser", "user01").Return(&user, nil).Twice()
+	dbMock.On("GetUser", "user01").Return(user, nil).Twice()
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
@@ -108,8 +109,7 @@ func TestSaveSettingsNoChangesAuthorized(t *testing.T) {
 	cookieHandler.SetCookieUsername(cookie, "user01")
 	req.AddCookie(cookie)
 
-	saveUser := user
-	dbMock.On("SaveUser", &saveUser).Return(nil).Once()
+	dbMock.On("SaveUser", user).Return(nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -127,9 +127,10 @@ func TestSaveSettingsChangePasswordAuthorized(t *testing.T) {
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	user := testUser
+	user := prepareExistingUser("user01")
+	assert.NotNil(t, user)
 	user.SetPassword("pass")
-	dbMock.On("GetUser", "user01").Return(&user, nil).Twice()
+	dbMock.On("GetUser", "user01").Return(user, nil).Twice()
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
@@ -184,7 +185,14 @@ func TestSaveSettingsChangeUsernameAuthorized(t *testing.T) {
 	req.AddCookie(cookie)
 
 	saveUser := user
-	dbMock.On("SetUsername", &saveUser, "user02").Return(nil).Once()
+	saveUser.SetUsername("user02")
+	getUpdatedUser := prepareExistingUser("user02")
+	assert.NotNil(t, getUpdatedUser)
+	dbMock.On("SaveUser", &saveUser).Return(nil).Once().
+		Run(func(args mock.Arguments) {
+			userArg := args.Get(0).(*data.User)
+			*userArg = *getUpdatedUser
+		})
 
 	dbMock.On("GetUser", "user02").Return(&saveUser, nil).Once()
 
@@ -222,7 +230,8 @@ func TestSaveSettingsChangeUsernameFailedAuthorized(t *testing.T) {
 	req.AddCookie(cookie)
 
 	saveUser := user
-	dbMock.On("SetUsername", &saveUser, "user02").Return(fmt.Errorf("Username already in use")).Once()
+	saveUser.SetUsername("user02")
+	dbMock.On("SaveUser", &saveUser).Return(fmt.Errorf("Username already in use")).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusInternalServerError, res.Code)
@@ -240,9 +249,10 @@ func TestSaveSettingsRestoreBackupAuthorized(t *testing.T) {
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	user := testUser
+	user := prepareExistingUser("user01")
+	assert.NotNil(t, user)
 	user.SetPassword("pass")
-	dbMock.On("GetUser", "user01").Return(&user, nil).Twice()
+	dbMock.On("GetUser", "user01").Return(user, nil).Twice()
 
 	body := new(bytes.Buffer)
 	writer := multipart.NewWriter(body)
@@ -261,8 +271,8 @@ func TestSaveSettingsRestoreBackupAuthorized(t *testing.T) {
 	req.AddCookie(cookie)
 
 	saveUser := user
-	dbMock.On("SaveUser", &saveUser).Return(nil).Once()
-	dbMock.On("Restore", &user, "json backup").Return(nil).Once()
+	dbMock.On("SaveUser", saveUser).Return(nil).Once()
+	dbMock.On("Restore", user, "json backup").Return(nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -270,6 +280,7 @@ func TestSaveSettingsRestoreBackupAuthorized(t *testing.T) {
 
 	dbMock.AssertExpectations(t)
 }
+
 func TestSaveSettingsUnauthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	cookieHandler, err := createTestCookieHandler()

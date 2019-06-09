@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/zlogic/vogon-go/data"
 )
 
@@ -100,11 +101,15 @@ func TestRegisterHandlerSuccessful(t *testing.T) {
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	user := &data.User{ID: 1}
-	user.SetPassword("pass")
-	dbMock.On("CreateUser", "user01").Return(user, nil).Once()
-
-	dbMock.On("SaveNewUser", user).Return(nil).Once()
+	saveUser := data.NewUser("user01")
+	saveUser.SetPassword("pass")
+	dbMock.On("SaveUser", mock.AnythingOfType("*data.User")).Return(nil).Once().Return(nil).
+		Run(func(args mock.Arguments) {
+			userArg := args.Get(0).(*data.User)
+			assert.NoError(t, userArg.ValidatePassword("pass"))
+			userArg.Password = saveUser.Password
+			assert.Equal(t, saveUser, userArg)
+		})
 
 	req, _ := http.NewRequest("POST", "/api/register", strings.NewReader("username=user01&password=pass"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -134,11 +139,7 @@ func TestRegisterHandlerUsernameAlreadyInUse(t *testing.T) {
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	user := &data.User{ID: 1}
-	user.SetPassword("pass")
-	dbMock.On("CreateUser", "user01").Return(user, nil).Once()
-
-	dbMock.On("SaveNewUser", user).Return(data.ErrUserAlreadyExists).Once()
+	dbMock.On("SaveUser", mock.AnythingOfType("*data.User")).Return(data.ErrUserAlreadyExists).Once()
 
 	req, _ := http.NewRequest("POST", "/api/register", strings.NewReader("username=user01&password=pass"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")

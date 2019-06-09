@@ -97,16 +97,12 @@ func RegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			rememberMe = false
 		}
 
-		user, err := s.db.CreateUser(username)
-		if err != nil {
-			handleError(w, r, err)
-			return
-		}
+		user := data.NewUser(username)
 		if err := user.SetPassword(password); err != nil {
 			handleError(w, r, err)
 			return
 		}
-		if err := s.db.SaveNewUser(user); err != nil {
+		if err := s.db.SaveUser(user); err != nil {
 			if err == data.ErrUserAlreadyExists {
 				http.Error(w, "Username is already in use", http.StatusInternalServerError)
 			} else {

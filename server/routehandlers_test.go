@@ -246,7 +246,7 @@ func TestHtmlTransactionsHandlerLoggedIn(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User { 0 }\nName transactions\nContent transactionspage", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  0 }\nName transactions\nContent transactionspage", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
 }
@@ -301,7 +301,7 @@ func TestHtmlTransactionEditorHandlerLoggedInEmptyValues(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User { 0 }\nName transactioneditor\nContent transactioneditor", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  0 }\nName transactioneditor\nContent transactioneditor", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
 }
@@ -341,7 +341,7 @@ func TestHtmlTransactionEditorHandlerLoggedInWithValues(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User { 0 }\nName transactioneditor\nContent transactioneditor 1 duplicate", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  0 }\nName transactioneditor\nContent transactioneditor 1 duplicate", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
 }
@@ -396,7 +396,7 @@ func TestHtmlReportHandlerLoggedIn(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User { 0 }\nName report\nContent report test 1,2", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  0 }\nName report\nContent report test 1,2", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
 }
@@ -451,7 +451,7 @@ func TestHtmlAccountsHandlerLoggedIn(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User { 0 }\nName accounts\nContent accountspage", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  0 }\nName accounts\nContent accountspage", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
 }
@@ -506,7 +506,7 @@ func TestHtmlSettingsHandlerLoggedIn(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User { 0 }\nName settings\nContent settingspage", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  0 }\nName settings\nContent settingspage", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
 }
