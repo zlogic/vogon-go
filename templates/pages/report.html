@@ -24,7 +24,7 @@ $(document).ready(function() {
   var balanceChartOptions = {
     responsive: true,
     tooltips: {
-      mode: 'index',
+      mode: 'nearest',
       intersect: false,
     },
     legend: {
@@ -32,18 +32,18 @@ $(document).ready(function() {
     },
     hover: {
       mode: 'nearest',
-      intersect: true
+      intersect: false
     },
     scales: {
       xAxes: [{
         type: 'time',
-        distribution: 'series',
+        distribution: 'linear',
         time: {
           unit: 'day',
           minUnit: 'day'
         },
         ticks: {
-          source: 'data',
+          source: 'auto',
           autoSkip: true
         }
       }],
@@ -59,7 +59,10 @@ $(document).ready(function() {
     responsive: true,
     tooltips: {
       mode: 'point',
-      intersect: false
+      intersect: false,
+      callbacks: {
+        title: function() {}
+      }
     },
     legend: {
       display: false,
@@ -102,7 +105,9 @@ $(document).ready(function() {
         datasets: [{
           radius: 0,
           data: data,
-          backgroundColor: colors[0]
+          backgroundColor: colors[0],
+          borderColor: colors[0],
+          steppedLine: 'before'
         }]
       }
       var balanceChart = new Chart(ctx, {

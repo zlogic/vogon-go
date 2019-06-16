@@ -119,7 +119,7 @@ $(document).ready(function() {
   var addComponent = function(component) {
     var index = componentsCounter++;
     var componentsTarget = $("#components");
-    var componentRow = $('<div class="form-row align-items-end"></div>');
+    var componentRow = $('<div class="row align-items-end"></div>');
     var accountSelect = $('<select class="form-control custom-select" id="account' + index + '" required><option></option></select>');
     for (var i in accounts) {
       var account = accounts[i];
@@ -129,18 +129,21 @@ $(document).ready(function() {
         option.prop("selected", true);
       accountSelect.append(option);
     }
-    componentRow.append($('<div class="form-group col-md-5"></div>')
+    var componentRowFormColumn = $('<div class="col-md-10 col-9"></div>').appendTo(componentRow);
+    var componentFormRow = $('<div class="form-row align-items-end"></div>').appendTo(componentRowFormColumn);
+    componentFormRow.append($('<div class="form-group col-md-6"></div>')
       .append('<label id="account' + index + '">Account</label>')
       .append(accountSelect)
     );
     var amountInput = $('<input type="number" class="form-control text-right" id="amount' + index + '" step="0.01" required></input>');
     amountInput.val((component.Amount/100).toFixed(2));
-    componentRow.append($('<div class="form-group col-md-5"></div>')
+    componentFormRow.append($('<div class="form-group col-md-6"></div>')
       .append('<label for="amount' + index + '">Amount</label>')
       .append($('<div class="input-group"></div>').append(amountInput).append('<div class="input-group-append"><div class="input-group-text"></div></div>'))
     );
-    componentRow.append($('<div class="form-group col-md-2"></div>')
-      .append('<button type="button" class="btn btn-outline-danger" data-delete="component">Delete</a>')
+    componentRow.append($('<div class="col-md-2 col-3"></div>')
+      .append($('<div class="form-group"></div>')
+        .append('<button type="button" class="btn btn-outline-danger" data-delete="component">Delete</a>'))
     );
     componentsTarget.append(componentRow);
     updateCurrencyLabel(componentRow);
