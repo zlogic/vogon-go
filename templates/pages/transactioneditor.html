@@ -184,7 +184,7 @@ $(document).ready(function() {
   $(document).on('click', 'button[data-delete="component"]', function(e) {
     e.preventDefault();
     var deleteButton = jQuery(this);
-    deleteButton.parent().parent().slideUp(function(){deleteButton.parent().parent().remove()});
+    deleteButton.parent().parent().parent().slideUp(function(){deleteButton.parent().parent().parent().remove()});
   });
 
   //Account changed
