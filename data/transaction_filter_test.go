@@ -8,9 +8,8 @@ import (
 )
 
 func TestGetTransactionsFilterDescription(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Date: "2019-03-20",
@@ -38,9 +37,8 @@ func TestGetTransactionsFilterDescription(t *testing.T) {
 }
 
 func TestGetTransactionsFilterDate(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",
@@ -84,9 +82,8 @@ func TestGetTransactionsFilterDate(t *testing.T) {
 }
 
 func TestGetTransactionsFilterTags(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",
@@ -130,9 +127,8 @@ func TestGetTransactionsFilterTags(t *testing.T) {
 }
 
 func TestGetTransactionsFilterAccounts(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",
@@ -179,9 +175,8 @@ func TestGetTransactionsFilterAccounts(t *testing.T) {
 }
 
 func TestGetTransactionsFilterType(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",
@@ -224,9 +219,8 @@ func TestGetTransactionsFilterType(t *testing.T) {
 }
 
 func TestCountTransactionsFilterDescription(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Date: "2019-03-20",
@@ -251,9 +245,8 @@ func TestCountTransactionsFilterDescription(t *testing.T) {
 }
 
 func TestCountTransactionsFilterDate(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",
@@ -294,9 +287,8 @@ func TestCountTransactionsFilterDate(t *testing.T) {
 }
 
 func TestCountTransactionsFilterTags(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",
@@ -337,9 +329,8 @@ func TestCountTransactionsFilterTags(t *testing.T) {
 }
 
 func TestCountTransactionsFilterAccounts(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",
@@ -383,9 +374,8 @@ func TestCountTransactionsFilterAccounts(t *testing.T) {
 }
 
 func TestCountTransactionsFilterType(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",

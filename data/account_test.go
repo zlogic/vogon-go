@@ -7,9 +7,8 @@ import (
 )
 
 func TestCreateAccount(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	account1 := Account{
 		Name:           "a1",
@@ -46,9 +45,8 @@ func TestCreateAccount(t *testing.T) {
 }
 
 func TestGetAccount(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	account1 := Account{
 		Name:           "a1",
@@ -78,9 +76,8 @@ func TestGetAccount(t *testing.T) {
 }
 
 func TestGetAccountDoesNotExist(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	account, err := dbService.GetAccount(&testUser, 0)
 	assert.Error(t, err)
@@ -88,9 +85,8 @@ func TestGetAccountDoesNotExist(t *testing.T) {
 }
 
 func TestUpdateAccount(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	account1 := Account{
 		Name:           "a1",
@@ -128,9 +124,8 @@ func TestUpdateAccount(t *testing.T) {
 }
 
 func TestDeleteAccount(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	account1 := Account{
 		Name:           "a1",
@@ -169,9 +164,8 @@ func TestDeleteAccount(t *testing.T) {
 }
 
 func TestDeleteNonExistingAccount(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	account := Account{
 		Name:           "a1",

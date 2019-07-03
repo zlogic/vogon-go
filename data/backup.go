@@ -53,12 +53,13 @@ func (s *DBService) Backup(user *User) (string, error) {
 
 func deletePrefix(prefix []byte) func(txn *badger.Txn) error {
 	return func(txn *badger.Txn) error {
-		it := txn.NewIterator(IteratorDoNotPrefetchOptions())
+		opts := IteratorDoNotPrefetchOptions()
+		opts.Prefix = prefix
+		it := txn.NewIterator(opts)
 		defer it.Close()
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		for it.Rewind(); it.Valid(); it.Next() {
 			item := it.Item()
-			key := make([]byte, len(item.Key()))
-			copy(key, item.Key())
+			key := item.KeyCopy(nil)
 			if err := txn.Delete(key); err != nil {
 				return errors.Wrapf(err, "Error deleting key %v", key)
 			}

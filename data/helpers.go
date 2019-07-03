@@ -5,17 +5,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func getPreviousValue(txn *badger.Txn, key []byte) ([]byte, error) {
+func getPreviousValue(txn *badger.Txn, key []byte, fn func(val []byte) error) error {
 	item, err := txn.Get(key)
-	if err != nil && err != badger.ErrKeyNotFound {
-		return nil, errors.Wrapf(err, "Failed to get previous value for %v", string(key))
+	if err != nil {
+		return errors.Wrapf(err, "Failed to get previous value for %v", string(key))
 	}
-	if err == nil {
-		value, err := item.Value()
-		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to read previous value for %v %v", string(key), err)
-		}
-		return value, nil
+	if err := item.Value(fn); err != nil {
+		return errors.Wrapf(err, "Failed to read previous value for %v %v", string(key), err)
 	}
-	return nil, nil
+	return nil
 }

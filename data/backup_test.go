@@ -341,9 +341,8 @@ func createBackupTransactions(accounts []*Account) []*Transaction {
 }
 
 func TestBackup(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	accounts := createBackupAccounts()
 	for _, account := range accounts {
@@ -363,9 +362,8 @@ func TestBackup(t *testing.T) {
 }
 
 func TestRestore(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	err = dbService.Restore(&testUser, restoreData)
 	assert.NoError(t, err)
@@ -396,9 +394,8 @@ func TestRestore(t *testing.T) {
 }
 
 func TestRestoreOverwriteExistingData(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	accounts := createBackupAccounts()
 	accounts = append(accounts, &Account{Name: "Extra account", Currency: "PLN", IncludeInTotal: true, ShowInList: true})

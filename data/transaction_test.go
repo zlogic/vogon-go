@@ -56,9 +56,8 @@ func TestNormalizeTransaction(t *testing.T) {
 }
 
 func TestCreateTransactionNoComponents(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction1 := Transaction{
 		Description: "t1",
@@ -95,9 +94,8 @@ func TestCreateTransactionNoComponents(t *testing.T) {
 }
 
 func TestGetTransactionsPaging(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction1 := Transaction{
 		Description: "t1",
@@ -164,9 +162,8 @@ func TestGetTransactionsPaging(t *testing.T) {
 }
 
 func TestGetTransactionNoComponents(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction1 := Transaction{
 		Description: "t1",
@@ -196,9 +193,8 @@ func TestGetTransactionNoComponents(t *testing.T) {
 }
 
 func TestGetTransactionDoesNotExist(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction, err := dbService.GetTransaction(&testUser, 0)
 	assert.Error(t, err)
@@ -206,9 +202,8 @@ func TestGetTransactionDoesNotExist(t *testing.T) {
 }
 
 func TestCountTransactions(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",
@@ -230,9 +225,8 @@ func TestCountTransactions(t *testing.T) {
 }
 
 func TestCountTransactionsEmpty(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	filterOptions := TransactionFilterOptions{}
 	count, err := dbService.CountTransactions(&testUser, filterOptions)
@@ -241,9 +235,8 @@ func TestCountTransactionsEmpty(t *testing.T) {
 }
 
 func TestUpdateTransactionNoComponents(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction1 := Transaction{
 		Description: "t1",
@@ -281,9 +274,8 @@ func TestUpdateTransactionNoComponents(t *testing.T) {
 }
 
 func TestDeleteTransactionNoComponents(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction1 := Transaction{
 		Description: "t1",
@@ -324,9 +316,8 @@ func TestDeleteTransactionNoComponents(t *testing.T) {
 }
 
 func TestDeleteNonExistingTransaction(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction := Transaction{
 		Description: "t1",
@@ -351,9 +342,8 @@ func TestDeleteNonExistingTransaction(t *testing.T) {
 }
 
 func TestCreateTransactionWithComponents(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	err = createTestAccounts(dbService)
 	assert.NoError(t, err)
@@ -416,9 +406,8 @@ func TestCreateTransactionWithComponents(t *testing.T) {
 }
 
 func TestUpdateTransactionWithComponents(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	err = createTestAccounts(dbService)
 	assert.NoError(t, err)
@@ -483,9 +472,8 @@ func TestUpdateTransactionWithComponents(t *testing.T) {
 }
 
 func TestDeleteTransactionWithComponents(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	err = createTestAccounts(dbService)
 	assert.NoError(t, err)

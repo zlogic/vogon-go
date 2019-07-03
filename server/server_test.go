@@ -8,6 +8,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/gorilla/securecookie"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"github.com/zlogic/vogon-go/data"
 )
@@ -182,11 +183,11 @@ func prepareExistingUser(username string) *data.User {
 		}
 	}()
 
-	var opts = badger.DefaultOptions
+	var opts = badger.DefaultOptions(tempDir)
+	opts.Logger = log.New()
 	opts.ValueLogFileSize = 1 << 20
 	opts.SyncWrites = false
-	opts.Dir = tempDir
-	opts.ValueDir = tempDir
+	opts.CompactL0OnClose = false
 
 	dbService, err := data.Open(opts)
 	if err != nil {

@@ -28,6 +28,11 @@ func NewUser(username string) *User {
 	return &User{newUsername: username}
 }
 
+// Decode deserializes a User.
+func (user *User) Decode(val []byte) error {
+	return gob.NewDecoder(bytes.NewBuffer(val)).Decode(user)
+}
+
 // GetUser returns the User by username.
 // If user doesn't exist, returns nil.
 func (s *DBService) GetUser(username string) (*User, error) {
@@ -39,15 +44,11 @@ func (s *DBService) GetUser(username string) (*User, error) {
 			return nil
 		}
 
-		value, err := item.Value()
-		if err != nil {
+		if err := item.Value(user.Decode); err != nil {
+			user = nil
 			return err
 		}
-		err = gob.NewDecoder(bytes.NewBuffer(value)).Decode(&user)
-		if err != nil {
-			user = nil
-		}
-		return err
+		return nil
 	})
 	if err != nil {
 		return nil, errors.Wrapf(err, "Cannot read User %v", username)
@@ -87,12 +88,8 @@ func (s *DBService) SaveUser(user *User) error {
 
 		existingUser := &User{}
 		if existingItem != nil || (err != nil && err != badger.ErrKeyNotFound) {
-			value, err := existingItem.Value()
-			if err != nil {
-				return errors.Wrap(err, "Cannot get existing value")
-			}
-			if err := gob.NewDecoder(bytes.NewBuffer(value)).Decode(existingUser); err != nil {
-				return errors.Wrap(err, "Cannot unmarshal user")
+			if err := existingItem.Value(existingUser.Decode); err != nil {
+				return errors.Wrap(err, "Cannot get existing value for user")
 			}
 			if user.newUsername != user.username {
 				log.WithField("key", key).Error("New username already in use")

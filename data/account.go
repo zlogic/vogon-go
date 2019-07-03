@@ -29,6 +29,11 @@ func (account *Account) Encode() ([]byte, error) {
 	return value.Bytes(), nil
 }
 
+// Decode deserializes an Account.
+func (account *Account) Decode(val []byte) error {
+	return gob.NewDecoder(bytes.NewBuffer(val)).Decode(account)
+}
+
 func (*DBService) createAccount(user *User, account *Account) func(*badger.Txn) error {
 	return func(txn *badger.Txn) error {
 		key := user.CreateAccountKey(account)
@@ -69,20 +74,13 @@ func (s *DBService) UpdateAccount(user *User, account *Account) error {
 	return s.db.Update(func(txn *badger.Txn) error {
 		key := user.CreateAccountKey(account)
 
-		previousValue, err := getPreviousValue(txn, key)
-		if err != nil {
-			log.WithField("key", key).WithError(err).Error("Cannot get previous value for account")
-			return err
-		}
-
-		if previousValue == nil {
-			log.WithField("key", key).Error("Cannot update account if it doesn't exist")
-			return fmt.Errorf("Cannot update account if it doesn't exist")
-		}
-
 		previousAccount := &Account{}
-		if err := gob.NewDecoder(bytes.NewBuffer(previousValue)).Decode(previousAccount); err != nil {
-			log.WithField("key", key).WithError(err).Error("Failed to read previous value of account")
+		if err := getPreviousValue(txn, key, previousAccount.Decode); err != nil {
+			if err == badger.ErrKeyNotFound {
+				log.WithField("key", key).Error("Cannot update account if it doesn't exist")
+				return fmt.Errorf("Cannot update account if it doesn't exist")
+			}
+			log.WithField("key", key).WithError(err).Error("Cannot get previous value for account")
 			return err
 		}
 		account.Balance = previousAccount.Balance
@@ -106,20 +104,13 @@ func (s *DBService) updateAccountBalance(user *User, accountID uint64, deltaBala
 		}
 		key := user.CreateAccountKeyFromID(accountID)
 
-		previousValue, err := getPreviousValue(txn, key)
-		if err != nil {
-			log.WithField("key", key).WithError(err).Error("Cannot get previous value for account")
-			return err
-		}
-
-		if previousValue == nil {
-			log.WithField("key", key).Error("Cannot update account if it doesn't exist")
-			return nil
-		}
-
 		account := &Account{}
-		if err := gob.NewDecoder(bytes.NewBuffer(previousValue)).Decode(account); err != nil {
-			log.WithField("key", key).WithError(err).Error("Failed to read previous value of account")
+		if err := getPreviousValue(txn, key, account.Decode); err != nil {
+
+			if err == badger.ErrKeyNotFound {
+				log.WithField("key", key).Error("Cannot update account if it doesn't exist")
+			}
+			log.WithField("key", key).WithError(err).Error("Cannot get previous value for account")
 			return err
 		}
 
@@ -137,23 +128,19 @@ func (s *DBService) getAccounts(user *User) func(*badger.Txn) ([]*Account, error
 	return func(txn *badger.Txn) ([]*Account, error) {
 		accounts := make([]*Account, 0)
 
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		opts := badger.DefaultIteratorOptions
+		opts.Prefix = []byte(user.CreateAccountKeyPrefix())
+		it := txn.NewIterator(opts)
 		defer it.Close()
-		prefix := []byte(user.CreateAccountKeyPrefix())
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		for it.Rewind(); it.Valid(); it.Next() {
 			item := it.Item()
 
 			k := item.Key()
-			v, err := item.Value()
-			if err != nil {
+
+			account := &Account{}
+			if err := item.Value(account.Decode); err != nil {
 				log.WithField("key", k).WithError(err).Error("Failed to read value of account")
 				continue
-			}
-			account := &Account{}
-
-			if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(account); err != nil {
-				log.WithField("key", k).WithError(err).Error("Failed to decode value of account")
-				return nil, err
 			}
 			accounts = append(accounts, account)
 		}
@@ -164,7 +151,7 @@ func (s *DBService) getAccounts(user *User) func(*badger.Txn) ([]*Account, error
 // GetAccount returns an Account by its ID.
 // If the Account doesn't exist, it returns an error.
 func (s *DBService) GetAccount(user *User, accountID uint64) (*Account, error) {
-	var account *Account
+	account := &Account{}
 
 	key := user.CreateAccountKeyFromID(accountID)
 
@@ -173,15 +160,11 @@ func (s *DBService) GetAccount(user *User, accountID uint64) (*Account, error) {
 		if err != nil {
 			return errors.Wrapf(err, "Failed to get account %v", string(key))
 		}
-		v, err := item.Value()
-		if err != nil {
-			return errors.Wrapf(err, "Failed to get value for account %v", string(key))
+
+		if err := item.Value(account.Decode); err != nil {
+			return errors.Wrapf(err, "Failed to read value for account %v", string(key))
 		}
 
-		account = &Account{}
-		if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(account); err != nil {
-			return errors.Wrapf(err, "Failed to decode value for account %v", string(key))
-		}
 		return err
 	})
 	if err != nil {

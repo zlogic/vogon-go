@@ -7,9 +7,8 @@ import (
 )
 
 func TestGetTags(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction1 := Transaction{
 		Description: "t1",
@@ -35,9 +34,8 @@ func TestGetTags(t *testing.T) {
 }
 
 func TestGetTransactionsWithoutTags(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	transaction1 := Transaction{
 		Description: "t1",
@@ -63,9 +61,8 @@ func TestGetTransactionsWithoutTags(t *testing.T) {
 }
 
 func TestGetTagsNoTransactions(t *testing.T) {
-	dbService, cleanup, err := createDb()
+	err := resetDb()
 	assert.NoError(t, err)
-	defer cleanup()
 
 	tags, err := dbService.GetTags(&testUser)
 	assert.NoError(t, err)

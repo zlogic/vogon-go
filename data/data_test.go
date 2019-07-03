@@ -1,13 +1,14 @@
 package data
 
 import (
-	"bytes"
-	"encoding/gob"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"testing"
 
 	"github.com/dgraph-io/badger"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 var testUser = User{ID: 11}
@@ -27,35 +28,51 @@ var testAccount2 = Account{
 	ShowInList:     true,
 }
 
-func createDb() (dbService *DBService, cleanupFunc func(), err error) {
+var dbService *DBService
+
+func TestMain(m *testing.M) {
 	dir, err := ioutil.TempDir("", "vogon")
 	if err != nil {
-		return nil, func() {}, err
+		panic(fmt.Sprintf("cannot create tempdir %v", err))
+	}
+	err = createDb(dir)
+	if err != nil {
+		panic(fmt.Sprintf("cannot open database %v", err))
 	}
 
-	var opts = badger.DefaultOptions
+	code := m.Run()
+	destroyDb(dir)
+	os.Exit(code)
+}
+
+func createDb(dir string) (err error) {
+	var opts = badger.DefaultOptions(dir)
+	opts.Logger = log.New()
 	opts.ValueLogFileSize = 1 << 20
 	opts.SyncWrites = false
-	opts.Dir = dir
-	opts.ValueDir = dir
+	opts.CompactL0OnClose = false
 
 	dbService, err = Open(opts)
-	if err != nil {
-		return nil, func() {}, err
-	}
-	return dbService, func() {
-		dbService.Close()
-		os.RemoveAll(opts.Dir)
-	}, nil
+	return
+}
+
+func resetDb() error {
+	return dbService.db.DropAll()
+}
+
+func destroyDb(dir string) {
+	dbService.Close()
+	os.RemoveAll(dir)
 }
 
 func getAllUsers(s *DBService) ([]*User, error) {
 	users := make([]*User, 0)
 	err := s.db.View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		opts := badger.DefaultIteratorOptions
+		opts.Prefix = []byte(UserKeyPrefix)
+		it := txn.NewIterator(opts)
 		defer it.Close()
-		prefix := []byte(UserKeyPrefix)
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		for it.Rewind(); it.Valid(); it.Next() {
 			item := it.Item()
 
 			k := item.Key()
@@ -65,16 +82,13 @@ func getAllUsers(s *DBService) ([]*User, error) {
 				return errors.Wrap(err, "Failed to decode username of user")
 			}
 
-			v, err := item.Value()
-			if err != nil {
+			user := &User{}
+
+			if err := item.Value(user.Decode); err != nil {
 				return errors.Wrap(err, "Failed to read value of user")
 			}
 
-			user := &User{username: *username}
-			err = gob.NewDecoder(bytes.NewBuffer(v)).Decode(&user)
-			if err != nil {
-				return errors.Wrap(err, "Failed to unmarshal value of user")
-			}
+			user.username = *username
 			users = append(users, user)
 		}
 		return nil

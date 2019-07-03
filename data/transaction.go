@@ -81,6 +81,11 @@ func (transaction *Transaction) Encode() ([]byte, error) {
 	return value.Bytes(), nil
 }
 
+// Decode deserializes a Transaction.
+func (transaction *Transaction) Decode(val []byte) error {
+	return gob.NewDecoder(bytes.NewBuffer(val)).Decode(transaction)
+}
+
 // DateFormat is the format used to serialize the Transaction Date.
 const DateFormat = "2006-01-02"
 const inputDateFormat = "2006-1-2"
@@ -175,19 +180,12 @@ func (s *DBService) UpdateTransaction(user *User, transaction *Transaction) erro
 	return s.db.Update(func(txn *badger.Txn) error {
 		key := user.CreateTransactionKey(transaction)
 
-		previousValue, err := getPreviousValue(txn, key)
-		if err != nil {
-			log.WithField("key", key).WithError(err).Error("Cannot get previous value for transaction")
-			return err
-		}
-
-		if previousValue == nil {
-			log.WithField("key", key).Error("Cannot update transaction if it doesn't exist")
-			return fmt.Errorf("Cannot update transaction if it doesn't exist")
-		}
-
 		previousTransaction := &Transaction{}
-		if err := gob.NewDecoder(bytes.NewBuffer(previousValue)).Decode(previousTransaction); err != nil {
+		if err := getPreviousValue(txn, key, previousTransaction.Decode); err != nil {
+			if err == badger.ErrKeyNotFound {
+				log.WithField("key", key).Error("Cannot update transaction if it doesn't exist")
+				return fmt.Errorf("Cannot update transaction if it doesn't exist")
+			}
 			log.WithField("key", key).WithError(err).Error("Failed to read previous value of transaction")
 			return err
 		}
@@ -298,17 +296,12 @@ func (s *DBService) getTransaction(user *User, transactionID uint64) func(*badge
 		}
 
 		k := item.Key()
-		v, err := item.Value()
-		if err != nil {
+		transaction := &Transaction{}
+		if err := item.Value(transaction.Decode); err != nil {
 			log.WithField("key", k).WithError(err).Error("Failed to read value of transaction")
 			return nil, err
 		}
 
-		transaction := &Transaction{}
-		if err := gob.NewDecoder(bytes.NewBuffer(v)).Decode(transaction); err != nil {
-			log.WithField("key", k).WithError(err).Error("Failed to decode value of transaction")
-			return nil, err
-		}
 		return transaction, nil
 	}
 }
@@ -317,9 +310,12 @@ func (s *DBService) getTransactions(user *User, options GetTransactionOptions) f
 	return func(txn *badger.Txn) ([]*Transaction, error) {
 		transactions := make([]*Transaction, 0)
 
-		it := txn.NewIterator(IteratorIndexOptions())
+		opts := IteratorIndexOptions()
+		opts.Prefix = []byte(user.CreateTransactionIndexKeyPrefix())
+		opts.Reverse = true
+		it := txn.NewIterator(opts)
 		defer it.Close()
-		prefix := []byte(user.CreateTransactionIndexKeyPrefix())
+		//TODO: remove this workaround for Badger and just use it.Rewind()
 		reversePrefix := append([]byte(user.CreateTransactionIndexKeyPrefix()), 0xff)
 
 		var currentItem uint64
@@ -328,7 +324,7 @@ func (s *DBService) getTransactions(user *User, options GetTransactionOptions) f
 			return currentItem < (options.Offset + 1)
 		}
 		emptyFilter := options.TransactionFilterOptions.IsEmpty()
-		for it.Seek(reversePrefix); it.ValidForPrefix(prefix); it.Next() {
+		for it.Seek(reversePrefix); it.Valid(); it.Next() {
 			if emptyFilter && skipItem() {
 				continue
 			}
@@ -400,11 +396,12 @@ func (s *DBService) CountTransactions(user *User, options TransactionFilterOptio
 
 	emptyFilter := options.IsEmpty()
 	err := s.db.View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(IteratorDoNotPrefetchOptions())
+		opts := IteratorDoNotPrefetchOptions()
+		opts.Prefix = []byte(user.CreateTransactionIndexKeyPrefix())
+		it := txn.NewIterator(opts)
 		defer it.Close()
-		prefix := []byte(user.CreateTransactionIndexKeyPrefix())
 
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+		for it.Rewind(); it.Valid(); it.Next() {
 			if !emptyFilter {
 				transactionID, err := user.DecodeTransactionIndexKey(it.Item().Key())
 				if err != nil {
@@ -437,19 +434,12 @@ func (s *DBService) CountTransactions(user *User, options TransactionFilterOptio
 func (s *DBService) DeleteTransaction(user *User, transactionID uint64) error {
 	key := user.CreateTransactionKeyFromID(transactionID)
 	return s.db.Update(func(txn *badger.Txn) error {
-		previousValue, err := getPreviousValue(txn, key)
-		if err != nil {
-			log.WithField("key", key).WithError(err).Error("Cannot get value for deleted transaction")
-			return err
-		}
-
-		if previousValue == nil {
-			log.WithField("key", key).Error("Cannot delete transaction if it doesn't exist")
-			return fmt.Errorf("Cannot delete non-existing transaction")
-		}
-
 		deleteTransaction := &Transaction{}
-		if err := gob.NewDecoder(bytes.NewBuffer(previousValue)).Decode(deleteTransaction); err != nil {
+		if err := getPreviousValue(txn, key, deleteTransaction.Decode); err != nil {
+			if err == badger.ErrKeyNotFound {
+				log.WithField("key", key).Error("Cannot delete transaction if it doesn't exist")
+				return fmt.Errorf("Cannot delete non-existing transaction")
+			}
 			log.WithField("key", key).WithError(err).Error("Failed to read value of deleted transaction")
 			return err
 		}
