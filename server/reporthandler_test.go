@@ -10,9 +10,9 @@ import (
 	"github.com/zlogic/vogon-go/data"
 )
 
-func createReportTransactions() []*data.Transaction {
-	return []*data.Transaction{
-		&data.Transaction{
+func createReportTransactions() []data.Transaction {
+	return []data.Transaction{
+		data.Transaction{
 			Description: "Unrelated",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Something"},
@@ -21,7 +21,7 @@ func createReportTransactions() []*data.Transaction {
 				data.TransactionComponent{AccountID: 3, Amount: -5000},
 			},
 		},
-		&data.Transaction{
+		data.Transaction{
 			Description: "Another transfer",
 			Type:        data.TransactionTypeTransfer,
 			Tags:        []string{"Transfer"},
@@ -31,7 +31,7 @@ func createReportTransactions() []*data.Transaction {
 				data.TransactionComponent{AccountID: 2, Amount: 100},
 			},
 		},
-		&data.Transaction{
+		data.Transaction{
 			Description: "More stuff",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Gadgets", "Widgets"},
@@ -40,7 +40,7 @@ func createReportTransactions() []*data.Transaction {
 				data.TransactionComponent{AccountID: 1, Amount: -5000},
 			},
 		},
-		&data.Transaction{
+		data.Transaction{
 			Description: "Widgets",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Widgets"},
@@ -49,7 +49,7 @@ func createReportTransactions() []*data.Transaction {
 				data.TransactionComponent{AccountID: 0, Amount: -3000},
 			},
 		},
-		&data.Transaction{
+		data.Transaction{
 			Description: "Gadgets",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Gadgets"},
@@ -58,7 +58,7 @@ func createReportTransactions() []*data.Transaction {
 				data.TransactionComponent{AccountID: 0, Amount: -3000},
 			},
 		},
-		&data.Transaction{
+		data.Transaction{
 			Description: "Stuff",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Gadgets", "Widgets"},
@@ -69,7 +69,7 @@ func createReportTransactions() []*data.Transaction {
 				data.TransactionComponent{AccountID: 2, Amount: -2000},
 			},
 		},
-		&data.Transaction{
+		data.Transaction{
 			Description: "Transfer",
 			Type:        data.TransactionTypeTransfer,
 			Tags:        []string{"Transfer"},
@@ -79,7 +79,7 @@ func createReportTransactions() []*data.Transaction {
 				data.TransactionComponent{AccountID: 1, Amount: 1000},
 			},
 		},
-		&data.Transaction{
+		data.Transaction{
 			Description: "Salary",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Salary"},
@@ -98,32 +98,32 @@ func TestReportEverything(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader(""))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	cookieHandler.SetCookieUsername(&cookie, "user01")
+	req.AddCookie(&cookie)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
-	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
 
-	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+	accounts := []data.Account{
+		data.Account{ID: 0, Name: "a1", Currency: "USD"},
+		data.Account{ID: 1, Name: "a2", Currency: "USD"},
+		data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+		data.Account{ID: 3, Name: "a4", Currency: "EUR"},
 	}
-	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
+	dbMock.On("GetAccounts", user).Return(accounts, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -143,31 +143,31 @@ func TestReportFilterDescription(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterDescription=stuff&filterAccounts=0,1,2"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	cookieHandler.SetCookieUsername(&cookie, "user01")
+	req.AddCookie(&cookie)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
-	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
 
-	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+	accounts := []data.Account{
+		data.Account{ID: 0, Name: "a1", Currency: "USD"},
+		data.Account{ID: 1, Name: "a2", Currency: "USD"},
+		data.Account{ID: 2, Name: "a3", Currency: "EUR"},
 	}
-	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
+	dbMock.On("GetAccounts", user).Return(accounts, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -187,32 +187,32 @@ func TestReportDateRange(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2&filterFrom=2015-11-02&filterTo=2015-11-04"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	cookieHandler.SetCookieUsername(&cookie, "user01")
+	req.AddCookie(&cookie)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
-	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
 
-	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+	accounts := []data.Account{
+		data.Account{ID: 0, Name: "a1", Currency: "USD"},
+		data.Account{ID: 1, Name: "a2", Currency: "USD"},
+		data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+		data.Account{ID: 3, Name: "a4", Currency: "EUR"},
 	}
-	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
+	dbMock.On("GetAccounts", user).Return(accounts, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -232,32 +232,32 @@ func TestReportFilterTags(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2&filterTags=Gadgets,Widgets"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	cookieHandler.SetCookieUsername(&cookie, "user01")
+	req.AddCookie(&cookie)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
-	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
 
-	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+	accounts := []data.Account{
+		data.Account{ID: 0, Name: "a1", Currency: "USD"},
+		data.Account{ID: 1, Name: "a2", Currency: "USD"},
+		data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+		data.Account{ID: 3, Name: "a4", Currency: "EUR"},
 	}
-	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
+	dbMock.On("GetAccounts", user).Return(accounts, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -277,32 +277,32 @@ func TestReportAccounts012(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	cookieHandler.SetCookieUsername(&cookie, "user01")
+	req.AddCookie(&cookie)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
-	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
 
-	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+	accounts := []data.Account{
+		data.Account{ID: 0, Name: "a1", Currency: "USD"},
+		data.Account{ID: 1, Name: "a2", Currency: "USD"},
+		data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+		data.Account{ID: 3, Name: "a4", Currency: "EUR"},
 	}
-	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
+	dbMock.On("GetAccounts", user).Return(accounts, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -322,32 +322,32 @@ func TestReportOnlyAccount0(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	cookieHandler.SetCookieUsername(&cookie, "user01")
+	req.AddCookie(&cookie)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
-	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
 
-	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+	accounts := []data.Account{
+		data.Account{ID: 0, Name: "a1", Currency: "USD"},
+		data.Account{ID: 1, Name: "a2", Currency: "USD"},
+		data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+		data.Account{ID: 3, Name: "a4", Currency: "EUR"},
 	}
-	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
+	dbMock.On("GetAccounts", user).Return(accounts, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -365,32 +365,32 @@ func TestReportOnlyAccount1(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=1"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	cookieHandler.SetCookieUsername(&cookie, "user01")
+	req.AddCookie(&cookie)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
-	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
 
-	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+	accounts := []data.Account{
+		data.Account{ID: 0, Name: "a1", Currency: "USD"},
+		data.Account{ID: 1, Name: "a2", Currency: "USD"},
+		data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+		data.Account{ID: 3, Name: "a4", Currency: "EUR"},
 	}
-	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
+	dbMock.On("GetAccounts", user).Return(accounts, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -408,32 +408,32 @@ func TestReportFilterExcludeTransfer(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2&filterIncludeTransfer=false"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	cookieHandler.SetCookieUsername(&cookie, "user01")
+	req.AddCookie(&cookie)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
-	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
 
-	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+	accounts := []data.Account{
+		data.Account{ID: 0, Name: "a1", Currency: "USD"},
+		data.Account{ID: 1, Name: "a2", Currency: "USD"},
+		data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+		data.Account{ID: 3, Name: "a4", Currency: "EUR"},
 	}
-	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
+	dbMock.On("GetAccounts", user).Return(accounts, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -453,32 +453,32 @@ func TestReportFilterExcludeExpenseIncome(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2&filterIncludeExpenseIncome=false"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	cookieHandler.SetCookieUsername(&cookie, "user01")
+	req.AddCookie(&cookie)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
-	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
 
-	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+	accounts := []data.Account{
+		data.Account{ID: 0, Name: "a1", Currency: "USD"},
+		data.Account{ID: 1, Name: "a2", Currency: "USD"},
+		data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+		data.Account{ID: 3, Name: "a4", Currency: "EUR"},
 	}
-	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
+	dbMock.On("GetAccounts", user).Return(accounts, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)

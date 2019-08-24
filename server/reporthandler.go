@@ -9,7 +9,7 @@ import (
 	"github.com/zlogic/vogon-go/data"
 )
 
-func getCurrency(component data.TransactionComponent, accounts []*data.Account) string {
+func getCurrency(component data.TransactionComponent, accounts []data.Account) string {
 	for _, account := range accounts {
 		if account.ID == component.AccountID {
 			return account.Currency
@@ -18,9 +18,9 @@ func getCurrency(component data.TransactionComponent, accounts []*data.Account) 
 	return ""
 }
 
-func filterComponents(components *[]data.TransactionComponent, accountIDs []uint64) {
-	resultComponents := (*components)[:0]
-	for _, component := range *components {
+func filterComponents(components []data.TransactionComponent, accountIDs []uint64) []data.TransactionComponent {
+	resultComponents := make([]data.TransactionComponent, 0, len(components))
+	for _, component := range components {
 		for _, accountID := range accountIDs {
 			if component.AccountID == accountID {
 				resultComponents = append(resultComponents, component)
@@ -28,28 +28,28 @@ func filterComponents(components *[]data.TransactionComponent, accountIDs []uint
 			}
 		}
 	}
-	*components = resultComponents
+	return resultComponents
 }
 
-func filterTransactions(transactions *[]*data.Transaction, filterOptions data.TransactionFilterOptions) {
+func filterTransactions(transactions []data.Transaction, filterOptions data.TransactionFilterOptions) []data.Transaction {
 	if filterOptions.IsEmpty() {
-		return
+		return transactions
 	}
-	result := (*transactions)[:0]
-	for _, transaction := range *transactions {
+	resultTransactions := make([]data.Transaction, 0, len(transactions))
+	for _, transaction := range transactions {
 		if filterOptions.Matches(transaction) {
-			filterComponents(&transaction.Components, filterOptions.FilterAccounts)
-			result = append(result, transaction)
+			transaction.Components = filterComponents(transaction.Components, filterOptions.FilterAccounts)
+			resultTransactions = append(resultTransactions, transaction)
 		}
 	}
-	*transactions = result
+	return resultTransactions
 }
 
-func filterAccounts(accounts []*data.Account, filterOptions data.TransactionFilterOptions) []*data.Account {
+func filterAccounts(accounts []data.Account, filterOptions data.TransactionFilterOptions) []data.Account {
 	if filterOptions.IsEmpty() {
 		return accounts
 	}
-	filteredAccounts := make([]*data.Account, 0, len(filterOptions.FilterAccounts))
+	filteredAccounts := make([]data.Account, 0, len(filterOptions.FilterAccounts))
 	for _, accountID := range filterOptions.FilterAccounts {
 		for _, account := range accounts {
 			if account.ID == accountID {
@@ -72,10 +72,10 @@ type tagAmounts struct {
 }
 type currencyTagAmount map[string]tagAmounts
 
-func createBalanceChart(transactions []*data.Transaction, accounts []*data.Account, filterOptions data.TransactionFilterOptions) currencyDateBalance {
+func createBalanceChart(transactions []data.Transaction, accounts []data.Account, filterOptions data.TransactionFilterOptions) currencyDateBalance {
 	var chart = make(currencyDateBalance)
 	var totals = make(map[string]int64)
-	var filterMatches = func(transaction *data.Transaction) bool {
+	var filterMatches = func(transaction data.Transaction) bool {
 		return (filterOptions.FilterFromDate == "" || filterOptions.FilterFromDate <= transaction.Date) &&
 			(filterOptions.FilterToDate == "" || transaction.Date <= filterOptions.FilterToDate)
 	}
@@ -102,7 +102,7 @@ func createBalanceChart(transactions []*data.Transaction, accounts []*data.Accou
 	return chart
 }
 
-func createTagsChart(transactions []*data.Transaction, accounts []*data.Account) currencyTagAmount {
+func createTagsChart(transactions []data.Transaction, accounts []data.Account) currencyTagAmount {
 	var chart = make(currencyTagAmount)
 	type transactionTotal struct {
 		Positive int64
@@ -148,10 +148,10 @@ func createTagsChart(transactions []*data.Transaction, accounts []*data.Account)
 }
 
 // ReportHandler generates data for a report.
-func ReportHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+func ReportHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
-		if user == nil {
+		if user == (data.User{}) {
 			return
 		}
 
@@ -181,7 +181,7 @@ func ReportHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 
 		chart := createBalanceChart(transactions, accounts, filterOptions)
 
-		filterTransactions(&transactions, filterOptions)
+		transactions = filterTransactions(transactions, filterOptions)
 		tags := createTagsChart(transactions, accounts)
 		type report struct {
 			BalanceChart currencyDateBalance

@@ -14,7 +14,7 @@ import (
 	"github.com/zlogic/vogon-go/server"
 )
 
-func serve(db *data.DBService) {
+func serve(db data.DBService) {
 	// Create the router and webserver
 	services, err := server.CreateServices(db)
 	if err != nil {

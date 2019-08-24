@@ -26,14 +26,9 @@ func (m *DBMock) GetOrCreateConfigVariable(varName string, generator func() (str
 	return args.Get(0).(string), args.Error(1)
 }
 
-func (m *DBMock) GetUser(username string) (*data.User, error) {
+func (m *DBMock) GetUser(username string) (data.User, error) {
 	args := m.Called(username)
-	user := args.Get(0)
-	var returnUser *data.User
-	if user != nil {
-		returnUser = user.(*data.User)
-	}
-	return returnUser, args.Error(1)
+	return args.Get(0).(data.User), args.Error(1)
 }
 
 func (m *DBMock) SaveUser(user *data.User) error {
@@ -41,92 +36,72 @@ func (m *DBMock) SaveUser(user *data.User) error {
 	return args.Error(0)
 }
 
-func (m *DBMock) GetAccounts(user *data.User) ([]*data.Account, error) {
+func (m *DBMock) GetAccounts(user data.User) ([]data.Account, error) {
 	args := m.Called(user)
-	accounts := args.Get(0)
-	var returnAccounts []*data.Account
-	if accounts != nil {
-		returnAccounts = accounts.([]*data.Account)
-	}
-	return returnAccounts, args.Error(1)
+	return args.Get(0).([]data.Account), args.Error(1)
 }
 
-func (m *DBMock) CountTransactions(user *data.User, options data.TransactionFilterOptions) (uint64, error) {
+func (m *DBMock) CountTransactions(user data.User, options data.TransactionFilterOptions) (uint64, error) {
 	args := m.Called(user, options)
 	return args.Get(0).(uint64), args.Error(1)
 }
 
-func (m *DBMock) GetTransactions(user *data.User, options data.GetTransactionOptions) ([]*data.Transaction, error) {
+func (m *DBMock) GetTransactions(user data.User, options data.GetTransactionOptions) ([]data.Transaction, error) {
 	args := m.Called(user, options)
-	transactions := args.Get(0)
-	var returnTransactions []*data.Transaction
-	if transactions != nil {
-		returnTransactions = transactions.([]*data.Transaction)
-	}
-	return returnTransactions, args.Error(1)
+	return args.Get(0).([]data.Transaction), args.Error(1)
 }
 
-func (m *DBMock) CreateAccount(user *data.User, account *data.Account) error {
+func (m *DBMock) CreateAccount(user data.User, account *data.Account) error {
 	args := m.Called(user, account)
 	return args.Error(0)
 }
 
-func (m *DBMock) UpdateAccount(user *data.User, account *data.Account) error {
+func (m *DBMock) UpdateAccount(user data.User, account data.Account) error {
 	args := m.Called(user, account)
 	return args.Error(0)
 }
 
-func (m *DBMock) GetAccount(user *data.User, accountID uint64) (*data.Account, error) {
+func (m *DBMock) GetAccount(user data.User, accountID uint64) (data.Account, error) {
 	args := m.Called(user, accountID)
-	account := args.Get(0)
-	var returnAccount *data.Account
-	if account != nil {
-		returnAccount = account.(*data.Account)
-	}
-	return returnAccount, args.Error(1)
+	return args.Get(0).(data.Account), args.Error(1)
 }
 
-func (m *DBMock) DeleteAccount(user *data.User, accountID uint64) error {
+func (m *DBMock) DeleteAccount(user data.User, accountID uint64) error {
 	args := m.Called(user, accountID)
 	return args.Error(0)
 }
 
-func (m *DBMock) CreateTransaction(user *data.User, transaction *data.Transaction) error {
+func (m *DBMock) CreateTransaction(user data.User, transaction *data.Transaction) error {
 	args := m.Called(user, transaction)
 	return args.Error(0)
 }
 
-func (m *DBMock) UpdateTransaction(user *data.User, transaction *data.Transaction) error {
+func (m *DBMock) UpdateTransaction(user data.User, transaction data.Transaction) error {
 	args := m.Called(user, transaction)
 	return args.Error(0)
 }
 
-func (m *DBMock) GetTransaction(user *data.User, transactionID uint64) (*data.Transaction, error) {
+func (m *DBMock) GetTransaction(user data.User, transactionID uint64) (data.Transaction, error) {
 	args := m.Called(user, transactionID)
-	transaction := args.Get(0)
-	var returnTransaction *data.Transaction
-	if transaction != nil {
-		returnTransaction = transaction.(*data.Transaction)
-	}
-	return returnTransaction, args.Error(1)
+	return args.Get(0).(data.Transaction), args.Error(1)
 }
 
-func (m *DBMock) DeleteTransaction(user *data.User, transactionID uint64) error {
+func (m *DBMock) DeleteTransaction(user data.User, transactionID uint64) error {
 	args := m.Called(user, transactionID)
 	return args.Error(0)
 }
 
-func (m *DBMock) GetTags(user *data.User) ([]string, error) {
+func (m *DBMock) GetTags(user data.User) ([]string, error) {
 	args := m.Called(user)
 	return args.Get(0).([]string), args.Error(1)
 }
 
-func (m *DBMock) Backup(user *data.User) (string, error) {
+func (m *DBMock) Backup(user data.User) (string, error) {
 	args := m.Called(user)
 	return args.Get(0).(string), args.Error(1)
 }
 
-func (m *DBMock) Restore(user *data.User, value string) error {
+func (m *DBMock) Restore(user data.User, value string) error {
 	args := m.Called(user, value)
 	return args.Error(0)
 }
@@ -169,11 +144,10 @@ func prepareTestFile(dir, fileName string, data []byte) error {
 	return ioutil.WriteFile(path.Join(dir, fileName), data, 0644)
 }
 
-func prepareExistingUser(username string) *data.User {
+func prepareExistingUser(username string) data.User {
 	existingUser, ok := testExistingUsers[username]
 	if ok {
-		user := existingUser
-		return &user
+		return existingUser
 	}
 
 	tempDir, recover, err := prepareTempDir()
@@ -191,15 +165,15 @@ func prepareExistingUser(username string) *data.User {
 
 	dbService, err := data.Open(opts)
 	if err != nil {
-		return nil
+		return data.User{}
 	}
 
 	user := data.NewUser(username)
-	err = dbService.SaveUser(user)
+	err = dbService.SaveUser(&user)
 	dbService.Close()
 	if err != nil {
-		return nil
+		return data.User{}
 	}
-	testExistingUsers[username] = *user
+	testExistingUsers[username] = user
 	return user
 }

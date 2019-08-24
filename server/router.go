@@ -33,7 +33,7 @@ func registrationAllowed() bool {
 }
 
 // CreateRouter returns a router and all handlers.
-func CreateRouter(s *Services) (*mux.Router, error) {
+func CreateRouter(s Services) (*mux.Router, error) {
 	registrationAllowed := registrationAllowed()
 
 	r := mux.NewRouter()

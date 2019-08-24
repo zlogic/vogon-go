@@ -268,23 +268,23 @@ const backupData = `{
   ]
 }`
 
-func createBackupAccounts() []*Account {
-	return []*Account{&Account{
+func createBackupAccounts() []Account {
+	return []Account{Account{
 		Name:           "Orange Bank",
 		Currency:       "PLN",
 		IncludeInTotal: true,
 		ShowInList:     true,
-	}, &Account{
+	}, Account{
 		Name:           "Green Bank",
 		Currency:       "ALL",
 		IncludeInTotal: true,
 		ShowInList:     false,
-	}, &Account{
+	}, Account{
 		Name:           "Purple Bank",
 		Currency:       "ZWL",
 		IncludeInTotal: true,
 		ShowInList:     false,
-	}, &Account{
+	}, Account{
 		Name:           "Magical Credit Card",
 		Currency:       "PLN",
 		IncludeInTotal: false,
@@ -292,8 +292,8 @@ func createBackupAccounts() []*Account {
 	}}
 }
 
-func createBackupTransactions(accounts []*Account) []*Transaction {
-	return []*Transaction{&Transaction{
+func createBackupTransactions(accounts []Account) []Transaction {
+	return []Transaction{Transaction{
 		Description: "Widgets",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"Widgets"},
@@ -301,7 +301,7 @@ func createBackupTransactions(accounts []*Account) []*Transaction {
 		Components: []TransactionComponent{
 			TransactionComponent{AccountID: accounts[1].ID, Amount: -10000},
 		},
-	}, &Transaction{
+	}, Transaction{
 		Description: "Salary",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"Salary"},
@@ -311,7 +311,7 @@ func createBackupTransactions(accounts []*Account) []*Transaction {
 			TransactionComponent{AccountID: accounts[1].ID, Amount: 100000},
 			TransactionComponent{AccountID: accounts[2].ID, Amount: 100000},
 		},
-	}, &Transaction{
+	}, Transaction{
 		Description: "Gadgets",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"Gadgets"},
@@ -319,7 +319,7 @@ func createBackupTransactions(accounts []*Account) []*Transaction {
 		Components: []TransactionComponent{
 			TransactionComponent{AccountID: accounts[3].ID, Amount: -10000},
 		},
-	}, &Transaction{
+	}, Transaction{
 		Description: "Credit card payment",
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"Credit"},
@@ -328,7 +328,7 @@ func createBackupTransactions(accounts []*Account) []*Transaction {
 			TransactionComponent{AccountID: accounts[2].ID, Amount: -10000},
 			TransactionComponent{AccountID: accounts[3].ID, Amount: 2000},
 		},
-	}, &Transaction{
+	}, Transaction{
 		Description: "Stuff",
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"Gadgets", "Widgets"},
@@ -345,18 +345,18 @@ func TestBackup(t *testing.T) {
 	assert.NoError(t, err)
 
 	accounts := createBackupAccounts()
-	for _, account := range accounts {
-		dbService.CreateAccount(&testUser, account)
+	for i := range accounts {
+		dbService.CreateAccount(testUser, &accounts[i])
 	}
 
 	transactions := createBackupTransactions(accounts)
 	transactions[4].Tags = []string{"Widgets", "Gadgets"}
-	for _, transaction := range transactions {
-		assert.NoError(t, transaction.Normalize())
-		dbService.CreateTransaction(&testUser, transaction)
+	for i := range transactions {
+		assert.NoError(t, transactions[i].Normalize())
+		dbService.CreateTransaction(testUser, &transactions[i])
 	}
 
-	json, err := dbService.Backup(&testUser)
+	json, err := dbService.Backup(testUser)
 	assert.NoError(t, err)
 	assert.Equal(t, backupData, json)
 }
@@ -365,12 +365,12 @@ func TestRestore(t *testing.T) {
 	err := resetDb()
 	assert.NoError(t, err)
 
-	err = dbService.Restore(&testUser, restoreData)
+	err = dbService.Restore(testUser, restoreData)
 	assert.NoError(t, err)
 
 	expectedAccounts := createBackupAccounts()
-	for i, account := range expectedAccounts {
-		account.ID = uint64(i)
+	for i := range expectedAccounts {
+		expectedAccounts[i].ID = uint64(i)
 	}
 	expectedAccounts[0].Balance = 99000
 	expectedAccounts[1].Balance = 90000
@@ -378,16 +378,16 @@ func TestRestore(t *testing.T) {
 	expectedAccounts[3].Balance = -8000
 
 	expectedTransactions := createBackupTransactions(expectedAccounts)
-	for i, transaction := range expectedTransactions {
-		transaction.ID = uint64(i)
+	for i := range expectedTransactions {
+		expectedTransactions[i].ID = uint64(i)
 	}
 	sortTransactionsAsc(expectedTransactions)
 
-	dbAccounts, err := dbService.GetAccounts(&testUser)
+	dbAccounts, err := dbService.GetAccounts(testUser)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedAccounts, dbAccounts)
 
-	dbTransactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
+	dbTransactions, err := dbService.GetTransactions(testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	sortTransactionsAsc(dbTransactions)
 	assert.Equal(t, expectedTransactions, dbTransactions)
@@ -398,14 +398,14 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 	assert.NoError(t, err)
 
 	accounts := createBackupAccounts()
-	accounts = append(accounts, &Account{Name: "Extra account", Currency: "PLN", IncludeInTotal: true, ShowInList: true})
-	for _, account := range accounts {
-		dbService.CreateAccount(&testUser, account)
+	accounts = append(accounts, Account{Name: "Extra account", Currency: "PLN", IncludeInTotal: true, ShowInList: true})
+	for i := range accounts {
+		dbService.CreateAccount(testUser, &accounts[i])
 	}
 
 	transactions := createBackupTransactions(accounts)
 	transactions[4].Tags = []string{"Widgets", "Gadgets"}
-	transactions = append(transactions, &Transaction{
+	transactions = append(transactions, Transaction{
 		Description: "Extra transaction",
 		Type:        TransactionTypeTransfer, Tags: []string{"Extra"}, Date: "2019-03-23",
 		Components: []TransactionComponent{
@@ -413,17 +413,17 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 			TransactionComponent{AccountID: accounts[4].ID, Amount: -42000},
 		},
 	})
-	for _, transaction := range transactions {
-		assert.NoError(t, transaction.Normalize())
-		dbService.CreateTransaction(&testUser, transaction)
+	for i := range transactions {
+		assert.NoError(t, transactions[i].Normalize())
+		dbService.CreateTransaction(testUser, &transactions[i])
 	}
 
-	err = dbService.Restore(&testUser, restoreData)
+	err = dbService.Restore(testUser, restoreData)
 	assert.NoError(t, err)
 
 	expectedAccounts := createBackupAccounts()
-	for i, account := range expectedAccounts {
-		account.ID = uint64(len(accounts)) + uint64(i)
+	for i := range expectedAccounts {
+		expectedAccounts[i].ID = uint64(len(accounts)) + uint64(i)
 	}
 	expectedAccounts[0].Balance = 99000
 	expectedAccounts[1].Balance = 90000
@@ -431,16 +431,16 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 	expectedAccounts[3].Balance = -8000
 
 	expectedTransactions := createBackupTransactions(expectedAccounts)
-	for i, transaction := range expectedTransactions {
-		transaction.ID = uint64(len(transactions)) + uint64(i)
+	for i := range expectedTransactions {
+		expectedTransactions[i].ID = uint64(len(transactions)) + uint64(i)
 	}
 	sortTransactionsAsc(expectedTransactions)
 
-	dbAccounts, err := dbService.GetAccounts(&testUser)
+	dbAccounts, err := dbService.GetAccounts(testUser)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedAccounts, dbAccounts)
 
-	dbTransactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
+	dbTransactions, err := dbService.GetTransactions(testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	sortTransactionsAsc(dbTransactions)
 	assert.Equal(t, expectedTransactions, dbTransactions)

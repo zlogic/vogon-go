@@ -21,7 +21,7 @@ type Account struct {
 }
 
 // Encode serializes an Account.
-func (account *Account) Encode() ([]byte, error) {
+func (account Account) Encode() ([]byte, error) {
 	var value bytes.Buffer
 	if err := gob.NewEncoder(&value).Encode(account); err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func (account *Account) Decode(val []byte) error {
 	return gob.NewDecoder(bytes.NewBuffer(val)).Decode(account)
 }
 
-func (*DBService) createAccount(user *User, account *Account) func(*badger.Txn) error {
+func (DBService) createAccount(user User, account Account) func(*badger.Txn) error {
 	return func(txn *badger.Txn) error {
 		key := user.CreateAccountKey(account)
 		value, err := account.Encode()
@@ -49,7 +49,7 @@ func (*DBService) createAccount(user *User, account *Account) func(*badger.Txn) 
 
 // CreateAccount creates and saves the specified account.
 // It generates sets the ID to the generated account ID.
-func (s *DBService) CreateAccount(user *User, account *Account) error {
+func (s DBService) CreateAccount(user User, account *Account) error {
 	seq, err := s.db.GetSequence([]byte(user.CreateSequenceAccountKey()), 1)
 	defer seq.Release()
 	if err != nil {
@@ -64,17 +64,17 @@ func (s *DBService) CreateAccount(user *User, account *Account) error {
 	account.Balance = 0
 
 	return s.db.Update(func(txn *badger.Txn) error {
-		return s.createAccount(user, account)(txn)
+		return s.createAccount(user, *account)(txn)
 	})
 }
 
 // UpdateAccount saves an already existing account.
 // If the account doesn't exist, it returns an error.
-func (s *DBService) UpdateAccount(user *User, account *Account) error {
+func (s DBService) UpdateAccount(user User, account Account) error {
 	return s.db.Update(func(txn *badger.Txn) error {
 		key := user.CreateAccountKey(account)
 
-		previousAccount := &Account{}
+		previousAccount := Account{}
 		if err := getPreviousValue(txn, key, previousAccount.Decode); err != nil {
 			if err == badger.ErrKeyNotFound {
 				log.WithField("key", key).Error("Cannot update account if it doesn't exist")
@@ -97,14 +97,14 @@ func (s *DBService) UpdateAccount(user *User, account *Account) error {
 	})
 }
 
-func (s *DBService) updateAccountBalance(user *User, accountID uint64, deltaBalance int64) func(*badger.Txn) error {
+func (s DBService) updateAccountBalance(user User, accountID uint64, deltaBalance int64) func(*badger.Txn) error {
 	return func(txn *badger.Txn) error {
 		if deltaBalance == 0 {
 			return nil
 		}
 		key := user.CreateAccountKeyFromID(accountID)
 
-		account := &Account{}
+		account := Account{}
 		if err := getPreviousValue(txn, key, account.Decode); err != nil {
 
 			if err == badger.ErrKeyNotFound {
@@ -124,9 +124,9 @@ func (s *DBService) updateAccountBalance(user *User, accountID uint64, deltaBala
 	}
 }
 
-func (s *DBService) getAccounts(user *User) func(*badger.Txn) ([]*Account, error) {
-	return func(txn *badger.Txn) ([]*Account, error) {
-		accounts := make([]*Account, 0)
+func (s DBService) getAccounts(user User) func(*badger.Txn) ([]Account, error) {
+	return func(txn *badger.Txn) ([]Account, error) {
+		accounts := make([]Account, 0)
 
 		opts := badger.DefaultIteratorOptions
 		opts.Prefix = []byte(user.CreateAccountKeyPrefix())
@@ -137,7 +137,7 @@ func (s *DBService) getAccounts(user *User) func(*badger.Txn) ([]*Account, error
 
 			k := item.Key()
 
-			account := &Account{}
+			account := Account{}
 			if err := item.Value(account.Decode); err != nil {
 				log.WithField("key", k).WithError(err).Error("Failed to read value of account")
 				continue
@@ -150,8 +150,8 @@ func (s *DBService) getAccounts(user *User) func(*badger.Txn) ([]*Account, error
 
 // GetAccount returns an Account by its ID.
 // If the Account doesn't exist, it returns an error.
-func (s *DBService) GetAccount(user *User, accountID uint64) (*Account, error) {
-	account := &Account{}
+func (s DBService) GetAccount(user User, accountID uint64) (Account, error) {
+	account := Account{}
 
 	key := user.CreateAccountKeyFromID(accountID)
 
@@ -168,28 +168,28 @@ func (s *DBService) GetAccount(user *User, accountID uint64) (*Account, error) {
 		return err
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to get account %v", accountID)
+		return Account{}, errors.Wrapf(err, "Failed to get account %v", accountID)
 	}
 	return account, nil
 }
 
 // GetAccounts returns all accounts for user.
-func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
-	var accounts []*Account
+func (s DBService) GetAccounts(user User) ([]Account, error) {
+	var accounts []Account
 	err := s.db.View(func(txn *badger.Txn) error {
 		var err error
 		accounts, err = s.getAccounts(user)(txn)
 		return err
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to get accounts")
+		return []Account{}, errors.Wrapf(err, "Failed to get accounts")
 	}
 	return accounts, nil
 }
 
 // DeleteAccount deletes an account by its ID.
 // If the account doesn't exist, it returns an error.
-func (s *DBService) DeleteAccount(user *User, accountID uint64) error {
+func (s DBService) DeleteAccount(user User, accountID uint64) error {
 	key := user.CreateAccountKeyFromID(accountID)
 	return s.db.Update(func(txn *badger.Txn) error {
 		if _, err := txn.Get(key); err != nil {

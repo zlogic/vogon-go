@@ -34,44 +34,44 @@ func CreateUserKey(username string) []byte {
 }
 
 // CreateKey creates a key for user.
-func (user *User) CreateKey() []byte {
+func (user User) CreateKey() []byte {
 	return CreateUserKey(user.username)
 }
 
 // DecodeUserKey decodes the username from a user key.
-func DecodeUserKey(key []byte) (*string, error) {
+func DecodeUserKey(key []byte) (string, error) {
 	keyString := string(key)
 	if !strings.HasPrefix(keyString, UserKeyPrefix) {
-		return nil, errors.Errorf("Not a user key: %v", keyString)
+		return "", errors.Errorf("Not a user key: %v", keyString)
 	}
 	parts := strings.Split(keyString, separator)
 	if len(parts) != 2 {
-		return nil, errors.Errorf("Invalid format of user key: %v", keyString)
+		return "", errors.Errorf("Invalid format of user key: %v", keyString)
 	}
 	username, err := decodePart(parts[1])
 	if err != nil {
-		return nil, errors.Errorf("Failed to decode username: %v because of %v", keyString, err)
+		return "", errors.Errorf("Failed to decode username: %v because of %v", keyString, err)
 	}
-	return &username, nil
+	return username, nil
 }
 
 // AccountKeyPrefix is the key prefix for Account.
 const AccountKeyPrefix = "account" + separator
 
 // CreateAccountKeyPrefix creates an Account key prefix for user.
-func (user *User) CreateAccountKeyPrefix() string {
+func (user User) CreateAccountKeyPrefix() string {
 	return AccountKeyPrefix + strconv.FormatUint(user.ID, 10) + separator
 }
 
 // CreateAccountKeyFromID creates a key for an Account based on its ID.
-func (user *User) CreateAccountKeyFromID(accountID uint64) []byte {
-	id := make([]byte, 8)
-	binary.BigEndian.PutUint64(id, accountID)
-	return append([]byte(user.CreateAccountKeyPrefix()), id...)
+func (user User) CreateAccountKeyFromID(accountID uint64) []byte {
+	var id [8]byte
+	binary.BigEndian.PutUint64(id[:], accountID)
+	return append([]byte(user.CreateAccountKeyPrefix()), id[:]...)
 }
 
 // CreateAccountKey creates a key for an Account entry.
-func (user *User) CreateAccountKey(account *Account) []byte {
+func (user User) CreateAccountKey(account Account) []byte {
 	return user.CreateAccountKeyFromID(account.ID)
 }
 
@@ -79,19 +79,19 @@ func (user *User) CreateAccountKey(account *Account) []byte {
 const TransactionKeyPrefix = "transaction" + separator
 
 // CreateTransactionKeyPrefix creates a Transaction key prefix for user.
-func (user *User) CreateTransactionKeyPrefix() string {
+func (user User) CreateTransactionKeyPrefix() string {
 	return TransactionKeyPrefix + strconv.FormatUint(user.ID, 10) + separator
 }
 
 // CreateTransactionKeyFromID creates a key for a Transaction based on its ID.
-func (user *User) CreateTransactionKeyFromID(transactionID uint64) []byte {
-	id := make([]byte, 8)
-	binary.BigEndian.PutUint64(id, transactionID)
-	return append([]byte(user.CreateTransactionKeyPrefix()), id...)
+func (user User) CreateTransactionKeyFromID(transactionID uint64) []byte {
+	var id [8]byte
+	binary.BigEndian.PutUint64(id[:], transactionID)
+	return append([]byte(user.CreateTransactionKeyPrefix()), id[:]...)
 }
 
 // CreateTransactionKey creates a key for a Transaction entry.
-func (user *User) CreateTransactionKey(transaction *Transaction) []byte {
+func (user User) CreateTransactionKey(transaction Transaction) []byte {
 	return user.CreateTransactionKeyFromID(transaction.ID)
 }
 
@@ -99,15 +99,15 @@ func (user *User) CreateTransactionKey(transaction *Transaction) []byte {
 const TransactionIndexPrefix = indexPrefix + separator + "transaction" + separator
 
 // CreateTransactionIndexKeyPrefix creates a Transaction sort index key prefix for user.
-func (user *User) CreateTransactionIndexKeyPrefix() string {
+func (user User) CreateTransactionIndexKeyPrefix() string {
 	return TransactionIndexPrefix + strconv.FormatUint(user.ID, 10) + separator
 }
 
 // CreateTransactionIndexKey creates a Transaction sort index key a Transaciton.
-func (user *User) CreateTransactionIndexKey(transaction *Transaction) []byte {
-	id := make([]byte, 8)
-	binary.BigEndian.PutUint64(id, transaction.ID)
-	return append([]byte(user.CreateTransactionIndexKeyPrefix()+transaction.Date+separator), id...)
+func (user User) CreateTransactionIndexKey(transaction Transaction) []byte {
+	var id [8]byte
+	binary.BigEndian.PutUint64(id[:], transaction.ID)
+	return append([]byte(user.CreateTransactionIndexKeyPrefix()+transaction.Date+separator), id[:]...)
 }
 
 // DecodeTransactionIndexKey decodes the Transaction ID from a transaction sort index key.

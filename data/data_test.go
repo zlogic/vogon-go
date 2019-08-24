@@ -28,7 +28,7 @@ var testAccount2 = Account{
 	ShowInList:     true,
 }
 
-var dbService *DBService
+var dbService DBService
 
 func TestMain(m *testing.M) {
 	dir, err := ioutil.TempDir("", "vogon")
@@ -65,8 +65,8 @@ func destroyDb(dir string) {
 	os.RemoveAll(dir)
 }
 
-func getAllUsers(s *DBService) ([]*User, error) {
-	users := make([]*User, 0)
+func getAllUsers(s DBService) ([]User, error) {
+	users := make([]User, 0)
 	err := s.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.Prefix = []byte(UserKeyPrefix)
@@ -82,13 +82,13 @@ func getAllUsers(s *DBService) ([]*User, error) {
 				return errors.Wrap(err, "Failed to decode username of user")
 			}
 
-			user := &User{}
+			user := User{}
 
 			if err := item.Value(user.Decode); err != nil {
 				return errors.Wrap(err, "Failed to read value of user")
 			}
 
-			user.username = *username
+			user.username = username
 			users = append(users, user)
 		}
 		return nil
@@ -99,12 +99,12 @@ func getAllUsers(s *DBService) ([]*User, error) {
 	return users, nil
 }
 
-func createTestAccounts(s *DBService) error {
+func createTestAccounts(s DBService) error {
 	saveUser := testUser
 	saveAccount := testAccount1
-	if err := s.CreateAccount(&saveUser, &saveAccount); err != nil {
+	if err := s.CreateAccount(saveUser, &saveAccount); err != nil {
 		return err
 	}
 	saveAccount = testAccount2
-	return s.CreateAccount(&saveUser, &saveAccount)
+	return s.CreateAccount(saveUser, &saveAccount)
 }

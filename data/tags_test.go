@@ -23,12 +23,12 @@ func TestGetTags(t *testing.T) {
 		Tags:        []string{"a1", "t1"},
 	}
 
-	err = dbService.CreateTransaction(&testUser, &transaction1)
+	err = dbService.CreateTransaction(testUser, &transaction1)
 	assert.NoError(t, err)
-	err = dbService.CreateTransaction(&testUser, &transaction2)
+	err = dbService.CreateTransaction(testUser, &transaction2)
 	assert.NoError(t, err)
 
-	tags, err := dbService.GetTags(&testUser)
+	tags, err := dbService.GetTags(testUser)
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, []string{"a1", "t1", "t2"}, tags)
 }
@@ -50,12 +50,12 @@ func TestGetTransactionsWithoutTags(t *testing.T) {
 		Tags:        []string{},
 	}
 
-	err = dbService.CreateTransaction(&testUser, &transaction1)
+	err = dbService.CreateTransaction(testUser, &transaction1)
 	assert.NoError(t, err)
-	err = dbService.CreateTransaction(&testUser, &transaction2)
+	err = dbService.CreateTransaction(testUser, &transaction2)
 	assert.NoError(t, err)
 
-	tags, err := dbService.GetTags(&testUser)
+	tags, err := dbService.GetTags(testUser)
 	assert.NoError(t, err)
 	assert.Empty(t, tags)
 }
@@ -64,7 +64,7 @@ func TestGetTagsNoTransactions(t *testing.T) {
 	err := resetDb()
 	assert.NoError(t, err)
 
-	tags, err := dbService.GetTags(&testUser)
+	tags, err := dbService.GetTags(testUser)
 	assert.NoError(t, err)
 	assert.Empty(t, tags)
 }

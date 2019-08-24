@@ -10,10 +10,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/zlogic/vogon-go/data"
 )
 
 // SettingsHandler gets or updates settings for an authenticated user.
-func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+func SettingsHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
 		if username == "" {
@@ -26,7 +27,7 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			handleError(w, r, err)
 			return
 		}
-		if user == nil {
+		if user == (data.User{}) {
 			handleBadCredentials(w, r, fmt.Errorf("Unknown username %v", username))
 			return
 		}
@@ -62,7 +63,7 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if err := s.db.SaveUser(user); err != nil {
+			if err := s.db.SaveUser(&user); err != nil {
 				handleError(w, r, err)
 				return
 			}
@@ -70,7 +71,7 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			if username != newUsername {
 				// Force logout
 				cookie := s.cookieHandler.NewCookie()
-				http.SetCookie(w, cookie)
+				http.SetCookie(w, &cookie)
 			}
 
 			restoreFile, ok := r.MultipartForm.File["restorefile"]
@@ -116,10 +117,10 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 }
 
 // BackupHandler returns a serialized backup of all data for an authenticated user.
-func BackupHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+func BackupHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
-		if user == nil {
+		if user == (data.User{}) {
 			return
 		}
 
