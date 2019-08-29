@@ -17,11 +17,11 @@ func TestLoginHandlerSuccessful(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	user := data.User{ID: 1}
+	user := &data.User{ID: 1}
 	user.SetPassword("pass")
 	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
@@ -49,11 +49,11 @@ func TestLoginHandlerIncorrectPassword(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	user := data.User{ID: 1}
+	user := &data.User{ID: 1}
 	user.SetPassword("pass")
 	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
@@ -74,11 +74,11 @@ func TestLoginHandlerUnknownUsername(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user02").Return(data.User{}, nil).Once()
+	dbMock.On("GetUser", "user02").Return(nil, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/login", strings.NewReader("username=user02&password=pass"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -97,7 +97,7 @@ func TestRegisterHandlerSuccessful(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -108,7 +108,7 @@ func TestRegisterHandlerSuccessful(t *testing.T) {
 			userArg := args.Get(0).(*data.User)
 			assert.NoError(t, userArg.ValidatePassword("pass"))
 			userArg.Password = saveUser.Password
-			assert.Equal(t, &saveUser, userArg)
+			assert.Equal(t, saveUser, userArg)
 		})
 
 	req, _ := http.NewRequest("POST", "/api/register", strings.NewReader("username=user01&password=pass"))
@@ -135,7 +135,7 @@ func TestRegisterHandlerUsernameAlreadyInUse(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -162,7 +162,7 @@ func TestRegisterRegistrationNotAllowed(t *testing.T) {
 	defer func() { os.Unsetenv("ALLOW_REGISTRATION") }()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 

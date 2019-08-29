@@ -10,22 +10,22 @@ import (
 	"github.com/zlogic/vogon-go/data"
 )
 
-func createTestTransactions() []data.Transaction {
-	return []data.Transaction{data.Transaction{
+func createTestTransactions() []*data.Transaction {
+	return []*data.Transaction{&data.Transaction{
 		ID:          3,
 		Description: "Gadgets 2",
 		Type:        data.TransactionTypeTransfer,
 		Tags:        []string{"Gadgets"},
 		Date:        "2015-11-03",
 		Components:  []data.TransactionComponent{},
-	}, data.Transaction{
+	}, &data.Transaction{
 		ID:          2,
 		Description: "Gadgets",
 		Type:        data.TransactionTypeExpenseIncome,
 		Tags:        []string{"Gadgets", "Widgets"},
 		Date:        "2015-11-03",
 		Components:  []data.TransactionComponent{},
-	}, data.Transaction{
+	}, &data.Transaction{
 		ID:          0,
 		Description: "Widgets",
 		Type:        data.TransactionTypeExpenseIncome,
@@ -34,7 +34,7 @@ func createTestTransactions() []data.Transaction {
 		Components: []data.TransactionComponent{
 			data.TransactionComponent{AccountID: 1, Amount: -10000},
 		},
-	}, data.Transaction{
+	}, &data.Transaction{
 		ID:          1,
 		Description: "Salary",
 		Type:        data.TransactionTypeExpenseIncome,
@@ -47,8 +47,8 @@ func createTestTransactions() []data.Transaction {
 	}}
 }
 
-func createTestTransaction() data.Transaction {
-	return data.Transaction{
+func createTestTransaction() *data.Transaction {
+	return &data.Transaction{
 		ID:          42,
 		Description: "Widgets",
 		Type:        data.TransactionTypeExpenseIncome,
@@ -65,24 +65,24 @@ func TestGetTransactionsAuthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/transactions/getpage", strings.NewReader("offset=0&limit=10"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	transactions := createTestTransactions()
 	options := data.GetTransactionOptions{Offset: 0, Limit: 10}
-	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -101,20 +101,20 @@ func TestGetTransactionsFilterAuthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/transactions/getpage", strings.NewReader("offset=0&limit=10&filterDescription=d1&filterFrom=f1&filterTo=t1&filterTags=s1,s2&filterAccounts=1,2&filterIncludeExpenseIncome=false&filterIncludeTransfer=false"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	transactions := createTestTransactions()
 	options := data.GetTransactionOptions{
@@ -130,7 +130,7 @@ func TestGetTransactionsFilterAuthorized(t *testing.T) {
 			ExcludeTransfer:      true,
 		},
 	}
-	dbMock.On("GetTransactions", user, options).Return(transactions, nil).Once()
+	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -143,13 +143,12 @@ func TestGetTransactionsFilterAuthorized(t *testing.T) {
 
 	dbMock.AssertExpectations(t)
 }
-
 func TestGetTransactionsUnauthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -169,19 +168,19 @@ func TestGetTransactionsUserDoesNotExist(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user01").Return(data.User{}, nil).Once()
+	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/transactions/getpage", strings.NewReader("offset=0&limit=0"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
@@ -195,23 +194,23 @@ func TestGetTransactionsCountAuthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/transactions/getcount", strings.NewReader(""))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	options := data.TransactionFilterOptions{}
-	dbMock.On("CountTransactions", user, options).Return(uint64(123), nil).Once()
+	dbMock.On("CountTransactions", &user, options).Return(uint64(123), nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -225,20 +224,20 @@ func TestGetTransactionsCountFilterAuthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/transactions/getcount", strings.NewReader("filterDescription=d1&filterFrom=f1&filterTo=t1&filterTags=s1,s2&filterAccounts=1,2&filterIncludeExpenseIncome=false&filterIncludeTransfer=false"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	options := data.TransactionFilterOptions{
 		FilterDescription:    "d1",
@@ -249,7 +248,7 @@ func TestGetTransactionsCountFilterAuthorized(t *testing.T) {
 		ExcludeExpenseIncome: true,
 		ExcludeTransfer:      true,
 	}
-	dbMock.On("CountTransactions", user, options).Return(uint64(123), nil).Once()
+	dbMock.On("CountTransactions", &user, options).Return(uint64(123), nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -263,7 +262,7 @@ func TestGetTransactionsCountUnauthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -283,19 +282,19 @@ func TestGetTransactionsCountUserDoesNotExist(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user01").Return(data.User{}, nil).Once()
+	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/transactions/getcount", strings.NewReader(""))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
@@ -308,22 +307,22 @@ func TestGetTransactionAuthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("GET", "/api/transaction/42", nil)
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	transaction := createTestTransaction()
-	dbMock.On("GetTransaction", user, uint64(42)).Return(transaction, nil).Once()
+	dbMock.On("GetTransaction", &user, uint64(42)).Return(transaction, nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -337,7 +336,7 @@ func TestGetTransactionUnauthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -356,18 +355,18 @@ func TestGetTransactionUserDoesNotExist(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user01").Return(data.User{}, nil).Once()
+	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
 
 	req, _ := http.NewRequest("GET", "/api/transaction/42", nil)
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
@@ -381,21 +380,21 @@ func TestDeleteTransactionAuthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("DELETE", "/api/transaction/42", nil)
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
-	dbMock.On("DeleteTransaction", user, uint64(42)).Return(nil).Once()
+	dbMock.On("DeleteTransaction", &user, uint64(42)).Return(nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -409,7 +408,7 @@ func TestDeleteTransactionUnauthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -428,18 +427,18 @@ func TestDeleteTransactionUserDoesNotExist(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user01").Return(data.User{}, nil).Once()
+	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
 
 	req, _ := http.NewRequest("DELETE", "/api/transaction/42", nil)
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
@@ -453,22 +452,22 @@ func TestPostCreateTransactionAuthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/transaction/new", strings.NewReader(`{"ID":42,"Description":"Widgets","Type":0,"Tags":["Widgets"],"Date":"2015-11-02","Components":[{"Amount":-10000,"AccountID":1}]}`))
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	transaction := createTestTransaction()
-	dbMock.On("CreateTransaction", user, &transaction).Return(nil).Once()
+	dbMock.On("CreateTransaction", &user, transaction).Return(nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -482,22 +481,22 @@ func TestPostUpdateTransactionAuthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := testUser
-	dbMock.On("GetUser", "user01").Return(user, nil).Once()
+	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/transaction/42", strings.NewReader(`{"ID":42,"Description":"Widgets","Type":0,"Tags":["Widgets"],"Date":"2015-11-02","Components":[{"Amount":-10000,"AccountID":1}]}`))
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	transaction := createTestTransaction()
-	dbMock.On("UpdateTransaction", user, transaction).Return(nil).Once()
+	dbMock.On("UpdateTransaction", &user, transaction).Return(nil).Once()
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
@@ -511,7 +510,7 @@ func TestPostTransactionUnauthorized(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -530,18 +529,18 @@ func TestPostTransactionUserDoesNotExist(t *testing.T) {
 	cookieHandler, err := createTestCookieHandler()
 	assert.NoError(t, err)
 
-	services := Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: cookieHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user01").Return(data.User{}, nil).Once()
+	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/transaction/42", nil)
 	res := httptest.NewRecorder()
 
 	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(&cookie, "user01")
-	req.AddCookie(&cookie)
+	cookieHandler.SetCookieUsername(cookie, "user01")
+	req.AddCookie(cookie)
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)

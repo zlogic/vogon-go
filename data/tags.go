@@ -6,8 +6,8 @@ import (
 )
 
 // GetTags returns an unsorted (but deduplicated) list of tags for user.
-func (s DBService) GetTags(user User) ([]string, error) {
-	var transactions []Transaction
+func (s *DBService) GetTags(user *User) ([]string, error) {
+	var transactions []*Transaction
 
 	err := s.db.View(func(txn *badger.Txn) error {
 		var err error

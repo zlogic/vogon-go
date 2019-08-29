@@ -16,7 +16,7 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	http.Error(w, "Internal server error", http.StatusInternalServerError)
 }
 
-func validateUser(w http.ResponseWriter, r *http.Request, s Services) string {
+func validateUser(w http.ResponseWriter, r *http.Request, s *Services) string {
 	username := s.cookieHandler.GetUsername(w, r)
 	if username == "" {
 		http.Redirect(w, r, "login", http.StatusSeeOther)
@@ -29,7 +29,7 @@ func loadTemplate(pageName string) (*template.Template, error) {
 }
 
 type viewData struct {
-	User     data.User
+	User     *data.User
 	Username string
 	Name     string
 	Form     url.Values
@@ -37,7 +37,7 @@ type viewData struct {
 
 // RootHandler handles the root url.
 // It redirects authenticated users to the default page and unauthenticated users to the login page.
-func RootHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func RootHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
 		var url string
@@ -51,10 +51,10 @@ func RootHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 }
 
 // LogoutHandler logs out the user.
-func LogoutHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func LogoutHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie := s.cookieHandler.NewCookie()
-		http.SetCookie(w, &cookie)
+		http.SetCookie(w, cookie)
 		http.Redirect(w, r, "login", http.StatusSeeOther)
 	}
 }
@@ -65,7 +65,7 @@ func FaviconHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // HTMLLoginHandler serves the login page.
-func HTMLLoginHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func HTMLLoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
 		if username != "" {
@@ -86,7 +86,7 @@ func HTMLLoginHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 }
 
 // HTMLRegisterHandler serves the register page.
-func HTMLRegisterHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func HTMLRegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := s.cookieHandler.GetUsername(w, r)
 		if username != "" {
@@ -103,7 +103,7 @@ func HTMLRegisterHandler(s Services) func(w http.ResponseWriter, r *http.Request
 }
 
 // HTMLUserPageHandler serves a user-specific page.
-func HTMLUserPageHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func HTMLUserPageHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := validateUser(w, r, s)
 		if username == "" {

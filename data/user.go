@@ -24,8 +24,8 @@ type User struct {
 var ErrUserAlreadyExists = errors.New("id conflicts with existing user")
 
 // NewUser creates a User with the provided username and a generated ID.
-func NewUser(username string) User {
-	return User{newUsername: username}
+func NewUser(username string) *User {
+	return &User{newUsername: username}
 }
 
 // Decode deserializes a User.
@@ -35,29 +35,29 @@ func (user *User) Decode(val []byte) error {
 
 // GetUser returns the User by username.
 // If user doesn't exist, returns nil.
-func (s DBService) GetUser(username string) (User, error) {
-	user := User{username: username}
+func (s *DBService) GetUser(username string) (*User, error) {
+	user := &User{username: username}
 	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(user.CreateKey())
 		if err == badger.ErrKeyNotFound {
-			user = User{}
+			user = nil
 			return nil
 		}
 
 		if err := item.Value(user.Decode); err != nil {
-			user = User{}
+			user = nil
 			return err
 		}
 		return nil
 	})
 	if err != nil {
-		return User{}, errors.Wrapf(err, "Cannot read User %v", username)
+		return nil, errors.Wrapf(err, "Cannot read User %v", username)
 	}
 	return user, nil
 }
 
 // SaveUser saves updates an existing user in the database.
-func (s DBService) SaveUser(user *User) error {
+func (s *DBService) SaveUser(user *User) error {
 	if user.newUsername == "" {
 		user.newUsername = user.username
 	}
@@ -86,7 +86,7 @@ func (s DBService) SaveUser(user *User) error {
 			return ErrUserAlreadyExists
 		}
 
-		existingUser := User{}
+		existingUser := &User{}
 		if existingItem != nil || (err != nil && err != badger.ErrKeyNotFound) {
 			if err := existingItem.Value(existingUser.Decode); err != nil {
 				return errors.Wrap(err, "Cannot get existing value for user")
@@ -124,7 +124,7 @@ func (s DBService) SaveUser(user *User) error {
 }
 
 // GetUsername returns the user's current username.
-func (user User) GetUsername() string {
+func (user *User) GetUsername() string {
 	return user.username
 }
 
@@ -149,6 +149,6 @@ func (user *User) SetPassword(newPassword string) error {
 }
 
 // ValidatePassword checks if password matches the user's password.
-func (user User) ValidatePassword(password string) error {
+func (user *User) ValidatePassword(password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 }

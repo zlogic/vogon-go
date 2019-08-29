@@ -17,26 +17,26 @@ func handleBadCredentials(w http.ResponseWriter, r *http.Request, err error) {
 	http.Error(w, "Bad credentials", http.StatusUnauthorized)
 }
 
-func validateUserForAPI(w http.ResponseWriter, r *http.Request, s Services) data.User {
+func validateUserForAPI(w http.ResponseWriter, r *http.Request, s *Services) *data.User {
 	username := s.cookieHandler.GetUsername(w, r)
 	if username == "" {
 		http.Error(w, "Bad credentials", http.StatusUnauthorized)
-		return data.User{}
+		return nil
 	}
 
 	user, err := s.db.GetUser(username)
 	if err != nil {
 		handleError(w, r, err)
-		return data.User{}
+		return nil
 	}
-	if user == (data.User{}) {
+	if user == nil {
 		handleBadCredentials(w, r, fmt.Errorf("Unknown username %v", username))
 	}
 	return user
 }
 
 // LoginHandler authenticates the user and sets the encrypted session cookie if the user provided valid credentials.
-func LoginHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func LoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
@@ -57,7 +57,7 @@ func LoginHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 			handleError(w, r, err)
 			return
 		}
-		if user == (data.User{}) {
+		if user == nil {
 			handleBadCredentials(w, r, fmt.Errorf("User %v does not exist", username))
 			return
 		}
@@ -67,12 +67,12 @@ func LoginHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		cookie := s.cookieHandler.NewCookie()
-		s.cookieHandler.SetCookieUsername(&cookie, username)
+		s.cookieHandler.SetCookieUsername(cookie, username)
 		if !rememberMe {
 			cookie.Expires = time.Time{}
 			cookie.MaxAge = 0
 		}
-		http.SetCookie(w, &cookie)
+		http.SetCookie(w, cookie)
 		_, err = io.WriteString(w, "OK")
 		if err != nil {
 			log.WithError(err).Error("Failed to write response")
@@ -81,7 +81,7 @@ func LoginHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 }
 
 // RegisterHandler creates and logs in a new user.
-func RegisterHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func RegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
 		if err != nil {
@@ -102,7 +102,7 @@ func RegisterHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 			handleError(w, r, err)
 			return
 		}
-		if err := s.db.SaveUser(&user); err != nil {
+		if err := s.db.SaveUser(user); err != nil {
 			if err == data.ErrUserAlreadyExists {
 				http.Error(w, "Username is already in use", http.StatusInternalServerError)
 			} else {
@@ -111,12 +111,12 @@ func RegisterHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		cookie := s.cookieHandler.NewCookie()
-		s.cookieHandler.SetCookieUsername(&cookie, username)
+		s.cookieHandler.SetCookieUsername(cookie, username)
 		if !rememberMe {
 			cookie.Expires = time.Time{}
 			cookie.MaxAge = 0
 		}
-		http.SetCookie(w, &cookie)
+		http.SetCookie(w, cookie)
 		_, err = io.WriteString(w, "OK")
 		if err != nil {
 			log.WithError(err).Error("Failed to write response")

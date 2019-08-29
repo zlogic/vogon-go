@@ -10,12 +10,12 @@ import (
 
 // BackupData is the toplevel structure exported in a backup.
 type BackupData struct {
-	Accounts     []Account
-	Transactions []Transaction
+	Accounts     []*Account
+	Transactions []*Transaction
 }
 
 // Backup returns a serialized copy of all data for user.
-func (s DBService) Backup(user User) (string, error) {
+func (s *DBService) Backup(user *User) (string, error) {
 	data := BackupData{}
 
 	err := s.db.View(func(txn *badger.Txn) error {
@@ -31,8 +31,8 @@ func (s DBService) Backup(user User) (string, error) {
 		}
 
 		sortTransactionsAsc(transactions)
-		for i := range transactions {
-			transactions[i].ID = uint64(i)
+		for i, transaction := range transactions {
+			transaction.ID = uint64(i)
 		}
 
 		data.Accounts = accounts
@@ -69,7 +69,7 @@ func deletePrefix(prefix []byte) func(txn *badger.Txn) error {
 }
 
 // Restore replaces all data for user with the provided serialized backup.
-func (s DBService) Restore(user User, value string) error {
+func (s *DBService) Restore(user *User, value string) error {
 	data := BackupData{}
 	if err := json.Unmarshal([]byte(value), &data); err != nil {
 		return errors.Wrap(err, "Error unmarshaling json")

@@ -12,10 +12,10 @@ import (
 )
 
 // AccountsHandler returns all Accounts for an authenticated user.
-func AccountsHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func AccountsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
-		if user == (data.User{}) {
+		if user == nil {
 			return
 		}
 
@@ -32,10 +32,10 @@ func AccountsHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 }
 
 // AccountHandler gets, updates or deletes an Account.
-func AccountHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func AccountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
-		if user == (data.User{}) {
+		if user == nil {
 			return
 		}
 
@@ -43,7 +43,7 @@ func AccountHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 		requestID := vars["id"]
 
 		if r.Method == http.MethodPost {
-			account := data.Account{}
+			account := &data.Account{}
 
 			err := json.NewDecoder(r.Body).Decode(&account)
 			if err != nil {
@@ -52,7 +52,7 @@ func AccountHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if requestID == "new" {
-				err = s.db.CreateAccount(user, &account)
+				err = s.db.CreateAccount(user, account)
 				requestID = strconv.FormatUint(account.ID, 10)
 			} else {
 				err = s.db.UpdateAccount(user, account)

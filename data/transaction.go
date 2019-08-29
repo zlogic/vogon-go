@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -74,7 +73,7 @@ func IteratorIndexOptions() badger.IteratorOptions {
 }
 
 // Encode serializes a Transaction.
-func (transaction Transaction) Encode() ([]byte, error) {
+func (transaction *Transaction) Encode() ([]byte, error) {
 	var value bytes.Buffer
 	if err := gob.NewEncoder(&value).Encode(transaction); err != nil {
 		return nil, err
@@ -123,7 +122,7 @@ func (transaction *Transaction) Normalize() error {
 	return nil
 }
 
-func sortTransactionsAsc(transactions []Transaction) {
+func sortTransactionsAsc(transactions []*Transaction) {
 	sort.Slice(transactions, func(i, j int) bool {
 		if transactions[i].Date != transactions[j].Date {
 			return transactions[i].Date < transactions[j].Date
@@ -132,7 +131,7 @@ func sortTransactionsAsc(transactions []Transaction) {
 	})
 }
 
-func (s DBService) createTransaction(user User, transaction Transaction) func(*badger.Txn) error {
+func (s *DBService) createTransaction(user *User, transaction *Transaction) func(*badger.Txn) error {
 	return func(txn *badger.Txn) error {
 		key := user.CreateTransactionKey(transaction)
 		value, err := transaction.Encode()
@@ -140,7 +139,7 @@ func (s DBService) createTransaction(user User, transaction Transaction) func(*b
 			return errors.Wrap(err, "Cannot encode transaction")
 		}
 
-		if err := s.updateAccountsBalance(user, nil, transaction.Components)(txn); err != nil {
+		if err := s.updateAccountsBalance(user, nil, &transaction.Components)(txn); err != nil {
 			return errors.Wrap(err, "Cannot update account balance")
 		}
 
@@ -154,7 +153,7 @@ func (s DBService) createTransaction(user User, transaction Transaction) func(*b
 }
 
 // CreateTransaction saves a new Transaction into the database.
-func (s DBService) CreateTransaction(user User, transaction *Transaction) error {
+func (s *DBService) CreateTransaction(user *User, transaction *Transaction) error {
 	seq, err := s.db.GetSequence([]byte(user.CreateSequenceTransactionKey()), 1)
 	defer seq.Release()
 	if err != nil {
@@ -167,21 +166,21 @@ func (s DBService) CreateTransaction(user User, transaction *Transaction) error 
 	transaction.ID = id
 
 	return s.db.Update(func(txn *badger.Txn) error {
-		index := user.CreateTransactionIndexKey(*transaction)
+		index := user.CreateTransactionIndexKey(transaction)
 		if err := txn.Set(index, nil); err != nil {
 			return errors.Wrap(err, "Cannot create index for transaction")
 		}
 
-		return s.createTransaction(user, *transaction)(txn)
+		return s.createTransaction(user, transaction)(txn)
 	})
 }
 
 // UpdateTransaction updates an existing Transaction in the database.
-func (s DBService) UpdateTransaction(user User, transaction Transaction) error {
+func (s *DBService) UpdateTransaction(user *User, transaction *Transaction) error {
 	return s.db.Update(func(txn *badger.Txn) error {
 		key := user.CreateTransactionKey(transaction)
 
-		previousTransaction := Transaction{}
+		previousTransaction := &Transaction{}
 		if err := getPreviousValue(txn, key, previousTransaction.Decode); err != nil {
 			if err == badger.ErrKeyNotFound {
 				log.WithField("key", key).Error("Cannot update transaction if it doesn't exist")
@@ -190,12 +189,12 @@ func (s DBService) UpdateTransaction(user User, transaction Transaction) error {
 			log.WithField("key", key).WithError(err).Error("Failed to read previous value of transaction")
 			return err
 		}
-		if reflect.DeepEqual(transaction, previousTransaction) {
+		if transaction == previousTransaction {
 			log.WithField("key", key).Debug("Transaction is unchanged")
 			return nil
 		}
 
-		if err := s.updateAccountsBalance(user, previousTransaction.Components, transaction.Components)(txn); err != nil {
+		if err := s.updateAccountsBalance(user, &previousTransaction.Components, &transaction.Components)(txn); err != nil {
 			return errors.Wrap(err, "Cannot update account balance")
 		}
 
@@ -218,16 +217,16 @@ func (s DBService) UpdateTransaction(user User, transaction Transaction) error {
 	})
 }
 
-func (s DBService) updateAccountsBalance(user User, previousComponents []TransactionComponent, newComponents []TransactionComponent) func(*badger.Txn) error {
+func (s *DBService) updateAccountsBalance(user *User, previousComponents *[]TransactionComponent, newComponents *[]TransactionComponent) func(*badger.Txn) error {
 	return func(txn *badger.Txn) error {
 		accountDeltas := make(map[uint64]int64)
 		if previousComponents != nil {
-			for _, component := range previousComponents {
+			for _, component := range *previousComponents {
 				accountDeltas[component.AccountID] = accountDeltas[component.AccountID] - component.Amount
 			}
 		}
 		if newComponents != nil {
-			for _, component := range newComponents {
+			for _, component := range *newComponents {
 				accountDeltas[component.AccountID] = accountDeltas[component.AccountID] + component.Amount
 			}
 		}
@@ -241,7 +240,7 @@ func (s DBService) updateAccountsBalance(user User, previousComponents []Transac
 }
 
 // IsEmpty returns if options do not apply any filtering (all transactions match this filter).
-func (options TransactionFilterOptions) IsEmpty() bool {
+func (options *TransactionFilterOptions) IsEmpty() bool {
 	return options.FilterDescription == "" &&
 		options.FilterFromDate == "" &&
 		options.FilterToDate == "" &&
@@ -252,7 +251,7 @@ func (options TransactionFilterOptions) IsEmpty() bool {
 }
 
 // Matches returns true if transaction is accepted by the filter.
-func (options TransactionFilterOptions) Matches(transaction Transaction) bool {
+func (options *TransactionFilterOptions) Matches(transaction *Transaction) bool {
 	containsTag := func(searchIn []string, searchFor []string) bool {
 		for _, a := range searchIn {
 			for _, b := range searchFor {
@@ -263,7 +262,7 @@ func (options TransactionFilterOptions) Matches(transaction Transaction) bool {
 		}
 		return false
 	}
-	containsAccount := func(searchIn Transaction, searchFor []uint64) bool {
+	containsAccount := func(searchIn *Transaction, searchFor []uint64) bool {
 		for _, a := range searchIn.Components {
 			for _, b := range searchFor {
 				if a.AccountID == b {
@@ -287,29 +286,29 @@ func (options TransactionFilterOptions) Matches(transaction Transaction) bool {
 		matchesType
 }
 
-func (s DBService) getTransaction(user User, transactionID uint64) func(*badger.Txn) (Transaction, error) {
-	return func(txn *badger.Txn) (Transaction, error) {
+func (s *DBService) getTransaction(user *User, transactionID uint64) func(*badger.Txn) (*Transaction, error) {
+	return func(txn *badger.Txn) (*Transaction, error) {
 		transactionKey := user.CreateTransactionKeyFromID(transactionID)
 		item, err := txn.Get(transactionKey)
 		if err != nil {
 			log.WithField("key", transactionKey).WithError(err).Error("Failed to get transaction")
-			return Transaction{}, err
+			return nil, err
 		}
 
 		k := item.Key()
-		transaction := Transaction{}
+		transaction := &Transaction{}
 		if err := item.Value(transaction.Decode); err != nil {
 			log.WithField("key", k).WithError(err).Error("Failed to read value of transaction")
-			return Transaction{}, err
+			return nil, err
 		}
 
 		return transaction, nil
 	}
 }
 
-func (s DBService) getTransactions(user User, options GetTransactionOptions) func(*badger.Txn) ([]Transaction, error) {
-	return func(txn *badger.Txn) ([]Transaction, error) {
-		transactions := make([]Transaction, 0)
+func (s *DBService) getTransactions(user *User, options GetTransactionOptions) func(*badger.Txn) ([]*Transaction, error) {
+	return func(txn *badger.Txn) ([]*Transaction, error) {
+		transactions := make([]*Transaction, 0)
 
 		opts := IteratorIndexOptions()
 		opts.Prefix = []byte(user.CreateTransactionIndexKeyPrefix())
@@ -361,8 +360,8 @@ func (s DBService) getTransactions(user User, options GetTransactionOptions) fun
 
 // GetTransaction returns a Transaction by its ID.
 // If the Transaction doesn't exist, it returns an error.
-func (s DBService) GetTransaction(user User, transactionID uint64) (Transaction, error) {
-	var transaction Transaction
+func (s *DBService) GetTransaction(user *User, transactionID uint64) (*Transaction, error) {
+	var transaction *Transaction
 
 	err := s.db.View(func(txn *badger.Txn) error {
 		var err error
@@ -370,15 +369,15 @@ func (s DBService) GetTransaction(user User, transactionID uint64) (Transaction,
 		return err
 	})
 	if err != nil {
-		return Transaction{}, errors.Wrapf(err, "Failed to get transaction %v", transactionID)
+		return nil, errors.Wrapf(err, "Failed to get transaction %v", transactionID)
 	}
 	return transaction, nil
 }
 
 // GetTransactions returns transactions for user matching the filter and paging options.
 // Returns an empty list if no transactions match the options.
-func (s DBService) GetTransactions(user User, options GetTransactionOptions) ([]Transaction, error) {
-	var transactions []Transaction
+func (s *DBService) GetTransactions(user *User, options GetTransactionOptions) ([]*Transaction, error) {
+	var transactions []*Transaction
 
 	err := s.db.View(func(txn *badger.Txn) error {
 		var err error
@@ -392,7 +391,7 @@ func (s DBService) GetTransactions(user User, options GetTransactionOptions) ([]
 }
 
 // CountTransactions returns the number of transactions matching the filter options.
-func (s DBService) CountTransactions(user User, options TransactionFilterOptions) (uint64, error) {
+func (s *DBService) CountTransactions(user *User, options TransactionFilterOptions) (uint64, error) {
 	var count uint64
 
 	emptyFilter := options.IsEmpty()
@@ -432,10 +431,10 @@ func (s DBService) CountTransactions(user User, options TransactionFilterOptions
 // DeleteTransaction deletes a Transaction and its sort index key by its ID.
 // Deleting a transaction also updates the affected Account balance.
 // If transaction doesn't exist, returns an error.
-func (s DBService) DeleteTransaction(user User, transactionID uint64) error {
+func (s *DBService) DeleteTransaction(user *User, transactionID uint64) error {
 	key := user.CreateTransactionKeyFromID(transactionID)
 	return s.db.Update(func(txn *badger.Txn) error {
-		deleteTransaction := Transaction{}
+		deleteTransaction := &Transaction{}
 		if err := getPreviousValue(txn, key, deleteTransaction.Decode); err != nil {
 			if err == badger.ErrKeyNotFound {
 				log.WithField("key", key).Error("Cannot delete transaction if it doesn't exist")
@@ -445,7 +444,7 @@ func (s DBService) DeleteTransaction(user User, transactionID uint64) error {
 			return err
 		}
 
-		if err := s.updateAccountsBalance(user, deleteTransaction.Components, nil)(txn); err != nil {
+		if err := s.updateAccountsBalance(user, &deleteTransaction.Components, nil)(txn); err != nil {
 			return errors.Wrap(err, "Cannot update account balance")
 		}
 

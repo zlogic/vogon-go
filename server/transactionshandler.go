@@ -64,10 +64,10 @@ func parseFilterForm(r *http.Request) (data.TransactionFilterOptions, error) {
 }
 
 // TransactionsCountHandler returns the number of transactions for an authenticated user.
-func TransactionsCountHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
-		if user == (data.User{}) {
+		if user == nil {
 			return
 		}
 
@@ -95,10 +95,10 @@ func TransactionsCountHandler(s Services) func(w http.ResponseWriter, r *http.Re
 }
 
 // TransactionsHandler returns a filtered, pages list of transactions for an authenticated user.
-func TransactionsHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
-		if user == (data.User{}) {
+		if user == nil {
 			return
 		}
 
@@ -150,10 +150,10 @@ func TransactionsHandler(s Services) func(w http.ResponseWriter, r *http.Request
 }
 
 // TransactionHandler gets, updates or deletes a Transaction.
-func TransactionHandler(s Services) func(w http.ResponseWriter, r *http.Request) {
+func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := validateUserForAPI(w, r, s)
-		if user == (data.User{}) {
+		if user == nil {
 			return
 		}
 
@@ -161,7 +161,7 @@ func TransactionHandler(s Services) func(w http.ResponseWriter, r *http.Request)
 		requestID := vars["id"]
 
 		if r.Method == http.MethodPost {
-			transaction := data.Transaction{}
+			transaction := &data.Transaction{}
 
 			err := json.NewDecoder(r.Body).Decode(&transaction)
 			if err != nil {
@@ -170,7 +170,7 @@ func TransactionHandler(s Services) func(w http.ResponseWriter, r *http.Request)
 			}
 
 			if requestID == "new" {
-				err = s.db.CreateTransaction(user, &transaction)
+				err = s.db.CreateTransaction(user, transaction)
 				requestID = strconv.FormatUint(transaction.ID, 10)
 			} else {
 				err = s.db.UpdateTransaction(user, transaction)
