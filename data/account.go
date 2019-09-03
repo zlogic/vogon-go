@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/dgraph-io/badger"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -40,7 +39,7 @@ func (*DBService) createAccount(user *User, account *Account) func(*badger.Txn) 
 		value, err := account.Encode()
 
 		if err != nil {
-			return errors.Wrap(err, "Cannot encode account")
+			return fmt.Errorf("Cannot encode account because of %w", err)
 		}
 
 		return txn.Set(key, value)
@@ -53,11 +52,11 @@ func (s *DBService) CreateAccount(user *User, account *Account) error {
 	seq, err := s.db.GetSequence([]byte(user.CreateSequenceAccountKey()), 1)
 	defer seq.Release()
 	if err != nil {
-		return errors.Wrap(err, "Cannot create account sequence object")
+		return fmt.Errorf("Cannot create account sequence object because of %w", err)
 	}
 	id, err := seq.Next()
 	if err != nil {
-		return errors.Wrap(err, "Cannot generate id for account")
+		return fmt.Errorf("Cannot generate id for account because of %w", err)
 	}
 
 	account.ID = id
@@ -91,7 +90,7 @@ func (s *DBService) UpdateAccount(user *User, account *Account) error {
 
 		value, err := account.Encode()
 		if err != nil {
-			return errors.Wrap(err, "Cannot encode account")
+			return fmt.Errorf("Cannot encode account because of %w", err)
 		}
 		return txn.Set(key, value)
 	})
@@ -118,7 +117,7 @@ func (s *DBService) updateAccountBalance(user *User, accountID uint64, deltaBala
 
 		value, err := account.Encode()
 		if err != nil {
-			return errors.Wrap(err, "Cannot encode account")
+			return fmt.Errorf("Cannot encode account because of %w", err)
 		}
 		return txn.Set(key, value)
 	}
@@ -158,17 +157,17 @@ func (s *DBService) GetAccount(user *User, accountID uint64) (*Account, error) {
 	err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to get account %v", string(key))
+			return fmt.Errorf("Failed to get account %v because of %w", string(key), err)
 		}
 
 		if err := item.Value(account.Decode); err != nil {
-			return errors.Wrapf(err, "Failed to read value for account %v", string(key))
+			return fmt.Errorf("Failed to read value for account %v because of %w", string(key), err)
 		}
 
 		return err
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to get account %v", accountID)
+		return nil, fmt.Errorf("Failed to get account %v because of %w", accountID, err)
 	}
 	return account, nil
 }
@@ -182,7 +181,7 @@ func (s *DBService) GetAccounts(user *User) ([]*Account, error) {
 		return err
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to get accounts")
+		return nil, fmt.Errorf("Failed to get accounts because of %w", err)
 	}
 	return accounts, nil
 }

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 const separator = "/"
@@ -42,15 +40,15 @@ func (user *User) CreateKey() []byte {
 func DecodeUserKey(key []byte) (*string, error) {
 	keyString := string(key)
 	if !strings.HasPrefix(keyString, UserKeyPrefix) {
-		return nil, errors.Errorf("Not a user key: %v", keyString)
+		return nil, fmt.Errorf("Not a user key: %v", keyString)
 	}
 	parts := strings.Split(keyString, separator)
 	if len(parts) != 2 {
-		return nil, errors.Errorf("Invalid format of user key: %v", keyString)
+		return nil, fmt.Errorf("Invalid format of user key: %v", keyString)
 	}
 	username, err := decodePart(parts[1])
 	if err != nil {
-		return nil, errors.Errorf("Failed to decode username: %v because of %v", keyString, err)
+		return nil, fmt.Errorf("Failed to decode username: %v because of %w", keyString, err)
 	}
 	return &username, nil
 }
@@ -143,15 +141,15 @@ func CreateServerConfigKey(varName string) []byte {
 func DecodeServerConfigKey(key []byte) (string, error) {
 	keyString := string(key)
 	if !strings.HasPrefix(keyString, ServerConfigKeyPrefix) {
-		return "", errors.Errorf("Not a config item key: %v", keyString)
+		return "", fmt.Errorf("Not a config item key: %v", keyString)
 	}
 	parts := strings.Split(keyString, separator)
 	if len(parts) != 2 {
-		return "", errors.Errorf("Invalid format of config item key: %v", keyString)
+		return "", fmt.Errorf("Invalid format of config item key: %v", keyString)
 	}
 	value, err := decodePart(parts[1])
 	if err != nil {
-		return "", errors.Errorf("Failed to config item value: %v because of %v", keyString, err)
+		return "", fmt.Errorf("Failed to config item value: %v because of %w", keyString, err)
 	}
 	return value, nil
 }

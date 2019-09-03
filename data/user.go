@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/dgraph-io/badger"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -21,7 +20,7 @@ type User struct {
 }
 
 // ErrUserAlreadyExists is an error when a user cannot be renamed because their username is already in use.
-var ErrUserAlreadyExists = errors.New("id conflicts with existing user")
+var ErrUserAlreadyExists = fmt.Errorf("id conflicts with existing user")
 
 // NewUser creates a User with the provided username and a generated ID.
 func NewUser(username string) *User {
@@ -51,7 +50,7 @@ func (s *DBService) GetUser(username string) (*User, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Cannot read User %v", username)
+		return nil, fmt.Errorf("Cannot read User %v because of %w", username, err)
 	}
 	return user, nil
 }
@@ -68,11 +67,11 @@ func (s *DBService) SaveUser(user *User) error {
 		seq, err := s.db.GetSequence([]byte(SequenceUserKey), 1)
 		defer seq.Release()
 		if err != nil {
-			return errors.Wrap(err, "Cannot create user sequence object")
+			return fmt.Errorf("Cannot create user sequence object because of %w", err)
 		}
 		id, err := seq.Next()
 		if err != nil {
-			return errors.Wrap(err, "Cannot generate id for user")
+			return fmt.Errorf("Cannot generate id for user because of %w", err)
 		}
 		user.ID = id
 	}
@@ -89,7 +88,7 @@ func (s *DBService) SaveUser(user *User) error {
 		existingUser := &User{}
 		if existingItem != nil || (err != nil && err != badger.ErrKeyNotFound) {
 			if err := existingItem.Value(existingUser.Decode); err != nil {
-				return errors.Wrap(err, "Cannot get existing value for user")
+				return fmt.Errorf("Cannot get existing value for user because of %w", err)
 			}
 			if user.newUsername != user.username {
 				log.WithField("key", key).Error("New username already in use")
@@ -111,7 +110,7 @@ func (s *DBService) SaveUser(user *User) error {
 
 		var value bytes.Buffer
 		if err := gob.NewEncoder(&value).Encode(user); err != nil {
-			return errors.Wrap(err, "Cannot marshal user")
+			return fmt.Errorf("Cannot marshal user because of %w", err)
 		}
 		return txn.Set(key, value.Bytes())
 	})

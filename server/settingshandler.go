@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 // SettingsHandler gets or updates settings for an authenticated user.
@@ -40,7 +38,7 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			formPart, ok := r.MultipartForm.Value["form"]
 			defer r.MultipartForm.RemoveAll()
 			if !ok {
-				err := errors.New("Cannot extract form part")
+				err := fmt.Errorf("Cannot extract form part")
 				handleError(w, r, err)
 				return
 			}

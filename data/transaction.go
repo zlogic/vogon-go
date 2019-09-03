@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -94,7 +93,7 @@ const inputDateFormat = "2006-1-2"
 func (transaction *Transaction) Normalize() error {
 	date, err := time.Parse(inputDateFormat, transaction.Date)
 	if err != nil {
-		return errors.Wrapf(err, "Cannot parse date "+transaction.Date)
+		return fmt.Errorf("Cannot parse date %v because of %w", transaction.Date, err)
 	}
 
 	transaction.Date = date.Format(DateFormat)
@@ -136,16 +135,16 @@ func (s *DBService) createTransaction(user *User, transaction *Transaction) func
 		key := user.CreateTransactionKey(transaction)
 		value, err := transaction.Encode()
 		if err != nil {
-			return errors.Wrap(err, "Cannot encode transaction")
+			return fmt.Errorf("Cannot encode transaction because of %w", err)
 		}
 
 		if err := s.updateAccountsBalance(user, nil, &transaction.Components)(txn); err != nil {
-			return errors.Wrap(err, "Cannot update account balance")
+			return fmt.Errorf("Cannot update account balance because of %w", err)
 		}
 
 		index := user.CreateTransactionIndexKey(transaction)
 		if err := txn.Set(index, nil); err != nil {
-			return errors.Wrap(err, "Cannot create index for transaction")
+			return fmt.Errorf("Cannot create index for transaction because of %w", err)
 		}
 
 		return txn.Set(key, value)
@@ -157,18 +156,18 @@ func (s *DBService) CreateTransaction(user *User, transaction *Transaction) erro
 	seq, err := s.db.GetSequence([]byte(user.CreateSequenceTransactionKey()), 1)
 	defer seq.Release()
 	if err != nil {
-		return errors.Wrap(err, "Cannot create transaction sequence object")
+		return fmt.Errorf("Cannot create transaction sequence object because of %w", err)
 	}
 	id, err := seq.Next()
 	if err != nil {
-		return errors.Wrap(err, "Cannot generate id for transaction")
+		return fmt.Errorf("Cannot generate id for transaction because of %w", err)
 	}
 	transaction.ID = id
 
 	return s.db.Update(func(txn *badger.Txn) error {
 		index := user.CreateTransactionIndexKey(transaction)
 		if err := txn.Set(index, nil); err != nil {
-			return errors.Wrap(err, "Cannot create index for transaction")
+			return fmt.Errorf("Cannot create index for transaction because of %w", err)
 		}
 
 		return s.createTransaction(user, transaction)(txn)
@@ -195,23 +194,23 @@ func (s *DBService) UpdateTransaction(user *User, transaction *Transaction) erro
 		}
 
 		if err := s.updateAccountsBalance(user, &previousTransaction.Components, &transaction.Components)(txn); err != nil {
-			return errors.Wrap(err, "Cannot update account balance")
+			return fmt.Errorf("Cannot update account balance because of %w", err)
 		}
 
 		previousTransactionIndexKey := user.CreateTransactionIndexKey(previousTransaction)
 		transactionIndexKey := user.CreateTransactionIndexKey(transaction)
 		if !bytes.Equal(previousTransactionIndexKey, transactionIndexKey) {
 			if err := txn.Delete(previousTransactionIndexKey); err != nil {
-				return errors.Wrap(err, "Cannot delete previous index for transaction")
+				return fmt.Errorf("Cannot delete previous index for transaction because of %w", err)
 			}
 			if err := txn.Set(transactionIndexKey, nil); err != nil {
-				return errors.Wrap(err, "Cannot create index for transaction")
+				return fmt.Errorf("Cannot create index for transaction because of %w", err)
 			}
 		}
 
 		value, err := transaction.Encode()
 		if err != nil {
-			return errors.Wrap(err, "Cannot encode transaction")
+			return fmt.Errorf("Cannot encode transaction because of %w", err)
 		}
 		return txn.Set(key, value)
 	})
@@ -232,7 +231,7 @@ func (s *DBService) updateAccountsBalance(user *User, previousComponents *[]Tran
 		}
 		for accountID, deltaAmount := range accountDeltas {
 			if err := s.updateAccountBalance(user, accountID, deltaAmount)(txn); err != nil {
-				return errors.Wrap(err, "Cannot update account balance")
+				return fmt.Errorf("Cannot update account balance because of %w", err)
 			}
 		}
 		return nil
@@ -369,7 +368,7 @@ func (s *DBService) GetTransaction(user *User, transactionID uint64) (*Transacti
 		return err
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to get transaction %v", transactionID)
+		return nil, fmt.Errorf("Failed to get transaction %v because of %w", transactionID, err)
 	}
 	return transaction, nil
 }
@@ -385,7 +384,7 @@ func (s *DBService) GetTransactions(user *User, options GetTransactionOptions) (
 		return err
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to get transactions")
+		return nil, fmt.Errorf("Failed to get transactions because of %w", err)
 	}
 	return transactions, nil
 }
@@ -423,7 +422,7 @@ func (s *DBService) CountTransactions(user *User, options TransactionFilterOptio
 		return nil
 	})
 	if err != nil {
-		return 0, errors.Wrapf(err, "Failed to count transactions")
+		return 0, fmt.Errorf("Failed to count transactions because of %w", err)
 	}
 	return count, nil
 }
@@ -445,12 +444,12 @@ func (s *DBService) DeleteTransaction(user *User, transactionID uint64) error {
 		}
 
 		if err := s.updateAccountsBalance(user, &deleteTransaction.Components, nil)(txn); err != nil {
-			return errors.Wrap(err, "Cannot update account balance")
+			return fmt.Errorf("Cannot update account balance because of %w", err)
 		}
 
 		transactionIndexKey := user.CreateTransactionIndexKey(deleteTransaction)
 		if err := txn.Delete(transactionIndexKey); err != nil {
-			return errors.Wrap(err, "Failed to delete transaction index")
+			return fmt.Errorf("Failed to delete transaction index because of %w", err)
 		}
 
 		return txn.Delete(key)

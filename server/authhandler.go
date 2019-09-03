@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/zlogic/vogon-go/data"
 )
@@ -63,7 +62,7 @@ func LoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 		}
 		err = user.ValidatePassword(password)
 		if err != nil {
-			handleBadCredentials(w, r, errors.Wrapf(err, "Invalid password for user %v", username))
+			handleBadCredentials(w, r, fmt.Errorf("Invalid password for user %v (%w)", username, err))
 			return
 		}
 		cookie := s.cookieHandler.NewCookie()

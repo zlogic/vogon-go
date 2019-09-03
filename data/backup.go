@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/dgraph-io/badger"
-	"github.com/pkg/errors"
 )
 
 // BackupData is the toplevel structure exported in a backup.
@@ -22,12 +21,12 @@ func (s *DBService) Backup(user *User) (string, error) {
 		var err error
 		accounts, err := s.getAccounts(user)(txn)
 		if err != nil {
-			return errors.Wrap(err, "Failed to get accounts when backing up data")
+			return fmt.Errorf("Failed to get accounts when backing up data because of %w", err)
 		}
 
 		transactions, err := s.getTransactions(user, GetAllTransactionsOptions)(txn)
 		if err != nil {
-			return errors.Wrap(err, "Failed to get transactions when backing up data")
+			return fmt.Errorf("Failed to get transactions when backing up data because of %w", err)
 		}
 
 		sortTransactionsAsc(transactions)
@@ -40,12 +39,12 @@ func (s *DBService) Backup(user *User) (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", errors.Wrapf(err, "Failed to get data to back up")
+		return "", fmt.Errorf("Failed to get data to back up because of %w", err)
 	}
 
 	value, err := json.MarshalIndent(data, "", "  ")
 	if err != nil {
-		return "", errors.Wrap(err, "Error marshaling json")
+		return "", fmt.Errorf("Error marshaling json (%w)", err)
 	}
 
 	return string(value), nil
@@ -61,7 +60,7 @@ func deletePrefix(prefix []byte) func(txn *badger.Txn) error {
 			item := it.Item()
 			key := item.KeyCopy(nil)
 			if err := txn.Delete(key); err != nil {
-				return errors.Wrapf(err, "Error deleting key %v", key)
+				return fmt.Errorf("Error deleting key %v because of %w", key, err)
 			}
 		}
 		return nil
@@ -72,19 +71,19 @@ func deletePrefix(prefix []byte) func(txn *badger.Txn) error {
 func (s *DBService) Restore(user *User, value string) error {
 	data := BackupData{}
 	if err := json.Unmarshal([]byte(value), &data); err != nil {
-		return errors.Wrap(err, "Error unmarshaling json")
+		return fmt.Errorf("Error unmarshaling json (%w)", err)
 	}
 
 	return s.db.Update(func(txn *badger.Txn) error {
 		// Delete previous values
 		if err := deletePrefix([]byte(user.CreateAccountKeyPrefix()))(txn); err != nil {
-			return errors.Wrap(err, "Failed to cleanup previous accounts")
+			return fmt.Errorf("Failed to cleanup previous accounts because of %w", err)
 		}
 		if err := deletePrefix([]byte(user.CreateTransactionKeyPrefix()))(txn); err != nil {
-			return errors.Wrap(err, "Failed to cleanup previous transactions")
+			return fmt.Errorf("Failed to cleanup previous transactions because of %w", err)
 		}
 		if err := deletePrefix([]byte(user.CreateTransactionIndexKeyPrefix()))(txn); err != nil {
-			return errors.Wrap(err, "Failed to cleanup previous transactions index")
+			return fmt.Errorf("Failed to cleanup previous transactions index because of %w", err)
 		}
 
 		accountIDs := make(map[uint64]uint64)
@@ -92,12 +91,12 @@ func (s *DBService) Restore(user *User, value string) error {
 		seq, err := s.db.GetSequence([]byte(user.CreateSequenceAccountKey()), 100)
 		defer seq.Release()
 		if err != nil {
-			return errors.Wrap(err, "Cannot create account sequence object")
+			return fmt.Errorf("Cannot create account sequence object because of %w", err)
 		}
 		for _, account := range data.Accounts {
 			id, err := seq.Next()
 			if err != nil {
-				return errors.Wrap(err, "Cannot generate id for account")
+				return fmt.Errorf("Cannot generate id for account because of %w", err)
 			}
 			accountIDs[account.ID] = id
 
@@ -105,19 +104,19 @@ func (s *DBService) Restore(user *User, value string) error {
 			account.Balance = 0
 
 			if err := s.createAccount(user, account)(txn); err != nil {
-				return errors.Wrapf(err, "Failed to create account %v", account)
+				return fmt.Errorf("Failed to create account %v because of %w", account, err)
 			}
 		}
 
 		seq, err = s.db.GetSequence([]byte(user.CreateSequenceTransactionKey()), 1000)
 		defer seq.Release()
 		if err != nil {
-			return errors.Wrap(err, "Cannot create transaction sequence object")
+			return fmt.Errorf("Cannot create transaction sequence object because of %w", err)
 		}
 		for _, transaction := range data.Transactions {
 			id, err := seq.Next()
 			if err != nil {
-				return errors.Wrap(err, "Cannot generate id for transaction")
+				return fmt.Errorf("Cannot generate id for transaction because of %w", err)
 			}
 			transaction.ID = id
 
@@ -132,7 +131,7 @@ func (s *DBService) Restore(user *User, value string) error {
 			}
 
 			if err := s.createTransaction(user, transaction)(txn); err != nil {
-				return errors.Wrapf(err, "Failed to create transaction %v", transaction)
+				return fmt.Errorf("Failed to create transaction %v because of %w", transaction, err)
 			}
 		}
 		return nil

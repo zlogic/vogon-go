@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/dgraph-io/badger"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -79,13 +78,13 @@ func getAllUsers(s *DBService) ([]*User, error) {
 
 			username, err := DecodeUserKey(k)
 			if err != nil {
-				return errors.Wrap(err, "Failed to decode username of user")
+				return fmt.Errorf("Failed to decode username of user because of %w", err)
 			}
 
 			user := &User{}
 
 			if err := item.Value(user.Decode); err != nil {
-				return errors.Wrap(err, "Failed to read value of user")
+				return fmt.Errorf("Failed to read value of user because of %w", err)
 			}
 
 			user.username = *username
@@ -94,7 +93,7 @@ func getAllUsers(s *DBService) ([]*User, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Cannot read users")
+		return nil, fmt.Errorf("Cannot read users because of %w", err)
 	}
 	return users, nil
 }

@@ -1,8 +1,9 @@
 package data
 
 import (
+	"fmt"
+
 	"github.com/dgraph-io/badger"
-	"github.com/pkg/errors"
 )
 
 // GetTags returns an unsorted (but deduplicated) list of tags for user.
@@ -15,7 +16,7 @@ func (s *DBService) GetTags(user *User) ([]string, error) {
 		return err
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to get transactions")
+		return nil, fmt.Errorf("Failed to get transactions for tags because of %w", err)
 	}
 
 	tags := make(map[string]bool)
