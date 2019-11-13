@@ -19,6 +19,7 @@ func DefaultOptions() badger.Options {
 	opts.Logger = log.New()
 	// Optimize options for low memory and disk usage
 	opts.MaxTableSize = 1 << 24
+	opts.MaxCacheSize = 1 << 24
 	// Allow GC of value log
 	opts.ValueLogFileSize = 4 << 20
 	opts.ValueLogMaxEntries = 10000
