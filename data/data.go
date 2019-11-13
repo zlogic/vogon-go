@@ -4,7 +4,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -42,16 +42,13 @@ func Open(options badger.Options) (*DBService, error) {
 
 // GC deletes expired items and attempts to perform a database cleanup.
 func (service *DBService) GC() {
-	//FIXME: uncomment when https://github.com/dgraph-io/badger/pull/929 is released
-	/*
-		for {
-			if err := service.db.RunValueLogGC(0.5); err != nil {
-				log.WithField("result", err).Info("Cleanup completed")
-				break
-			}
-			log.Info("Cleanup reclaimed space")
+	for {
+		if err := service.db.RunValueLogGC(0.5); err != nil {
+			log.WithField("result", err).Info("Cleanup completed")
+			break
 		}
-	*/
+		log.Info("Cleanup reclaimed space")
+	}
 }
 
 // Close closes the underlying database.

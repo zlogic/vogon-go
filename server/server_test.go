@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/gorilla/securecookie"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"

@@ -3,7 +3,7 @@ package data
 import (
 	"fmt"
 
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 )
 
 func getPreviousValue(txn *badger.Txn, key []byte, fn func(val []byte) error) error {
