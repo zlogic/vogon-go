@@ -29,11 +29,23 @@
         <div class="form-row">
           <div class="form-group col-md-6 col-sm-12">
             <label for="filterTransactionTags">Tags</label>
-            <select class="custom-select" id="filterTransactionTags" multiple></select>
+            <select class="custom-select" id="filterTransactionTags" data-selectall="#selectAllTags" multiple></select>
+            <div class="form-check">
+              <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="selectAllTags" data-selectall="#filterTransactionTags">
+                <label class="custom-control-label" for="selectAllTags">Select/Deselect all</label>
+              </div>
+            </div>
           </div>
           <div class="form-group col-md-6 col-sm-12">
             <label for="filterTransactionAccounts">Accounts</label>
-            <select class="custom-select" id="filterTransactionAccounts" multiple></select>
+            <select class="custom-select" id="filterTransactionAccounts" data-selectall="#selectAllAccounts" multiple></select>
+            <div class="form-check">
+              <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="selectAllAccounts" data-selectall="#filterTransactionAccounts">
+                <label class="custom-control-label" for="selectAllAccounts">Select/Deselect all</label>
+              </div>
+            </div>
           </div>
         </div>
         <div class="form-row">
@@ -333,6 +345,9 @@ $(document).ready(function() {
     }).fail(function() {
       loadFailedAlert("Failed to load tags.")
     });
+
+    $('#selectAllTags').prop('checked', true);
+    $('#selectAllAccounts').prop('checked', true);
   });
   $('#transactionsFilterComponents').on('hide.bs.collapse', function(){
     var form = $(this).find("form");
@@ -379,6 +394,36 @@ $(document).ready(function() {
     var params = getFilterFormValues();
     postHiddenForm("report", params);
   });
+  $(document).on('change', 'input[data-selectall]', function(e) {
+    e.preventDefault();
+    var checkBox = $(this);
+    var target = $(checkBox.attr('data-selectall'));
+    $(target).find($('option')).prop('selected', this.checked);
+  });
+  $(document).on('change', 'select[data-selectall]', function(e) {
+    e.preventDefault();
+    var selectAllCheckbox = $(this).attr('data-selectall');
+    var selectedItems = $(this).val();
+    var items = $.map($(this).find('option'), function(e) { return e.value; })
+    var some = false;
+    var all = true;
+    
+    for (var i in items) {
+      var item = items[i];
+      if (selectedItems.includes(item)) {
+        some = true;
+      } else {
+        all = false;
+      }
+    }
+    if (all) {
+      $(selectAllCheckbox).prop('checked', true).prop('indeterminate', false)
+    } else if (some) {
+      $(selectAllCheckbox).prop('indeterminate', true)
+    } else {
+      $(selectAllCheckbox).prop('checked', false).prop('indeterminate', false)
+    }
+  });
 
   var loadTransactions = function() {
     addProgress();
@@ -396,7 +441,9 @@ $(document).ready(function() {
     });
     $.getJSON("api/accounts").done(function(data) {
       accounts = {};
-      data.forEach(function (account) { accounts[account.ID] = account; });
+      data.forEach(function (account) { 
+        if (account.ShowInList) accounts[account.ID] = account; 
+      });
       updateIfReady();
     }).fail(function() {
       loadFailedAlert("Failed to load accounts.")
