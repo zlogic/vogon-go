@@ -229,9 +229,12 @@ $(document).ready(function() {
         appendCurrencyAmounts("&sum; ");
       }
 
+      var transactionDate = new Date(transaction.Date);
+      var localTransactionDate = new Date(transactionDate.getUTCFullYear(), transactionDate.getUTCMonth(), transactionDate.getUTCDate());
+
       var transactionRow = $('<tr></tr>')
         .append($('<td></td>').append(descriptionTagsColumn))
-        .append($('<td></td>').append(new Date(transaction.Date).toLocaleDateString()))
+        .append($('<td></td>').append(localTransactionDate.toLocaleDateString()))
         .append($('<td></td>').append(accountsColumn))
         .append($('<td></td>').append(amountsColumn))
         .append($('<td></td>').append(actionsColumn));
@@ -380,7 +383,7 @@ $(document).ready(function() {
   $('#filterForm').submit(function(event) {
     event.preventDefault();
     var applyButton = $("#applyButton");
-    var applyButtonSpinner = applyButton.find('span[role="status"]');;
+    var applyButtonSpinner = applyButton.find('span[role="status"]');
     applyButton.prop("disabled", true);
     applyButtonSpinner.prop("hidden", false);
     var form = $(this);

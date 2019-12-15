@@ -70,8 +70,11 @@
 </script>
 <script>
 $(document).ready(function() {
-  var currentDate = new Date().toISOString().split("T")[0];
-  var transaction = {Description: "", Type: 0, Date: currentDate, Tags: [], Components: []};
+  var getCurrentDate = function() {
+    let date = new Date();
+    return "" + date.getFullYear() + "-" + (date.getMonth()+1) +"-" + date.getDate();
+  }
+  var transaction = {Description: "", Type: 0, Date: getCurrentDate(), Tags: [], Components: []};
   var accounts = null;
   var componentsCounter = 0;
   var autocompleteTags = null;
@@ -154,7 +157,8 @@ $(document).ready(function() {
     if (transaction === null || accounts === null || autocompleteTags === null) return;
     description.val(transaction.Description);
     $('input[name=selectType][value="' + transaction.Type +'"]').prop("checked", true);
-    transaction.Tags.forEach(tagsInputComponent.addTag);
+    if (transaction.Tags !== null && transaction.Tags !== undefined)
+      transaction.Tags.forEach(tagsInputComponent.addTag);
     date.val(transaction.Date);
     lockForm(false);
 
@@ -257,7 +261,7 @@ $(document).ready(function() {
         transaction = data;
         if(action === "duplicate"){
           delete transaction.ID;
-          transaction.Date = currentDate;
+          transaction.Date = getCurrentDate();
         }
         updateIfReady();
       }).fail(function() {
