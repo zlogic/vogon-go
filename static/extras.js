@@ -13,17 +13,19 @@ var initTagsInput = function(tagsInput, tagsDropdown, tagsList, suggestTags) {
       .get();
   }
 
-  var updateDropdownMenu = function() {
+  var updateDropdownMenu = function(focused) {
+    if (focused === undefined)
+      focused = tagsInput.is(":focus");
     tagsDropdown.empty();
     var userInput = tagsInput.val().toLowerCase();
     var autoCompleteSuggestions = suggestTags(userInput);
-    if (autoCompleteSuggestions.length == 0 || !tagsInput.is(":focus")) {
+    if (autoCompleteSuggestions.length == 0 || !focused) {
       tagsDropdown.removeClass('show');
     } else {
       tagsDropdown.addClass('show');
     }
     autoCompleteSuggestions.forEach(function (tag) {
-      tagsDropdown.append($('<a class="dropdown-item" href="#"></a>').text(tag));
+      tagsDropdown.append($('<a class="dropdown-item" href="#" tabindex="0"></a>').text(tag));
     });
   }
 
@@ -40,7 +42,7 @@ var initTagsInput = function(tagsInput, tagsDropdown, tagsList, suggestTags) {
     updateDropdownMenu();
   });
   tagsInput.focus(function(e){
-    updateDropdownMenu();
+    updateDropdownMenu(true);
   })
   tagsInput.blur(function(e){
     if (tagsDropdown.children().is(e.relatedTarget))
