@@ -139,8 +139,8 @@ func TestGetTransactionsFilterAccounts(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		saveTransaction := transaction
 		saveTransaction.Components = []TransactionComponent{
-			TransactionComponent{AccountID: uint64(i)},
-			TransactionComponent{AccountID: 42},
+			{AccountID: uint64(i)},
+			{AccountID: 42},
 		}
 		err = dbService.CreateTransaction(&testUser, &saveTransaction)
 		assert.NoError(t, err)
@@ -340,8 +340,8 @@ func TestCountTransactionsFilterAccounts(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		saveTransaction := transaction
 		saveTransaction.Components = []TransactionComponent{
-			TransactionComponent{AccountID: uint64(i)},
-			TransactionComponent{AccountID: 42},
+			{AccountID: uint64(i)},
+			{AccountID: 42},
 		}
 		err = dbService.CreateTransaction(&testUser, &saveTransaction)
 		assert.NoError(t, err)

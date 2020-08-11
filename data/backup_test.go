@@ -269,22 +269,22 @@ const backupData = `{
 }`
 
 func createBackupAccounts() []*Account {
-	return []*Account{&Account{
+	return []*Account{{
 		Name:           "Orange Bank",
 		Currency:       "PLN",
 		IncludeInTotal: true,
 		ShowInList:     true,
-	}, &Account{
+	}, {
 		Name:           "Green Bank",
 		Currency:       "ALL",
 		IncludeInTotal: true,
 		ShowInList:     false,
-	}, &Account{
+	}, {
 		Name:           "Purple Bank",
 		Currency:       "ZWL",
 		IncludeInTotal: true,
 		ShowInList:     false,
-	}, &Account{
+	}, {
 		Name:           "Magical Credit Card",
 		Currency:       "PLN",
 		IncludeInTotal: false,
@@ -293,49 +293,49 @@ func createBackupAccounts() []*Account {
 }
 
 func createBackupTransactions(accounts []*Account) []*Transaction {
-	return []*Transaction{&Transaction{
+	return []*Transaction{{
 		Description: "Widgets",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"Widgets"},
 		Date:        "2015-11-02",
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: accounts[1].ID, Amount: -10000},
+			{AccountID: accounts[1].ID, Amount: -10000},
 		},
-	}, &Transaction{
+	}, {
 		Description: "Salary",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"Salary"},
 		Date:        "2015-11-01",
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: accounts[0].ID, Amount: 100000},
-			TransactionComponent{AccountID: accounts[1].ID, Amount: 100000},
-			TransactionComponent{AccountID: accounts[2].ID, Amount: 100000},
+			{AccountID: accounts[0].ID, Amount: 100000},
+			{AccountID: accounts[1].ID, Amount: 100000},
+			{AccountID: accounts[2].ID, Amount: 100000},
 		},
-	}, &Transaction{
+	}, {
 		Description: "Gadgets",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"Gadgets"},
 		Date:        "2015-11-03",
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: accounts[3].ID, Amount: -10000},
+			{AccountID: accounts[3].ID, Amount: -10000},
 		},
-	}, &Transaction{
+	}, {
 		Description: "Credit card payment",
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"Credit"},
 		Date:        "2015-11-09",
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: accounts[2].ID, Amount: -10000},
-			TransactionComponent{AccountID: accounts[3].ID, Amount: 2000},
+			{AccountID: accounts[2].ID, Amount: -10000},
+			{AccountID: accounts[3].ID, Amount: 2000},
 		},
-	}, &Transaction{
+	}, {
 		Description: "Stuff",
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"Gadgets", "Widgets"},
 		Date:        "2015-11-07",
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: accounts[0].ID, Amount: -1000},
-			TransactionComponent{AccountID: accounts[2].ID, Amount: -10000},
+			{AccountID: accounts[0].ID, Amount: -1000},
+			{AccountID: accounts[2].ID, Amount: -10000},
 		},
 	}}
 }
@@ -409,8 +409,8 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 		Description: "Extra transaction",
 		Type:        TransactionTypeTransfer, Tags: []string{"Extra"}, Date: "2019-03-23",
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: accounts[0].ID, Amount: -8800},
-			TransactionComponent{AccountID: accounts[4].ID, Amount: -42000},
+			{AccountID: accounts[0].ID, Amount: -8800},
+			{AccountID: accounts[4].ID, Amount: -42000},
 		},
 	})
 	for _, transaction := range transactions {

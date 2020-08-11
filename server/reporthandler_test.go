@@ -12,82 +12,82 @@ import (
 
 func createReportTransactions() []*data.Transaction {
 	return []*data.Transaction{
-		&data.Transaction{
+		{
 			Description: "Unrelated",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Something"},
 			Date:        "2015-11-07",
 			Components: []data.TransactionComponent{
-				data.TransactionComponent{AccountID: 3, Amount: -5000},
+				{AccountID: 3, Amount: -5000},
 			},
 		},
-		&data.Transaction{
+		{
 			Description: "Another transfer",
 			Type:        data.TransactionTypeTransfer,
 			Tags:        []string{"Transfer"},
 			Date:        "2015-11-06",
 			Components: []data.TransactionComponent{
-				data.TransactionComponent{AccountID: 0, Amount: -7000},
-				data.TransactionComponent{AccountID: 2, Amount: 100},
+				{AccountID: 0, Amount: -7000},
+				{AccountID: 2, Amount: 100},
 			},
 		},
-		&data.Transaction{
+		{
 			Description: "More stuff",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Gadgets", "Widgets"},
 			Date:        "2015-11-05",
 			Components: []data.TransactionComponent{
-				data.TransactionComponent{AccountID: 1, Amount: -5000},
+				{AccountID: 1, Amount: -5000},
 			},
 		},
-		&data.Transaction{
+		{
 			Description: "Widgets",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Widgets"},
 			Date:        "2015-11-04",
 			Components: []data.TransactionComponent{
-				data.TransactionComponent{AccountID: 0, Amount: -3000},
+				{AccountID: 0, Amount: -3000},
 			},
 		},
-		&data.Transaction{
+		{
 			Description: "Gadgets",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Gadgets"},
 			Date:        "2015-11-04",
 			Components: []data.TransactionComponent{
-				data.TransactionComponent{AccountID: 0, Amount: -3000},
+				{AccountID: 0, Amount: -3000},
 			},
 		},
-		&data.Transaction{
+		{
 			Description: "Stuff",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Gadgets", "Widgets"},
 			Date:        "2015-11-03",
 			Components: []data.TransactionComponent{
-				data.TransactionComponent{AccountID: 0, Amount: -2000},
-				data.TransactionComponent{AccountID: 1, Amount: -2000},
-				data.TransactionComponent{AccountID: 2, Amount: -2000},
+				{AccountID: 0, Amount: -2000},
+				{AccountID: 1, Amount: -2000},
+				{AccountID: 2, Amount: -2000},
 			},
 		},
-		&data.Transaction{
+		{
 			Description: "Transfer",
 			Type:        data.TransactionTypeTransfer,
 			Tags:        []string{"Transfer"},
 			Date:        "2015-11-02",
 			Components: []data.TransactionComponent{
-				data.TransactionComponent{AccountID: 0, Amount: -1000},
-				data.TransactionComponent{AccountID: 1, Amount: 1000},
+				{AccountID: 0, Amount: -1000},
+				{AccountID: 1, Amount: 1000},
 			},
 		},
-		&data.Transaction{
+		{
 			Description: "Salary",
 			Type:        data.TransactionTypeExpenseIncome,
 			Tags:        []string{"Salary"},
 			Date:        "2015-11-01",
 			Components: []data.TransactionComponent{
-				data.TransactionComponent{AccountID: 0, Amount: 100000},
-				data.TransactionComponent{AccountID: 1, Amount: 100000},
-				data.TransactionComponent{AccountID: 2, Amount: 100000},
+				{AccountID: 0, Amount: 100000},
+				{AccountID: 1, Amount: 100000},
+				{AccountID: 2, Amount: 100000},
 			},
 		},
 	}
@@ -118,10 +118,10 @@ func TestReportEverything(t *testing.T) {
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+		{ID: 0, Name: "a1", Currency: "USD"},
+		{ID: 1, Name: "a2", Currency: "USD"},
+		{ID: 2, Name: "a3", Currency: "EUR"},
+		{ID: 3, Name: "a4", Currency: "EUR"},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 
@@ -163,9 +163,9 @@ func TestReportFilterDescription(t *testing.T) {
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
+		{ID: 0, Name: "a1", Currency: "USD"},
+		{ID: 1, Name: "a2", Currency: "USD"},
+		{ID: 2, Name: "a3", Currency: "EUR"},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 
@@ -207,10 +207,10 @@ func TestReportDateRange(t *testing.T) {
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+		{ID: 0, Name: "a1", Currency: "USD"},
+		{ID: 1, Name: "a2", Currency: "USD"},
+		{ID: 2, Name: "a3", Currency: "EUR"},
+		{ID: 3, Name: "a4", Currency: "EUR"},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 
@@ -252,10 +252,10 @@ func TestReportFilterTags(t *testing.T) {
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+		{ID: 0, Name: "a1", Currency: "USD"},
+		{ID: 1, Name: "a2", Currency: "USD"},
+		{ID: 2, Name: "a3", Currency: "EUR"},
+		{ID: 3, Name: "a4", Currency: "EUR"},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 
@@ -297,10 +297,10 @@ func TestReportAccounts012(t *testing.T) {
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+		{ID: 0, Name: "a1", Currency: "USD"},
+		{ID: 1, Name: "a2", Currency: "USD"},
+		{ID: 2, Name: "a3", Currency: "EUR"},
+		{ID: 3, Name: "a4", Currency: "EUR"},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 
@@ -342,10 +342,10 @@ func TestReportOnlyAccount0(t *testing.T) {
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+		{ID: 0, Name: "a1", Currency: "USD"},
+		{ID: 1, Name: "a2", Currency: "USD"},
+		{ID: 2, Name: "a3", Currency: "EUR"},
+		{ID: 3, Name: "a4", Currency: "EUR"},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 
@@ -385,10 +385,10 @@ func TestReportOnlyAccount1(t *testing.T) {
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+		{ID: 0, Name: "a1", Currency: "USD"},
+		{ID: 1, Name: "a2", Currency: "USD"},
+		{ID: 2, Name: "a3", Currency: "EUR"},
+		{ID: 3, Name: "a4", Currency: "EUR"},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 
@@ -428,10 +428,10 @@ func TestReportFilterExcludeTransfer(t *testing.T) {
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+		{ID: 0, Name: "a1", Currency: "USD"},
+		{ID: 1, Name: "a2", Currency: "USD"},
+		{ID: 2, Name: "a3", Currency: "EUR"},
+		{ID: 3, Name: "a4", Currency: "EUR"},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 
@@ -473,10 +473,10 @@ func TestReportFilterExcludeExpenseIncome(t *testing.T) {
 	dbMock.On("GetTransactions", &user, options).Return(transactions, nil).Once()
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD"},
-		&data.Account{ID: 1, Name: "a2", Currency: "USD"},
-		&data.Account{ID: 2, Name: "a3", Currency: "EUR"},
-		&data.Account{ID: 3, Name: "a4", Currency: "EUR"},
+		{ID: 0, Name: "a1", Currency: "USD"},
+		{ID: 1, Name: "a2", Currency: "USD"},
+		{ID: 2, Name: "a3", Currency: "EUR"},
+		{ID: 3, Name: "a4", Currency: "EUR"},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 

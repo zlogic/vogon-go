@@ -30,8 +30,8 @@ func TestGetAccountsAuthorized(t *testing.T) {
 	req.AddCookie(cookie)
 
 	accounts := []*data.Account{
-		&data.Account{ID: 0, Name: "a1", Currency: "USD", Balance: 100, IncludeInTotal: false, ShowInList: true},
-		&data.Account{ID: 4, Name: "a2", Currency: "EUR", Balance: -4200, IncludeInTotal: true, ShowInList: false},
+		{ID: 0, Name: "a1", Currency: "USD", Balance: 100, IncludeInTotal: false, ShowInList: true},
+		{ID: 4, Name: "a2", Currency: "EUR", Balance: -4200, IncludeInTotal: true, ShowInList: false},
 	}
 	dbMock.On("GetAccounts", &user).Return(accounts, nil).Once()
 

@@ -11,38 +11,38 @@ import (
 )
 
 func createTestTransactions() []*data.Transaction {
-	return []*data.Transaction{&data.Transaction{
+	return []*data.Transaction{{
 		ID:          3,
 		Description: "Gadgets 2",
 		Type:        data.TransactionTypeTransfer,
 		Tags:        []string{"Gadgets"},
 		Date:        "2015-11-03",
 		Components:  []data.TransactionComponent{},
-	}, &data.Transaction{
+	}, {
 		ID:          2,
 		Description: "Gadgets",
 		Type:        data.TransactionTypeExpenseIncome,
 		Tags:        []string{"Gadgets", "Widgets"},
 		Date:        "2015-11-03",
 		Components:  []data.TransactionComponent{},
-	}, &data.Transaction{
+	}, {
 		ID:          0,
 		Description: "Widgets",
 		Type:        data.TransactionTypeExpenseIncome,
 		Tags:        []string{"Widgets"},
 		Date:        "2015-11-02",
 		Components: []data.TransactionComponent{
-			data.TransactionComponent{AccountID: 1, Amount: -10000},
+			{AccountID: 1, Amount: -10000},
 		},
-	}, &data.Transaction{
+	}, {
 		ID:          1,
 		Description: "Salary",
 		Type:        data.TransactionTypeExpenseIncome,
 		Tags:        []string{"Salary"},
 		Date:        "2015-11-01",
 		Components: []data.TransactionComponent{
-			data.TransactionComponent{AccountID: 0, Amount: 100000},
-			data.TransactionComponent{AccountID: 1, Amount: 100000},
+			{AccountID: 0, Amount: 100000},
+			{AccountID: 1, Amount: 100000},
 		},
 	}}
 }
@@ -55,7 +55,7 @@ func createTestTransaction() *data.Transaction {
 		Tags:        []string{"Widgets"},
 		Date:        "2015-11-02",
 		Components: []data.TransactionComponent{
-			data.TransactionComponent{AccountID: 1, Amount: -10000},
+			{AccountID: 1, Amount: -10000},
 		},
 	}
 }

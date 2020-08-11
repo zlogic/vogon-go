@@ -354,8 +354,8 @@ func TestCreateTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"t1", "t2"},
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: 0, Amount: -1},
-			TransactionComponent{AccountID: 1, Amount: 2},
+			{AccountID: 0, Amount: -1},
+			{AccountID: 1, Amount: 2},
 		},
 	}
 
@@ -382,9 +382,9 @@ func TestCreateTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"t1", "t3"},
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: 0, Amount: 100},
-			TransactionComponent{AccountID: 0, Amount: 100},
-			TransactionComponent{AccountID: 1, Amount: 100},
+			{AccountID: 0, Amount: 100},
+			{AccountID: 0, Amount: 100},
+			{AccountID: 1, Amount: 100},
 		},
 	}
 
@@ -418,8 +418,8 @@ func TestUpdateTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"t1", "t2"},
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: 0, Amount: -1},
-			TransactionComponent{AccountID: 1, Amount: 2},
+			{AccountID: 0, Amount: -1},
+			{AccountID: 1, Amount: 2},
 		},
 	}
 	transaction2 := Transaction{
@@ -428,9 +428,9 @@ func TestUpdateTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"t1", "t3"},
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: 0, Amount: 100},
-			TransactionComponent{AccountID: 0, Amount: 100},
-			TransactionComponent{AccountID: 1, Amount: 100},
+			{AccountID: 0, Amount: 100},
+			{AccountID: 0, Amount: 100},
+			{AccountID: 1, Amount: 100},
 		},
 	}
 
@@ -443,10 +443,10 @@ func TestUpdateTransactionWithComponents(t *testing.T) {
 	assert.NoError(t, err)
 
 	transaction2.Components = []TransactionComponent{
-		TransactionComponent{AccountID: 0, Amount: 5},
-		TransactionComponent{AccountID: 0, Amount: 10},
-		TransactionComponent{AccountID: 0, Amount: 17},
-		TransactionComponent{AccountID: 1, Amount: 4},
+		{AccountID: 0, Amount: 5},
+		{AccountID: 0, Amount: 10},
+		{AccountID: 0, Amount: 17},
+		{AccountID: 1, Amount: 4},
 	}
 	transaction2.ID = 1
 
@@ -484,8 +484,8 @@ func TestDeleteTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"t1", "t2"},
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: 0, Amount: -1},
-			TransactionComponent{AccountID: 1, Amount: 2},
+			{AccountID: 0, Amount: -1},
+			{AccountID: 1, Amount: 2},
 		},
 	}
 	transaction2 := Transaction{
@@ -494,9 +494,9 @@ func TestDeleteTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"t1", "t3"},
 		Components: []TransactionComponent{
-			TransactionComponent{AccountID: 0, Amount: 100},
-			TransactionComponent{AccountID: 0, Amount: 100},
-			TransactionComponent{AccountID: 1, Amount: 100},
+			{AccountID: 0, Amount: 100},
+			{AccountID: 0, Amount: 100},
+			{AccountID: 1, Amount: 100},
 		},
 	}
 
