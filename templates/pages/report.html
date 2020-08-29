@@ -1,11 +1,11 @@
 {{ define "content" }}
 <h2>Report</h2>
 <div id="reportTarget"></div>
-<script type="text/javascript" src="static/Chart.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js" integrity="sha512-vBmx0N/uQOXznm/Nbkp7h0P1RfLSj0HQrFSzV8m7rOGyj30fYAOKHYvCNez+yM8IrfnW0TCodDEjRqf6fodf/Q==" crossorigin="anonymous"></script>
 <script>
   // Load CSS
   Chart.platform.disableCSSInjection = true;
-  $('head').append('<link rel="stylesheet" type="text/css" href="static/Chart.min.css">');
+  $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" integrity="sha512-/zs32ZEJh+/EO2N1b0PEdoA10JkdC3zJ8L5FTiQu82LR9S/rOQNfQN7U59U9BC12swNeRAz3HSzIL2vpp4fv3w==" crossorigin="anonymous" />');
 </script>
 <script>
   var params = {
