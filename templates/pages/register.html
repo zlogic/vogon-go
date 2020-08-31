@@ -1,64 +1,70 @@
 {{ define "content" }}
-<h2>Register</h2>
-<form id="registerForm" autocomplete="off">
-  <div class="form-row">
-    <div class="form-group col-md-6">
-      <label for="inputUsername">Username</label>
-      <input type="text" class="form-control" id="inputUsername" placeholder="Username" required>
-    </div>
-    <div class="form-group col-md-6">
-      <label for="inputPassword">Password</label>
-      <input type="password" class="form-control" id="inputPassword" placeholder="Password" required>
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group col-md-6">
-      <div class="custom-control custom-checkbox">
-        <input class="custom-control-input" type="checkbox" id="rememberMe">
-        <label class="custom-control-label" for="rememberMe">Remember me</label>
+<div class="columns">
+  <div class="column is-6 is-offset-3">
+    <div class="card">
+      <header class="card-header">
+        <p class="card-header-title">Register</p>
+      </header>
+      <div class="card-content">
+        <form id="registerForm" autocomplete="off">
+          <div class="field">
+            <label class="label" for="inputUsername">Username</label>
+            <div class="control">
+              <input type="text" class="input" id="inputUsername" placeholder="Username" required>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="inputPassword">Password</label>
+            <div class="control">
+              <input type="password" class="input" id="inputPassword" placeholder="Password" required>
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <label class="checkbox" for="rememberMe">
+                <input type="checkbox" id="rememberMe"> Remember me
+              </label>
+            </div>
+          </div>
+          <div class="field is-grouped">
+            <div class="control">
+              <button type="submit" class="button is-primary">Register</button>
+            </div>
+          </div>
+          <div id="registerFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Registration failed: <span id="failReason"></span></div>
+        </form>
       </div>
     </div>
   </div>
-  <div class="form-row">
-    <div class="form-group col-md-12">
-      <button type="submit" class="btn btn-primary">
-        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
-        Register
-      </button>
-    </div>
-  </div>
-  <div id="registerFailed" class="alert alert-danger" role="alert" hidden>Registration failed: <span id="failReason"></span></div>
-</form>
+</div>
 <script>
-$(document).ready(function() {
-  $("#registerForm").submit(function(event) {
-    event.preventDefault();
-    // Prepare request
-    var $form = $(this);
-    $form.find("#registerFailed").prop("hidden", true);
-    var username = $form.find("input[id='inputUsername']");
-    var password = $form.find("input[id='inputPassword']");
-    var rememberMe = $form.find("input[id='rememberMe']");
-    var submit = $form.find('button[type="submit"]');
-    var spinner = $form.find('button[type="submit"] span[role="status"]');
-    var lockForm = function(processing){
-      [username, password, rememberMe, submit].forEach(function(control){
-        control.attr("disabled", processing);
-      })
-      spinner.prop("hidden", !processing);
-    }
-    lockForm(true);
-    $.post("api/register", {username: username.val(), password: password.val(), rememberMe: rememberMe.prop('checked')})
-    .done(function() {
-      window.location.href = "transactions";
+document.addEventListener('DOMContentLoaded', () => {
+  var registerForm = document.getElementById("registerForm");
+  var registerFailed = registerForm.querySelector("#registerFailed");
+  var username = registerForm.querySelector("input[id='inputUsername']");
+  var password = registerForm.querySelector("input[id='inputPassword']");
+  var rememberMe = registerForm.querySelector("input[id='rememberMe']");
+  var submit = registerForm.querySelector("button[type='submit']");
+
+  var lockForm = function(processing){
+    [username, password, rememberMe, submit].forEach(function(control){
+      control.disabled = processing;
     })
-    .fail(function(response) {
+    if(processing) submit.classList.add("is-loading");
+    else submit.classList.remove("is-loading");
+  }
+
+  registerForm.addEventListener("submit", function(event){
+    event.preventDefault();
+    registerFailed.hidden = true;
+    lockForm(true);
+
+    reqPost("api/register", {username: username.value, password: password.value, rememberMe: rememberMe.checked}, function(data) {
+      window.location.href = "transactions";
+    }, function(error) {
       lockForm(false);
-      var alertDiv = $form.find("#registerFailed")
-      alertDiv.hide();
-      alertDiv.find("#failReason").text(response.responseText);
-      alertDiv.prop("hidden", false);
-      alertDiv.slideDown();
+      registerFailed.hidden = false;
+      registerFailed.querySelector("#failReason").textContent = error;
     });
   });
 });

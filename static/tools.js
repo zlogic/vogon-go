@@ -25,11 +25,14 @@ var reqPost = function(url, data, success, failure) {
   request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
   request.onload = function() {
     if (this.status >= 200 && this.status < 400) {
-      success(JSON.parse(this.response));
+      if (this.response !== "") success({});
+      else success(JSON.parse(this.response));
     } else {
-      failure();
+      failure(this.response);
     }
   };
-  request.onerror = failure;
+  request.onerror = function(){
+    failure("Request error");
+  }; 
   request.send(postData);
 };
