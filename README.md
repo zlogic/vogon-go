@@ -35,7 +35,7 @@ To build the Docker image for Vogon container, run the following Docker command:
 
 `docker build -t vogon:latest .`
 
-To deploy create a Vogon container, run the following Docker command (change `[port]` to the port where Vogon-NJ will be accessible):
+To deploy create a Vogon container, run the following Docker command (change `[port]` to the port where Vogon will be accessible):
 
 ```
 docker create \
