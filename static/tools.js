@@ -13,20 +13,22 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-var reqPost = function(url, data, success, failure) {
+var encodeJSONToForm = function(data){
   var postData = "";
   for (var property in data) {
     if (postData !== "") postData += "&";
     postData += property  + "=" + encodeURIComponent(data[property]);
   }
+  return postData;
+};
 
+var reqPost = function(url, data, success, failure) {
   var request = new XMLHttpRequest();
   request.open("POST", url, true);
   request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
   request.onload = function() {
     if (this.status >= 200 && this.status < 400) {
-      if (this.response !== "") success({});
-      else success(JSON.parse(this.response));
+      success(this.response);
     } else {
       failure(this.response);
     }
@@ -34,5 +36,25 @@ var reqPost = function(url, data, success, failure) {
   request.onerror = function(){
     failure("Request error");
   }; 
-  request.send(postData);
+  request.send(encodeJSONToForm(data));
+};
+
+var reqGet = function(url, success, failure) {
+  var request = new XMLHttpRequest();
+  request.open("GET", url, true);
+  request.onload = function() {
+    if (this.status >= 200 && this.status < 400) {
+      success(this.response);
+    } else {
+      failure(this.response);
+    }
+  };
+  request.onerror = function(){
+    failure("Request error");
+  }; 
+  request.send();
+};
+
+var removeChildren = function(el) {
+  while(el.firstChild) el.removeChild(el.firstChild);
 };

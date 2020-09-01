@@ -1,150 +1,192 @@
 {{ define "content" }}
-<h2>Settings</h2>
-<form id="configurationForm" autocomplete="off">
-  <div class="form-group row">
-    <label for="editUsername" class="col-sm-2 col-form-label">Username</label>
-    <div class="col-sm-10">
-      <input type="text" class="form-control" id="editUsername" placeholder="Username" required>
-    </div>
-  </div>
-  <div class="form-group row">
-    <label for="editPassword" class="col-sm-2 col-form-label">Password</label>
-    <div class="col-sm-10">
-      <input type="password" class="form-control" id="editPassword" placeholder="Password">
-    </div>
-  </div>
-  <div class="form-group row">
-    <label for="restoreBackupFile" class="col-sm-2 col-form-label">Restore backup</label>
-    <div class="col-sm-10">
-      <div class="custom-file">
-        <input type="file" class="custom-file-input" name="restoreBackupFile">
-        <label class="custom-file-label" for="restoreBackupFile">Choose backup file to restore</label>
+<p class="title">Settings</p>
+<div class="content">
+  <div class="container is-widescreen">
+    <form id="configurationForm" accept-charset="utf-8" autocomplete="off">
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label for="editUsername" class="label">Username</label>
+        </div>
+        <div class="field-body">
+          <div class="field">
+            <p class="control">
+              <input type="text" class="input" id="editUsername" placeholder="Username" required>
+            </p>
+          </div>
+        </div>
       </div>
-    </div>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label for="editPassword" class="label">Password</label>
+        </div>
+        <div class="field-body">
+          <div class="field">
+            <p class="control">
+              <input type="password" class="input" id="editPassword" placeholder="Password">
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal">
+          <label for="restoreBackupFile" class="label">Restore backup</label>
+        </div>
+        <div class="field-body">
+          <div class="field">
+            <div class="control">
+              <div class="file has-name is-fullwidth" id="restoreBackupField">
+                <label class="file-label">
+                  <input class="file-input" type="file" name="restoreBackupFile">
+                  <span class="file-cta">
+                    <span class="file-label">Choose file to restore</span>
+                  </span>
+                  <span class="file-name"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal"></div>
+        <div class="field-body">
+          <div class="field">
+            <div class="control">
+              <div id="restoreWarning" class="notification is-warning animate__animated animate__flipInX" role="alert" hidden>Restoring a backup will overwrite all existing data</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal"></div>
+        <div class="field-body">
+          <div class="field">
+            <p class="control">
+              <button type="submit" class="button is-primary">Save</button>
+            </p>
+            <div class="content">
+              <div id="saveSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Saved successfully</div>
+              <div id="saveFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Save failed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field is-horizontal">
+        <div class="field-label is-normal"></div>
+        <div class="field-body">
+          <div class="field">
+            <p class="control">
+              <button id="backupData" class="button" href="api/backup">Backup data</button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </form>
   </div>
-  <div class="row" id="restoreWarning" hidden>
-    <div class="col-sm-2"></div>
-    <div class="col-sm-10">
-      <div class="alert alert-danger" role="alert">Restoring a backup will overwrite all existing data</div>
-    </div>
-  </div>
-  <div class="form-group row">
-    <div class="col-sm-2"></div>
-    <div class="col-sm-10">
-      <button type="submit" class="btn btn-primary">
-        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
-        Save</button>
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-sm-2"></div>
-    <div class="col-sm-10">
-      <div id="saveSuccessful" class="alert alert-success" role="alert" hidden>Saved successfully</div>
-      <div id="saveFailed" class="alert alert-danger" role="alert" hidden>Save failed</div>
-    </div>
-  </div>
-  <div class="form-group row">
-    <div class="col-sm-2"></div>
-    <div class="col-sm-10">
-      <button id="backupData" class="btn btn-outline-secondary" href="api/backup">Backup data</button>
-    </div>
-  </div>
-</form>
+</div>
 <script>
-$(document).ready(function() {
-  var username = $('input[id="editUsername"]');
-  var password = $('input[id="editPassword"]');
-  var restoreBackupFile = $('input[name="restoreBackupFile"]');
-  var restoreBackupFileWarning = $("#restoreWarning")
-  var submit = $('button[type="submit"]');
-  var spinner = $('button[type="submit"] span[role="status"]');
+document.addEventListener('DOMContentLoaded', () => {
+  var username = document.querySelector('input[id="editUsername"]');
+  var password = document.querySelector('input[id="editPassword"]');
+  var restoreBackupFile = document.querySelector('#restoreBackupField input[type="file"]');
+  var restoreBackupFileWarning = document.querySelector('#restoreWarning');
+  var submit = document.querySelector('button[type="submit"]');
+  var configurationForm = document.getElementById("configurationForm");
   var updateRestoreWarning = function(){
-    var hidden = $(restoreBackupFileWarning).prop("hidden");
-    if(restoreBackupFile.val() && hidden)
-      $(restoreBackupFileWarning).hide().prop("hidden", false).slideDown();
-    else if(!restoreBackupFile.val() && !hidden)
-      $(restoreBackupFileWarning).prop("hidden", true);
-  }
+    restoreBackupFileWarning.hidden = !(restoreBackupFile.files.length > 0);
+  };
   var updateRestoreFilename = function(){
-    var fileName = $(restoreBackupFile).val().split(/[\\\/]/).pop();
-    $(restoreBackupFile).siblings(".custom-file-label").addClass("selected").html(fileName);
+    var fileName = document.querySelector('#restoreBackupField .file-name');
+    if (restoreBackupFile.files.length > 0) {
+      fileName.textContent = restoreBackupFile.files[0].name;
+    } else {
+      fileName.textContent = "";
+    }
     updateRestoreWarning();
-  }
+  };
   var lockConfiguration = function(processing){
-    [restoreBackupFile, username, password, submit, spinner].forEach(function(control){
-      control.attr("disabled", processing);
+    [restoreBackupFile, username, password, submit].forEach(function(control){
+      control.disabled = processing;
     });
-    spinner.prop("hidden", !processing);
+    if(processing) submit.classList.add("is-loading");
+    else submit.classList.remove("is-loading");
     updateRestoreWarning();
   }
   var showResultAlert = function(alertDiv){
-    alertDiv.hide();
-    alertDiv.prop("hidden", false);
-    alertDiv.slideDown();
+    alertDiv.hidden = false;
   }
-
+  
   var updateFormValues = function(settings) {
-    username.val(settings.Username);
-    password.val("");
-    restoreBackupFile.val("");
+    username.value = settings.Username;
+    password.value = "";
+    restoreBackupFile.value = null;
     updateRestoreFilename();
   }
-  $(".custom-file-input").on("change", updateRestoreFilename);
+  restoreBackupFile.onchange = updateRestoreFilename;
   // Load current field items
   var loadItems = function() {
     lockConfiguration(true);
-    $.getJSON("api/settings").done(function(settings) {
+    reqGet("api/settings", function(settings) {
       lockConfiguration(false);
-      updateFormValues(settings);
-    }).fail(function() {
-      var alertDiv = $('<div class="alert alert-danger" role="alert">Failed to fetch current settings.</div>');
-      var form = $("#configurationForm");
-      form.empty().append(alertDiv);
-      alertDiv.hide();
-      alertDiv.slideDown();
+      updateFormValues(JSON.parse(settings));
+    }, function() {
+      removeChildren(configurationForm);
+      configurationForm.insertAdjacentHTML("afterbegin", '<div class="notification is-danger animate__animated animate__flipInX" role="alert">Failed to fetch current settings.</div>')
     });
   }
   loadItems();
 
   // Submit configuration handler
-  $("#configurationForm").submit(function(event) {
+  configurationForm.addEventListener("submit", function(event){
     event.preventDefault();
     lockConfiguration(true);
     // Prepare request
-    var $form = $(this);
-    $form.find("#saveFailed").prop("hidden", true);
-    $form.find("#saveSuccessful").prop("hidden", true);
-    var postData = {Username: username.val(), Password: password.val()};
+    var saveSuccessful = configurationForm.querySelector("#saveSuccessful");
+    var saveFailed = configurationForm.querySelector("#saveFailed");
+    saveSuccessful.hidden = true;
+    saveFailed.hidden = true;
+    
+    var postData = {Username: username.value, Password: password.value};
     if(postData.Password === null || postData.Password === undefined || postData.Password === '')
       delete postData.Password;
+
     // Send data
     var formData = new FormData();
-    formData.append("form", $.param(postData));
-    formData.append("restorefile", restoreBackupFile.prop("files")[0]);
-    $.ajax({
-      url: "api/settings",
-      type: "POST",
-      data: formData,
-      processData: false,
-      contentType: false
-    })
-    .done(function(data) {
-      showResultAlert($form.find("#saveSuccessful"));
-      updateFormValues(JSON.parse(data));
-    })
-    .fail(function() {
-      showResultAlert($form.find("#saveFailed"));
-    })
-    .always(function() {
+    formData.append("form", encodeJSONToForm(postData));
+    if(restoreBackupFile.files.length > 0)
+      formData.append("restorefile", restoreBackupFile.files[0]);
+
+    var showError = function() {
+      showResultAlert(saveFailed);
       lockConfiguration(false);
-    });
+    };
+
+    var request = new XMLHttpRequest();
+    request.open("POST", "api/settings", true);
+    request.onload = function() {
+      if (this.status >= 200 && this.status < 400) {
+        showResultAlert(saveSuccessful);
+        updateFormValues(JSON.parse(this.response));
+        lockConfiguration(false);
+      } else {
+        showError();
+      }
+    };
+    request.onerror = showError; 
+    request.send(formData);
   });
 
   //Backup button
-  $("#backupData").click(function(e){
+  var backupDataButton = document.getElementById("backupData");
+  backupDataButton.addEventListener('click', (event) => {
     event.preventDefault();
-    var exportForm = $('<form id="exportForm" method="post" action="api/backup" hidden></form>');
-    $("body").append(exportForm);
+    var exportForm = document.createElement("form");
+    exportForm.setAttribute("method", "post");
+    exportForm.setAttribute("action", "api/backup")
+    exportForm.hidden = true;
+
+    var body = document.querySelector("body");
+    body.append(exportForm);
     exportForm.submit();
     exportForm.remove();
   });
