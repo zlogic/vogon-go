@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loginFailed.hidden = true;
     lockForm(true);
 
-    reqPost("api/login", {username: username.value, password: password.value, rememberMe: rememberMe.checked}, function(data) {
+    reqPostForm("api/login", {username: username.value, password: password.value, rememberMe: rememberMe.checked}, function(data) {
       window.location.href = "transactions";
     }, function() {
       lockForm(false);

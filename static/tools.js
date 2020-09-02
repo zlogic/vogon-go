@@ -22,7 +22,23 @@ var encodeJSONToForm = function(data){
   return postData;
 };
 
-var reqPost = function(url, data, success, failure) {
+var reqGet = function(url, success, failure) {
+  var request = new XMLHttpRequest();
+  request.open("GET", url, true);
+  request.onload = function() {
+    if (this.status >= 200 && this.status < 400) {
+      success(this.response);
+    } else {
+      failure(this.response);
+    }
+  };
+  request.onerror = function(){
+    failure("Request error");
+  }; 
+  request.send();
+};
+
+var reqPostForm = function(url, data, success, failure) {
   var request = new XMLHttpRequest();
   request.open("POST", url, true);
   request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -39,9 +55,26 @@ var reqPost = function(url, data, success, failure) {
   request.send(encodeJSONToForm(data));
 };
 
-var reqGet = function(url, success, failure) {
+var reqPostJSON = function(url, data, success, failure) {
   var request = new XMLHttpRequest();
-  request.open("GET", url, true);
+  request.open("POST", url, true);
+  request.setRequestHeader("Content-Type", "application/json");
+  request.onload = function() {
+    if (this.status >= 200 && this.status < 400) {
+      success(this.response);
+    } else {
+      failure(this.response);
+    }
+  };
+  request.onerror = function(){
+    failure("Request error");
+  }; 
+  request.send(JSON.stringify(data));
+};
+
+var reqDelete = function(url,  success, failure) {
+  var request = new XMLHttpRequest();
+  request.open("DELETE", url, true);
   request.onload = function() {
     if (this.status >= 200 && this.status < 400) {
       success(this.response);

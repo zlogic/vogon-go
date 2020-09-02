@@ -1,51 +1,57 @@
 {{ define "content" }}
-<h2>Account</h2>
-<form id="accountForm" accept-charset="utf-8" autocomplete="off">
-  <div class="form-row">
-    <div class="form-group col-md-9">
-      <label for="editName">Name</label>
-      <input type="text" class="form-control" id="editName" placeholder="Enter account name" required>
-    </div>
-    <div class="form-group col-md-3">
-      <label for="editCurrency">Currency</label>
-      <input type="text" class="form-control" id="editCurrency" placeholder="Enter account currency" required>
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group col-md-12">
-      <div class="custom-control custom-checkbox">
-        <input type="checkbox" class="custom-control-input" id="includeInTotal">
-        <label class="custom-control-label" for="includeInTotal">Include in total</label>
+<p class="title">Account</p>
+<div class="content">
+  <div class="container is-widescreen">
+    <form id="accountForm" accept-charset="utf-8" autocomplete="off">
+      <div class="columns">
+        <div class="column is-two-thirds">
+          <div class="field">
+            <label for="editName" class="label">Name</label>
+            <div class="control">
+              <input type="text" class="input" id="editName" placeholder="Enter account name" required>
+            </div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="field">
+            <label for="editCurrency" class="label">Currency</label>
+            <div class="control">
+              <input type="text" class="input" id="editCurrency" placeholder="Enter account currency" required>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="custom-control custom-checkbox">
-        <input type="checkbox" class="custom-control-input" id="showInList">
-        <label class="custom-control-label" for="showInList">Show in accounts list</label>
+      <div class="field">
+        <div class="control">
+          <label class="checkbox"><input type="checkbox" id="includeInTotal"> Include in total</label>
+        </div>
       </div>
-    </div>
+      <div class="field">
+        <div class="control">
+          <label class="checkbox"><input type="checkbox" id="showInList"> Show in accounts list</label>
+        </div>
+      </div>
+      <div class="field">
+        <p class="control">
+          <button type="submit" class="button is-primary">Save</button>
+        </p>
+        <div class="content">
+          <div id="saveSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Saved successfully</div>
+          <div id="saveFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Save failed</div>
+        </div>
+      </div>
+      <div class="field">
+        <p class="control">
+          <button id="deleteButton" class="button is-danger">Delete</button>
+        </p>
+        <div class="content">
+          <div id="deleteSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Deleted successfully</div>
+          <div id="deleteFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Delete failed</div>
+        </div>
+      </div>
+    </form>
   </div>
-  <div class="form-group">
-    <button type="submit" class="btn btn-primary">
-      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
-      Save</button>
-  </div>
-  <div class="row">
-    <div class="form-group col-md-12">
-      <div id="saveSuccessful" class="alert alert-success" role="alert" hidden>Saved successfully</div>
-      <div id="saveFailed" class="alert alert-danger" role="alert" hidden>Save failed</div>
-    </div>
-  </div>
-  <div class="form-group">
-    <button id="deleteButton" type="button" class="btn btn-danger">
-      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
-      Delete</button>
-  </div>
-  <div class="row">
-    <div class="form-group col-md-12">
-      <div id="deleteSuccessful" class="alert alert-success" role="alert" hidden>Deleted successfully</div>
-      <div id="deleteFailed" class="alert alert-danger" role="alert" hidden>Delete failed</div>
-    </div>
-  </div>
-</form>
+</div>
 {{ if .Form.id }}
 <script>
   var accountID = parseInt('{{ index .Form "id" 0 }}');
@@ -55,104 +61,93 @@
   var action = '{{ index .Form "action" 0 }}';
 </script>
 <script>
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', () => {
   var account = null;
   var componentsCounter = 0;
 
-  var nameEditor = $('input[id="editName"]');
-  var currencyEditor = $('input[id="editCurrency"]');
-  var includeInTotal = $('input[id="includeInTotal"]');
-  var showInList = $('input[id="showInList"]');
-  var submit = $('button[type="submit"]');
-  var deleteButton = $('button[id="deleteButton"]');
-  var spinner = $('button[type="submit"] span[role="status"]');
-  var deleteSpinner = $('button[id="deleteButton"] span[role="status"]');
+  var nameEditor = document.querySelector('input[id="editName"]');
+  var currencyEditor = document.querySelector('input[id="editCurrency"]');
+  var includeInTotal = document.querySelector('input[id="includeInTotal"]');
+  var showInList = document.querySelector('input[id="showInList"]');
+  var submit = document.querySelector('button[type="submit"]');
+  var deleteButton = document.querySelector('button[id="deleteButton"]');
+  var accountForm = document.getElementById("accountForm");
 
   var lockForm = function(lock) {
-     $("#accountForm").find("input").prop("readonly", lock);
-  }
+    var inputs = accountForm.querySelectorAll("input");
+    for (var i = 0; i < inputs.length; ++i)
+      inputs[i].disabled = lock;
+  };
 
   var showResultAlert = function(alertDiv){
-    alertDiv.hide();
-    alertDiv.prop("hidden", false);
-    alertDiv.slideDown();
-  }
+    alertDiv.hidden = false;
+  };
 
   var updateForm = function() {
-    nameEditor.val(account.Name);
-    currencyEditor.val(account.Currency);
-    includeInTotal.prop("checked", account.IncludeInTotal);
-    showInList.prop("checked", account.ShowInList);
+    nameEditor.value = account.Name;
+    currencyEditor.value = account.Currency;
+    includeInTotal.checked = account.IncludeInTotal;
+    showInList.checked = account.ShowInList;
     lockForm(false);
-  }
+  };
 
-  //Delete component button
-  $(document).on('click', 'button[data-delete="component"]', function(e) {
-    e.preventDefault();
-    var deleteButton = jQuery(this);
-    deleteButton.parent().parent().slideUp(function(){deleteButton.parent().parent().remove()});
-  });
-  
   // Submit handler
-  $("#accountForm").submit(function(event) {
+  accountForm.addEventListener("submit", function(event){
     event.preventDefault();
     lockForm(true);
-    $("#saveFailed").prop("hidden", true);
-    $("#saveSuccessful").prop("hidden", true);
-    spinner.prop("hidden", false);
-    account.Name = nameEditor.val();
-    account.Currency = currencyEditor.val();
-    account.IncludeInTotal = includeInTotal.prop("checked");
-    account.ShowInList = showInList.prop("checked");
+    var saveSuccessful = accountForm.querySelector("#saveSuccessful");
+    var saveFailed = accountForm.querySelector("#saveFailed");
+    saveSuccessful.hidden = true;
+    saveFailed.hidden = true;
+    submit.classList.add("is-loading");
+    account.Name = nameEditor.value;
+    account.Currency = currencyEditor.value;
+    account.IncludeInTotal = includeInTotal.checked;
+    account.ShowInList = showInList.checked;
     var id = account.ID || "new";
-    $.ajax("api/account/" + id, {
-      data : JSON.stringify(account),
-      contentType : 'application/json',
-      type : 'POST'
-    }).done(function() {
+    reqPostJSON("api/account/" + id, account, function() {
       window.location.href = "accounts";
-      showResultAlert($("#saveSuccessful"));
-    }).fail(function(data){
-      showResultAlert($("#saveFailed"));
+      showResultAlert(saveSuccessful);
+      submit.classList.remove("is-loading");
+    }, function() {
+      showResultAlert(saveFailed);
       lockForm(false);
-    }).always(function(){
-      spinner.prop("hidden", true);
+      submit.classList.remove("is-loading");
     });
   });
+
 
   // Delete handler
-  $("#deleteButton").click(function(event) {
+  deleteButton.addEventListener('click', (event) => {
     event.preventDefault();
     lockForm(true);
-    $("#deleteFailed").prop("hidden", true);
-    $("#deleteSuccessful").prop("hidden", true);
-    deleteSpinner.prop("hidden", false);
-    $.ajax("api/account/" + accountID, {
-      type : 'DELETE'
-    }).done(function() {
+    var deleteSuccessful = accountForm.querySelector("#deleteSuccessful");
+    var deleteFailed = accountForm.querySelector("#deleteFailed");
+    deleteSuccessful.hidden = true;
+    deleteFailed.hidden = true;
+    deleteButton.classList.add("is-loading");
+    reqDelete("api/account/" + accountID, function() {
       window.location.href = "accounts";
-      showResultAlert($("#deleteSuccessful"));
-    }).fail(function(data){
-      showResultAlert($("#deleteFailed"));
+      showResultAlert(deleteSuccessful);
+      deleteButton.classList.remove("is-loading");
+    }, function(){
+      showResultAlert(deleteFailed);
       lockForm(false);
-    }).always(function(){
-      deleteSpinner.prop("hidden", true);
+      deleteButton.classList.remove("is-loading");
     });
-  })
+  });
   if (action !== "edit")
-    $("#deleteButton").remove();
+    deleteButton.remove();
 
   var loadAccount = function() {
     lockForm(true);
     if (action === "edit") {
-      $.getJSON("api/account/" + accountID).done(function(data) {
-        account = data;
+      reqGet("api/account/" + accountID, function(data){
+        account = JSON.parse(data);
         updateForm();
-      }).fail(function() {
-        var alertDiv = $('<div class="alert alert-danger" role="alert">Failed to fetch account details.</div>');
-        $("#accountForm").empty().append(alertDiv);
-        alertDiv.hide();
-        alertDiv.slideDown();
+      }, function() {
+        removeChildren(accountForm);
+        accountForm.insertAdjacentHTML("afterbegin", '<div class="notification is-danger animate__animated animate__flipInX" role="alert">Failed to fetch account details.</div>')
       });
     } else if (action === "new") {
       account = {Name: "", Currency: "", IncludeInTotal: true, ShowInList: true};

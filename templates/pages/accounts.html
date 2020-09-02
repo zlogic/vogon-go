@@ -1,66 +1,80 @@
 {{ define "content" }}
-<h2>Accounts</h2>
-<div class="pb-3">
-  <div class="custom-control custom-switch">
-    <input type="checkbox" class="custom-control-input" id="showAllAccounts">
-    <label class="custom-control-label" for="showAllAccounts">Show all accounts</label>
+<p class="title">Accounts</p>
+<div class="content">
+  <div class="container is-widescreen">
+    <p>
+      <label class="checkbox">
+        <input type="checkbox" id="showAllAccounts">
+        Show all accounts
+      </label>
+    </p>
+    <p>
+      <a class="button" href="accounteditor?action=new" role="button">Add account</a>
+    </p>
+    <div>
+      <table class="table is-striped">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th><div class="has-text-right">Balance</div></th>
+            <th>Currency</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
 </div>
-<div class="pb-3">
-  <a class="btn btn-outline-secondary" href="accounteditor?action=new" role="button">Add account</a>
-</div>
-<div class="table-responsive">
-  <table class="table">
-    <thead>
-      <tr>
-        <th scope="col">Name</th>
-        <th scope="col"><div class="text-right">Balance</div></th>
-        <th scope="col">Currency</th>
-        <th scope="col"></th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-</div>
 <script>
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', () => {
   var accounts = [];
   var showAllAccounts = false;
   var addProgress = function() {
-    var progressRow = $('<tr></tr>')
-      .append($('<td class="col-12"></td>')
-        .append($('<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated w-100" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div>'))
-      );
-    var target = $("tbody");
-    target.empty().append(progressRow);
+    var progressRow = document.createElement("tr");
+    var progressCell = document.createElement("td")
+    progressRow.append(progressCell);
+    progressCell.setAttribute("colspan", 4);
+    progressCell.insertAdjacentHTML("afterbegin", '<progress class="progress is-primary" max="100"></progress>');
+    var target = document.querySelector("tbody");
+    removeChildren(target);
+    target.append(progressRow);
   }
   var updateVisibility = function() {
-    var progress = $(".progress");
-    if (!progress.prop("hidden")) {
-      progress.slideUp(function() { progress.parent().parent().remove(); });
-    }
-    var table = $(".table-responsive");
-    if (table.prop("hidden"))
-      table.hide().prop("hidden", false).slideDown();
+    var progressBar = document.querySelector("progress");
+    if (progressBar !== null)
+      progressBar.parentElement.parentElement.remove();
   }
   var updateAccounts = function() {
-    var accountsTarget = $("tbody");
-    accountsTarget.empty();
+    var accountsTarget = document.querySelector("tbody");
+    removeChildren(accountsTarget);
     for (i in accounts) {
       var account = accounts[i];
       if (!showAllAccounts && !account.ShowInList)
         continue
-      var editColumn = $('<a class="btn btn-outline-secondary" href="accounteditor?action=edit&id=' + account.ID + '" role="button">Edit</a>');
-      var accountRow = $('<tr></tr>')
-        .append($('<td></td>').text(account.Name))
-        .append($('<td></td>')
-          .append($('<div class="text-right"></div>').text((account.Balance/100).toFixed(2)))
-        )
-        .append($('<td></td>').text(account.Currency))
-        .append($('<td></td>').append(editColumn));
+      var editColumn = document.createElement("a");
+      editColumn.setAttribute("class", "button")
+      editColumn.setAttribute("href", "accounteditor?action=edit&id=" + account.ID);
+      editColumn.setAttribute("role", "button");
+      editColumn.textContent = "Edit";
+      var accountRow = document.createElement("tr");
+      var accountCell = document.createElement("td");
+      accountCell.textContent = account.Name;
+      accountRow.append(accountCell);
+      accountCell = document.createElement("td");
+      var balanceDiv = document.createElement("div")
+      balanceDiv.setAttribute("class", "has-text-right");
+      balanceDiv.textContent = (account.Balance/100).toFixed(2)
+      accountCell.append(balanceDiv);
+      accountRow.append(accountCell);
+      accountCell = document.createElement("td");
+      accountCell.textContent = account.Currency;
+      accountRow.append(accountCell);
+      accountCell = document.createElement("td");
+      accountCell.append(editColumn);
+      accountRow.append(accountCell);
       if (account.TotalAccount) 
-        accountRow.addClass("table-secondary");
+        accountRow.classList.add("has-background-primary-light");
       accountsTarget.append(accountRow);
     }
   }
@@ -73,23 +87,22 @@ $(document).ready(function() {
     }
     for(var currency in accountTotals)
       accounts.push({Name: "Totals for "+ currency, Currency: currency, Balance: accountTotals[currency], ShowInList: true, TotalAccount: true});
-  }
-  $("#showAllAccounts").change(function() {
-    showAllAccounts = this.checked;
+  };
+  document.querySelector("#showAllAccounts").addEventListener('change', (event) => {
+    showAllAccounts = event.target.checked;
     updateAccounts();
   });
   var loadAccounts = function() {
     addProgress();
-    $.getJSON("api/accounts").done(function(data) {
-      accounts = data;
+    reqGet("api/accounts", function(data) {
+      accounts = JSON.parse(data);
       createTotalAccounts();
       updateAccounts();
       updateVisibility();
-    }).fail(function() {
-      var alertDiv = $('<div class="alert alert-danger" role="alert">Failed to fetch accounts.</div>');
-      $(".table-responsive").empty().append(alertDiv);
-      alertDiv.hide();
-      alertDiv.slideDown();
+    }, function() {
+      var alertTarget = document.querySelector("table").parentElement;
+      removeChildren(alertTarget);
+      alertTarget.insertAdjacentHTML("afterbegin", '<div class="notification is-danger animate__animated animate__flipInX" role="alert">Failed to fetch accounts.</div>')
     });
   }
   loadAccounts();
