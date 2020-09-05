@@ -1,11 +1,13 @@
 {{ define "content" }}
-<h2>Report</h2>
-<div id="reportTarget"></div>
+<p class="title">Report</p>
+<div class="container is-widescreen">
+  <div id="reportTarget" class="content"></div>
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js" integrity="sha512-vBmx0N/uQOXznm/Nbkp7h0P1RfLSj0HQrFSzV8m7rOGyj30fYAOKHYvCNez+yM8IrfnW0TCodDEjRqf6fodf/Q==" crossorigin="anonymous"></script>
 <script>
   // Load CSS
   Chart.platform.disableCSSInjection = true;
-  $('head').append('<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" integrity="sha512-/zs32ZEJh+/EO2N1b0PEdoA10JkdC3zJ8L5FTiQu82LR9S/rOQNfQN7U59U9BC12swNeRAz3HSzIL2vpp4fv3w==" crossorigin="anonymous" />');
+  document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" integrity="sha512-/zs32ZEJh+/EO2N1b0PEdoA10JkdC3zJ8L5FTiQu82LR9S/rOQNfQN7U59U9BC12swNeRAz3HSzIL2vpp4fv3w==" crossorigin="anonymous" />');
 </script>
 <script>
   var params = {
@@ -19,8 +21,8 @@
   };
 </script>
 <script>
-$(document).ready(function() {
-  var reportTarget = $('#reportTarget');
+document.addEventListener('DOMContentLoaded', () => {
+  var reportTarget = document.getElementById("reportTarget");
   var balanceChartOptions = {
     responsive: true,
     tooltips: {
@@ -89,14 +91,17 @@ $(document).ready(function() {
 	];
 
   var addProgress = function() {
-    var progressRow = $('<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated w-100" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div>')
-    reportTarget.empty().append(progressRow);
+    removeChildren(reportTarget);
+    reportTarget.insertAdjacentHTML("afterbegin", '<progress class="progress is-primary" max="100"></progress>');
   }
   var updateReport = function(report) {
-    reportTarget.empty();
+    removeChildren(reportTarget);
     for (var currency in report.BalanceChart) {
-      var ctx = $('<canvas></canvas>');
-      reportTarget.append($('<div></div>').append($('<h3></h3>').text("Balance for "+ currency)).append(ctx));
+      var currencyChartDiv = document.createElement("div");
+      reportTarget.append(currencyChartDiv);
+      var currencyChartTitle = document.createElement("h3")
+      currencyChartDiv.append(currencyChartTitle);
+      currencyChartTitle.textContent = "Balance for "+ currency;
       var currencyChart = report.BalanceChart[currency];
       var data = [];
       for (var date in currencyChart)
@@ -110,6 +115,8 @@ $(document).ready(function() {
           steppedLine: 'before'
         }]
       }
+      var ctx = document.createElement("canvas");
+      currencyChartDiv.append(ctx);
       var balanceChart = new Chart(ctx, {
         type: 'line',
         data: dataset,
@@ -117,8 +124,11 @@ $(document).ready(function() {
       });
     }
     for (var currency in report.TagsChart) {
-      var ctx = $('<canvas></canvas>');
-      reportTarget.append($('<div></div>').append($('<h3></h3>').text("Tags for "+ currency)).append(ctx));
+      var tagsChartDiv = document.createElement("div");
+      reportTarget.append(tagsChartDiv);
+      var tagsChartTitle = document.createElement("h3")
+      tagsChartDiv.append(tagsChartTitle);
+      tagsChartTitle.textContent = "Tags for "+ currency;
       var tagsChart = report.TagsChart[currency];
       var tags = {};
       var appendTag = function(tag){
@@ -158,6 +168,8 @@ $(document).ready(function() {
         labels: ['Income','Expense','Transfer'],
         datasets: tagDatasets
       };
+      var ctx = document.createElement("canvas");
+      tagsChartDiv.append(ctx);
       var tagsChart = new Chart(ctx, {
         type: 'horizontalBar',
         data: dataset,
@@ -168,13 +180,12 @@ $(document).ready(function() {
 
   var loadData = function() {
     addProgress();
-    $.post("api/report", params, null, "json").done(function(data) {
+    reqPostForm("api/report", params, function(data) {
+      data = JSON.parse(data);
       updateReport(data);
-    }).fail(function() {
-      var alertDiv = $('<div class="alert alert-danger" role="alert">Failed to generate report.</div>');
-      $("#reportTarget").empty().append(alertDiv);
-      alertDiv.hide();
-      alertDiv.slideDown();
+    }, function() {
+      removeChildren(reportTarget);
+      reportTarget.insertAdjacentHTML("afterbegin", '<div class="notification is-danger animate__animated animate__flipInX" role="alert">Failed to generate report.</div>')
     });
   }
   loadData();
