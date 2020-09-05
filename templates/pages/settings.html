@@ -1,88 +1,86 @@
 {{ define "content" }}
 <p class="title">Settings</p>
-<div class="content">
-  <div class="container is-widescreen">
-    <form id="configurationForm" accept-charset="utf-8" autocomplete="off">
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label for="editUsername" class="label">Username</label>
-        </div>
-        <div class="field-body">
-          <div class="field">
-            <p class="control">
-              <input type="text" class="input" id="editUsername" placeholder="Username" required>
-            </p>
-          </div>
+<div class="container is-widescreen">
+  <form id="configurationForm" accept-charset="utf-8" autocomplete="off">
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label for="editUsername" class="label">Username</label>
+      </div>
+      <div class="field-body">
+        <div class="field">
+          <p class="control">
+            <input type="text" class="input" id="editUsername" placeholder="Username" required>
+          </p>
         </div>
       </div>
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label for="editPassword" class="label">Password</label>
-        </div>
-        <div class="field-body">
-          <div class="field">
-            <p class="control">
-              <input type="password" class="input" id="editPassword" placeholder="Password">
-            </p>
-          </div>
+    </div>
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label for="editPassword" class="label">Password</label>
+      </div>
+      <div class="field-body">
+        <div class="field">
+          <p class="control">
+            <input type="password" class="input" id="editPassword" placeholder="Password">
+          </p>
         </div>
       </div>
-      <div class="field is-horizontal">
-        <div class="field-label is-normal">
-          <label for="restoreBackupFile" class="label">Restore backup</label>
-        </div>
-        <div class="field-body">
-          <div class="field">
-            <div class="control">
-              <div class="file has-name is-fullwidth" id="restoreBackupField">
-                <label class="file-label">
-                  <input class="file-input" type="file" name="restoreBackupFile">
-                  <span class="file-cta">
-                    <span class="file-label">Choose file to restore</span>
-                  </span>
-                  <span class="file-name"></span>
-                </label>
-              </div>
+    </div>
+    <div class="field is-horizontal">
+      <div class="field-label is-normal">
+        <label for="restoreBackupFile" class="label">Restore backup</label>
+      </div>
+      <div class="field-body">
+        <div class="field">
+          <div class="control">
+            <div class="file has-name is-fullwidth" id="restoreBackupField">
+              <label class="file-label">
+                <input class="file-input" type="file" name="restoreBackupFile">
+                <span class="file-cta">
+                  <span class="file-label">Choose file to restore</span>
+                </span>
+                <span class="file-name"></span>
+              </label>
             </div>
           </div>
         </div>
       </div>
-      <div class="field is-horizontal">
-        <div class="field-label is-normal"></div>
-        <div class="field-body">
-          <div class="field">
-            <div class="control">
-              <div id="restoreWarning" class="notification is-warning animate__animated animate__flipInX" role="alert" hidden>Restoring a backup will overwrite all existing data</div>
-            </div>
+    </div>
+    <div class="field is-horizontal">
+      <div class="field-label is-normal"></div>
+      <div class="field-body">
+        <div class="field">
+          <div class="control">
+            <div id="restoreWarning" class="notification is-warning animate__animated animate__flipInX" role="alert" hidden>Restoring a backup will overwrite all existing data</div>
           </div>
         </div>
       </div>
-      <div class="field is-horizontal">
-        <div class="field-label is-normal"></div>
-        <div class="field-body">
-          <div class="field">
-            <p class="control">
-              <button type="submit" class="button is-primary">Save</button>
-            </p>
-            <div class="content">
-              <div id="saveSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Saved successfully</div>
-              <div id="saveFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Save failed</div>
-            </div>
+    </div>
+    <div class="field is-horizontal">
+      <div class="field-label is-normal"></div>
+      <div class="field-body">
+        <div class="field">
+          <p class="control">
+            <button type="submit" class="button is-primary">Save</button>
+          </p>
+          <div class="content">
+            <div id="saveSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Saved successfully</div>
+            <div id="saveFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Save failed</div>
           </div>
         </div>
       </div>
-      <div class="field is-horizontal">
-        <div class="field-label is-normal"></div>
-        <div class="field-body">
-          <div class="field">
-            <p class="control">
-              <button id="backupData" class="button" href="api/backup">Backup data</button>
-            </p>
-          </div>
+    </div>
+    <div class="field is-horizontal">
+      <div class="field-label is-normal"></div>
+      <div class="field-body">
+        <div class="field">
+          <p class="control">
+            <button id="backupData" class="button" href="api/backup">Backup data</button>
+          </p>
         </div>
       </div>
-    </form>
-  </div>
+    </div>
+  </form>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', () => {

@@ -1,56 +1,54 @@
 {{ define "content" }}
 <p class="title">Account</p>
-<div class="content">
-  <div class="container is-widescreen">
-    <form id="accountForm" accept-charset="utf-8" autocomplete="off">
-      <div class="columns">
-        <div class="column is-two-thirds">
-          <div class="field">
-            <label for="editName" class="label">Name</label>
-            <div class="control">
-              <input type="text" class="input" id="editName" placeholder="Enter account name" required>
-            </div>
-          </div>
-        </div>
-        <div class="column">
-          <div class="field">
-            <label for="editCurrency" class="label">Currency</label>
-            <div class="control">
-              <input type="text" class="input" id="editCurrency" placeholder="Enter account currency" required>
-            </div>
+<div class="container is-widescreen">
+  <form id="accountForm" accept-charset="utf-8" autocomplete="off">
+    <div class="columns">
+      <div class="column is-two-thirds">
+        <div class="field">
+          <label for="editName" class="label">Name</label>
+          <div class="control">
+            <input type="text" class="input" id="editName" placeholder="Enter account name" required>
           </div>
         </div>
       </div>
-      <div class="field">
-        <div class="control">
-          <label class="checkbox"><input type="checkbox" id="includeInTotal"> Include in total</label>
+      <div class="column">
+        <div class="field">
+          <label for="editCurrency" class="label">Currency</label>
+          <div class="control">
+            <input type="text" class="input" id="editCurrency" placeholder="Enter account currency" required>
+          </div>
         </div>
       </div>
-      <div class="field">
-        <div class="control">
-          <label class="checkbox"><input type="checkbox" id="showInList"> Show in accounts list</label>
-        </div>
+    </div>
+    <div class="field">
+      <div class="control">
+        <label class="checkbox"><input type="checkbox" id="includeInTotal"> Include in total</label>
       </div>
-      <div class="field">
-        <p class="control">
-          <button type="submit" class="button is-primary">Save</button>
-        </p>
-        <div class="content">
-          <div id="saveSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Saved successfully</div>
-          <div id="saveFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Save failed</div>
-        </div>
+    </div>
+    <div class="field">
+      <div class="control">
+        <label class="checkbox"><input type="checkbox" id="showInList"> Show in accounts list</label>
       </div>
-      <div class="field">
-        <p class="control">
-          <button id="deleteButton" class="button is-danger">Delete</button>
-        </p>
-        <div class="content">
-          <div id="deleteSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Deleted successfully</div>
-          <div id="deleteFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Delete failed</div>
-        </div>
+    </div>
+    <div class="field">
+      <p class="control">
+        <button type="submit" class="button is-primary">Save</button>
+      </p>
+      <div class="content">
+        <div id="saveSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Saved successfully</div>
+        <div id="saveFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Save failed</div>
       </div>
-    </form>
-  </div>
+    </div>
+    <div class="field">
+      <p class="control">
+        <button id="deleteButton" class="button is-danger">Delete</button>
+      </p>
+      <div class="content">
+        <div id="deleteSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Deleted successfully</div>
+        <div id="deleteFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Delete failed</div>
+      </div>
+    </div>
+  </form>
 </div>
 {{ if .Form.id }}
 <script>

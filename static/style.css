@@ -8,7 +8,6 @@ input[type="number"] {
     -moz-appearance: textfield;
 }
 
-
 /* Transactions table container (to be covered with the loading shade) */
 .transactions-table-container {
     position: relative;
@@ -16,12 +15,6 @@ input[type="number"] {
 
 /* Shade to indicate that transactions are loading */
 .transactions-loading-shade {
-    position: absolute;
-    text-align: center;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
     background: rgba(0, 0, 0, 0.15);
     z-index: 1;
 }
@@ -30,11 +23,6 @@ input[type="number"] {
     position: -webkit-sticky;
     position: sticky;
     top: 50vh;
-}
-
-/* Allow word breaking for date column */
-.date-column {
-    word-break: break-word;
 }
 
 /* Tag editor */

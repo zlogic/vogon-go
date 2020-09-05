@@ -1,180 +1,286 @@
 {{ define "content" }}
-<h2>Transactions</h2>
-<div id="loadAlerts"></div>
-<div id="transactionControls" class="pb-3">
-  <button class="btn btn-outline-primary" data-toggle="collapse" type="button" id="filterButton" data-target="#transactionsFilterComponents" aria-expanded="false" aria-controls="transactionsFilterComponents" disabled>
-    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
-    Advanced
-  </button>
-  <a class="btn btn-secondary float-right" href="transactioneditor?action=new" role="button">Add transaction</a>
-</div>
-<div id="transactionsFilterComponents" class="collapse pb-3 container">
-  <div class="card">
-    <div class="card-body">
-      <form id="filterForm" accept-charset="utf-8" autocomplete="off">
-        <div class="form-row">
-          <div class="form-group col-md-6 col-sm-12">
-            <label for="inputFilterDescription">Transaction description</label>
-            <input type="text" class="form-control" id="inputFilterDescription" placeholder="Enter description to filter">
-          </div>
-          <div class="form-group col-md-3 col-sm-12">
-            <label for="inputFilterFrom">From date</label>
-            <input type="date" class="form-control" id="inputFilterFrom" placeholder="From date">
-          </div>
-          <div class="form-group col-md-3 col-sm-12">
-            <label for="inputFilterTo">To date</label>
-            <input type="date" class="form-control" id="inputFilterTo" placeholder="To date">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group col-md-6 col-sm-12">
-            <label for="filterTransactionTags">Tags</label>
-            <select class="custom-select" id="filterTransactionTags" data-selectall="#selectAllTags" multiple></select>
-            <div class="form-check">
-              <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="selectAllTags" data-selectall="#filterTransactionTags">
-                <label class="custom-control-label" for="selectAllTags">Select/Deselect all</label>
-              </div>
-            </div>
-          </div>
-          <div class="form-group col-md-6 col-sm-12">
-            <label for="filterTransactionAccounts">Accounts</label>
-            <select class="custom-select" id="filterTransactionAccounts" data-selectall="#selectAllAccounts" multiple></select>
-            <div class="form-check">
-              <div class="custom-control custom-checkbox">
-                <input type="checkbox" class="custom-control-input" id="selectAllAccounts" data-selectall="#filterTransactionAccounts">
-                <label class="custom-control-label" for="selectAllAccounts">Select/Deselect all</label>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group col">
-            <div class="custom-control custom-checkbox">
-              <input type="checkbox" class="custom-control-input" id="filterIncludeExpenseIncome">
-              <label class="custom-control-label" for="filterIncludeExpenseIncome">Include expense/income transactions</label>
-            </div>
-            <div class="custom-control custom-checkbox">
-              <input type="checkbox" class="custom-control-input" id="filterIncludeTransfer">
-              <label class="custom-control-label" for="filterIncludeTransfer">Include transfer transactions</label>
-            </div>
-          </div>
-        </div>
-        <button type="submit" class="btn btn-primary" id="applyButton">
-          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
-          Apply filter
-        </button>
-        <button class="btn btn-outline-info" id="createReportButton">
-          Create report
-        </button>
-      </form>
-    </div>
+<p class="title">Transactions</p>
+<div class="container is-widescreen">
+  <div class="content" id="loadAlerts"></div>
+  <div class="content" id="transactionControls">
+    <button class="button is-info is-outlined" type="button" id="filterButton" aria-expanded="false" aria-controls="transactionsFilterComponents" disabled>Advanced</button>
+    <a class="button is-primary is-pulled-right" href="transactioneditor?action=new" role="button">Add transaction</a>
   </div>
-</div>
-<div class="transactions-table-container">
-  <div class="transactions-loading-shade" hidden>
-    <div class="transactions-loading-spinner">
-      <div class="spinner-border" role="status">
-        <span class="sr-only">Loading transactions...</span>
+  <div class="content animate__animated" id="transactionsFilterComponents" hidden>
+    <div class="card">
+      <div class="card-content">
+        <div class="content">
+          <form id="filterForm" accept-charset="utf-8" autocomplete="off">
+            <div class="columns">
+              <div class="column is-half">
+                <div class="field">
+                  <label class="label" for="inputFilterDescription">Transaction description</label>
+                  <div class="control">
+                    <input type="text" class="input" id="inputFilterDescription" placeholder="Enter description to filter">
+                  </div>
+                </div>
+              </div>
+              <div class="column">
+                <div class="field">
+                  <label class="label" for="inputFilterFrom">From date</label>
+                  <div class="control">
+                    <input type="date" class="input" id="inputFilterFrom" placeholder="From date">
+                  </div>
+                </div>
+              </div>
+              <div class="column">
+                <div class="field">
+                  <label class="label" for="inputFilterTo">To date</label>
+                  <div class="control">
+                    <input type="date" class="input" id="inputFilterTo" placeholder="To date">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="columns">
+              <div class="column">
+                <div class="field">
+                  <label class="label" for="filterTransactionTags">Tags</label>
+                  <div class="control">
+                    <div class="select is-multiple is-fullwidth">
+                      <select id="filterTransactionTags" multiple></select>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="control">
+                    <label class="checkbox">
+                      <input type="checkbox" id="selectAllTags"> Select/Deselect all
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="column">
+                <div class="field">
+                  <label class="label" for="filterTransactionAccounts">Accounts</label>
+                  <div class="control">
+                    <div class="select is-multiple is-fullwidth">
+                      <select id="filterTransactionAccounts" multiple></select>
+                    </div>
+                  </div>
+                </div>
+                <div class="field">
+                  <div class="control">
+                    <label class="checkbox">
+                      <input type="checkbox" id="selectAllAccounts"> Select/Deselect all
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="content">
+              <div class="field">
+                <div class="control">
+                  <label class="checkbox">
+                    <input type="checkbox" id="filterIncludeExpenseIncome"> Include expense/income transactions
+                  </label>
+                </div>
+              </div>
+              <div class="field">
+                <div class="control">
+                  <label class="checkbox">
+                    <input type="checkbox" id="filterIncludeTransfer"> Include transfer transactions
+                  </label>
+                </div>
+              </div>
+              <div class="field is-grouped">
+                <p class="control">
+                  <button type="submit" class="button is-primary" id="applyButton">Apply filter</button>
+                </p>
+                <p class="control">
+                  <button class="button is-info is-outlined" id="createReportButton">Create report</button>
+                </p>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
-  <div class="table-responsive">
-    <table class="table">
-      <thead>
-        <tr>
-          <th scope="col">Description</th>
-          <th scope="col">Date</th>
-          <th scope="col">Accounts</th>
-          <th scope="col"><div class="text-right">Amount</div></th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
+  <div class="content transactions-table-container">
+    <div class="is-overlay transactions-loading-shade" hidden>
+      <div class="transactions-loading-spinner">
+        <div class="columns is-centered">
+          <div class="column is-half">
+            <progress class="progress is-primary" max="50"></progress>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="transactionsTable">
+      <table class="table is-striped">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Date</th>
+            <th>Accounts</th>
+            <th><div class="has-text-right">Amount</div></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </div>
-  <div id="pagination"></div>
+  <div id="pagination">
+    <nav class="pagination is-centered" role="navigation" aria-label="transactions pagination">
+      <button class="button pagination-previous">Previous</button>
+      <button class="button pagination-next">Next page</button>
+      <ul class="pagination-list"></ul>
+    </nav>
+  </div>
 </div>
 <script>
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', () => {
   var isExpenseIncome = function(transaction) { return transaction.Type === 0; }
   var isTransfer = function(transaction) { return transaction.Type === 1; }
   var itemsPerPage = 100;
 
-  var table = $(".table-responsive");
-  var progress = $(".progress");
-  var transactionsTarget = $("tbody");
-  var paginationTarget = $("#pagination");
-  var transactionsLoadingShade = $(".transactions-loading-shade");
+  var table = document.querySelector("#transactionsTable");
+  var transactionsTarget = document.querySelector("tbody");
+  var paginationTarget = document.querySelector("#pagination");
+  var previousPageButton = document.querySelector(".pagination-previous");
+  var nextPageButton = document.querySelector(".pagination-next");
+  var transactionsLoadingShade = document.querySelector(".transactions-loading-shade");
+  var filterButton = document.getElementById("filterButton");
+  var filterForm = document.getElementById("filterForm");
+  var transactionsFilterComponents = document.getElementById("transactionsFilterComponents");
 
-  var loadAlerts = $('#loadAlerts')
+  var loadAlerts = document.querySelector('#loadAlerts');
   var loadFailed = false;
-
-  var setPage = null;
 
   var currentPage = null;
   var count = null;
   var accounts = null;
   var filterParams = {};
   var addProgress = function() {
-    var progressRow = $('<tr></tr>')
-      .append($('<td colspan="5"></td>')
-        .append($('<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated w-100" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div></div>'))
-      );
-    var target = $("tbody");
-    target.empty().append(progressRow);
-  }
-  var updateVisibility = function() {
-    if (!progress.prop("hidden")) {
-      progress.slideUp(function() { progress.parent().parent().remove(); });
+    var progressRow = document.createElement("tr");
+    var progressCell = document.createElement("td")
+    progressRow.append(progressCell);
+    progressCell.setAttribute("colspan", 4);
+    progressCell.insertAdjacentHTML("afterbegin", '<progress class="progress is-primary" max="100"></progress>');
+    var target = document.querySelector("tbody");
+    removeChildren(target);
+    target.append(progressRow);
+  };
+  var removeInitialProgressBar = function() {
+    var progress = document.querySelector("tr td progress");
+    if (progress !== null) {
+      progress.parentElement.parentElement.remove();
     }
-    if (table.prop("hidden"))
-      table.hide().prop("hidden", false).slideDown();
-  }
+  };
   
   var loadFailedAlert = function(msg) {
-    $("#transactionControls").empty();
-    $("#transactionsFilterComponents").empty();
-    $(".transactions-table-container").empty()
-    var alertDiv = $('<div class="alert alert-danger" role="alert"></div>').text(msg);
+    removeChildren(document.querySelector("#transactionControls"));
+    removeChildren(document.querySelector("#transactionsFilterComponents"));
+    removeChildren(document.querySelector(".transactions-table-container"));
+    paginationTarget.hidden = true;
+    var alertDiv = document.createElement("div");
+    alertDiv.setAttribute("class", "notification is-danger animate__animated animate__flipInX")
+    alertDiv.setAttribute("role", "alert");
+    alertDiv.textContent = msg;
     loadAlerts.append(alertDiv);
-    alertDiv.hide();
-    alertDiv.slideDown();
-  }
+  };
 
   var postHiddenForm = function(destination, values) {
-    var hiddenForm = $('<form id="hiddenForm" method="post" action="' + destination + '" hidden></form>');
-    for (var name in values)
-      hiddenForm.append($('<input type="hidden" name="' + name + '"></input>').val(values[name]));
-    $("body").append(hiddenForm);
+    var hiddenForm = document.createElement("form");
+    hiddenForm.id = "hiddenForm";
+    hiddenForm.method = "post";
+    hiddenForm.action = destination;
+    hiddenForm.hidden = true;
+    for (var name in values) {
+      var hiddenInput = document.createElement("input");
+      hiddenInput.name = name;
+      hiddenInput.value = values[name];
+      hiddenInput.type = "hidden";
+      hiddenForm.append(hiddenInput);
+    }
+    document.body.append(hiddenForm);
     hiddenForm.submit();
     hiddenForm.remove();
   }
+  var updateTransactions = null;
+  var setPage = function(page) {
+    currentPage = page;
+    var pagesCount = Math.ceil(count / itemsPerPage);
+    previousPageButton.disabled = page === 0;
+    nextPageButton.disabled = page === (pagesCount-1);
+
+    var pageLinks = paginationTarget.querySelector(".pagination-list");
+    removeChildren(pageLinks);
+    var createPagelinkClickHandler = function(pageLink, i){
+      pageLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        setPage(i);
+      });
+    };
+    for (var i=0;i<pagesCount;i++){
+      if (i === 0 || i === pagesCount-1 || (i >= (currentPage-2) && i <= (currentPage+2))) {
+        var pageLinkItem = document.createElement("li");
+        var pageLink = document.createElement("button");
+        pageLink.setAttribute("class", "button pagination-link")
+        if (i === page) pageLink.classList.add("is-current");
+        pageLink.textContent = i+1;
+        createPagelinkClickHandler(pageLink, i);
+        pageLinkItem.append(pageLink);
+        pageLinks.append(pageLinkItem);
+      } else if (i === 1 || i === pagesCount-2) {
+        pageLinks.insertAdjacentHTML("beforeend", '<li><span class="pagination-ellipsis">&hellip;</span></li>');
+      }
+    }
+    
+    var offset = Math.trunc(page*itemsPerPage);
+    transactionsLoadingShade.hidden = false;
+    var params = {offset: offset, limit: itemsPerPage};
+    for (var p in filterParams)
+      params[p] = filterParams[p];  
+    reqPostForm("api/transactions/getpage", params, function(data) {
+      var transactions = JSON.parse(data);
+      transactionsLoadingShade.hidden = true;
+      updateTransactions(transactions);
+    }, function() {
+      loadFailedAlert("Failed to load transactions page.")
+    });
+  };
   var updateTransactions = function(transactions) {
     if (transactions === null || accounts === null) return;
-    transactionsTarget.empty();
+    removeChildren(transactionsTarget);
     for (var tr in transactions) {
       var transaction = transactions[tr];
 
-      var descriptionTagsColumn = $('<div></div>')
-        .append($('<div></div>').text(transaction.Description));
-      var tagsDiv = $('<div></div>')
-      for (i in transaction.Tags)
-        descriptionTagsColumn.append($('<span class="badge badge-light"></span>').text(transaction.Tags[i])).append(" ");
+      var descriptionTagsColumn = document.createElement("div");
+      var descriptionTagsColumnText = document.createElement("div");
+      var duplicateButton = document.createElement("a");
+      descriptionTagsColumnText.append(duplicateButton);
+      duplicateButton.setAttribute("class", "button is-small is-pulled-right");
+      duplicateButton.setAttribute("href", "transactioneditor?action=duplicate&id=" + transaction.ID);
+      duplicateButton.textContent = "Duplicate";
+      descriptionTagsColumn.append(descriptionTagsColumnText);
+      var descriptionLink = document.createElement("a");
+      descriptionTagsColumnText.append(descriptionLink)
+      descriptionLink.setAttribute("href", "transactioneditor?action=edit&id=" + transaction.ID);
+      descriptionLink.textContent = transaction.Description;
+
+      var tagsDiv = document.createElement("div");
+      tagsDiv.setAttribute("class", "tags")
+      for (i in transaction.Tags) {
+        var tagBadge = document.createElement("span");
+        tagsDiv.append(tagBadge);
+        tagBadge.setAttribute("class", "tag");
+        tagBadge.textContent = transaction.Tags[i];
+        tagsDiv.insertAdjacentText("beforeend", " ");
+      }
       descriptionTagsColumn.append(tagsDiv);
 
-      var accountsColumn = $('<div></div>');
-      var amountsColumn = $('<div class="text-right"></div>');
-      var editButton = $('<a class="dropdown-item" href="transactioneditor?action=edit&id='+ transaction.ID +'">Edit</a>');
-      var duplicateButton = $('<a class="dropdown-item" href="transactioneditor?action=duplicate&id='+ transaction.ID +'">Duplicate</a>');
-      var actionsColumn = $('<div class="dropdown text-right">' + 
-        '<button class="btn btn-outline-secondary btn-small dropdown-toggle" type="button" id="dropdownMenuButton' + transaction.ID + '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Tools</button>' +
-        '</div>');
-      actionsColumn.append($('<div class="dropdown-menu" aria-labelledby="dropdownMenuButton' + transaction.ID + '">')
-        .append(editButton)
-        .append(duplicateButton)
-      );
+
+      var accountsColumn = document.createElement("div");
+      var amountsColumn = document.createElement("div");
+      amountsColumn.setAttribute("class", "has-text-right");
+
       var incomeAccounts = [], expenseAccounts = [];
       var currencyAmounts = {};
       var amountOk = true;
@@ -194,11 +300,15 @@ $(document).ready(function() {
         currencyAmounts[currency] = currencyTotal;
       }
       var appendAccount = function (accountID){
-        accountsColumn.append($('<div></div>').text((accounts[accountID] || {Name:""}).Name));
+        var accountNameDiv = document.createElement("div");
+        accountNameDiv.textContent = (accounts[accountID] || {Name:""}).Name;
+        accountsColumn.append(accountNameDiv);
       }
       var appendCurrencyAmounts = function (){
-        var prefix = isTransfer(transaction) ? "&sum;" : "";
         for (currency in currencyAmounts) {
+          var amountDiv = document.createElement("div");
+          amountsColumn.append(amountDiv);
+          if (isTransfer(transaction)) amountDiv.insertAdjacentHTML("afterbegin", "&sum;");
           var total = currencyAmounts[currency];
           var getAmount = function() {
             if (isExpenseIncome(transaction))
@@ -210,7 +320,7 @@ $(document).ready(function() {
           if (isTransfer(transaction) && Object.keys(currencyAmounts).length == 1 && total.positive !== total.negative)
             amountOk = false;
 
-          amountsColumn.append($('<div></div>').html(prefix + (getAmount()/100).toFixed(2) +" " + currency));
+          amountDiv.insertAdjacentText("beforeend", (getAmount()/100).toFixed(2) + " " + currency);
         }
       }
       if (isExpenseIncome(transaction)) {
@@ -223,7 +333,7 @@ $(document).ready(function() {
         appendCurrencyAmounts();
       } else if (isTransfer(transaction)) {
         expenseAccounts.forEach(appendAccount);
-        accountsColumn.append($('<div></div>').html('&darr;'));
+        accountsColumn.insertAdjacentHTML("beforeend", "<div>&darr;</div>");
         incomeAccounts.forEach(appendAccount);
         
         appendCurrencyAmounts("&sum; ");
@@ -232,223 +342,212 @@ $(document).ready(function() {
       var transactionDate = new Date(transaction.Date);
       var localTransactionDate = new Date(transactionDate.getUTCFullYear(), transactionDate.getUTCMonth(), transactionDate.getUTCDate());
 
-      var transactionRow = $('<tr></tr>')
-        .append($('<td></td>').append(descriptionTagsColumn))
-        .append($('<td></td>').append(localTransactionDate.toLocaleDateString()))
-        .append($('<td></td>').append(accountsColumn))
-        .append($('<td></td>').append(amountsColumn))
-        .append($('<td></td>').append(actionsColumn));
-      if (!amountOk) amountsColumn.parent().addClass("bg-danger").addClass("text-white");
+      var transactionRow = document.createElement("tr");
+      var transactionCell = document.createElement("td");
+      transactionCell.append(descriptionTagsColumn);
+      transactionRow.append(transactionCell);
+      transactionCell = document.createElement("td");
+      transactionCell.textContent = localTransactionDate.toLocaleDateString();
+      transactionRow.append(transactionCell);
+      transactionCell = document.createElement("td");
+      transactionCell.append(accountsColumn);
+      transactionRow.append(transactionCell);
+      var amountsCell = document.createElement("td");
+      amountsCell.append(amountsColumn);
+      transactionRow.append(amountsCell);
+      if (!amountOk) {
+        amountsCell.classList.add("has-background-danger");
+        amountsCell.classList.add("has-text-white");
+      }
       transactionsTarget.append(transactionRow);
     }
   }
   var updatePagination = function() {
-    paginationTarget.empty();
-
-    var paginationElement = $('<ul class="pagination justify-content-center"></ul>');
-
-    var previousPageButton = $('<a class="page-link" href="#pagePrevious"><span aria-hidden="true">&laquo;</span></a>');
-    paginationElement.append($('<li class="page-item"></li>').append(previousPageButton));
-
-    var pageSelectionButton = $('<button class="page-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-flip="false"></button>');
-    var pageSelectionMenu = $('<div class="dropdown-menu"></div>');
-
-    paginationElement.append($('<li class="page-item"></li>')
-      .append($('<div class="btn-group dropup"></div>')
-        .append(pageSelectionButton).append(pageSelectionMenu))
-    );
-
-    var nextPageButton = $('<a class="page-link" href="#pageNext"><span aria-hidden="true">&raquo;</span></a>');
-    paginationElement.append($('<li class="page-item"></li>').append(nextPageButton));
-
-    var pagesCount = Math.ceil(count / itemsPerPage);
-    setPage = function(page) {
-      currentPage = page;
-      previousPageButton.parent().toggleClass("disabled", page === 0);
-      nextPageButton.parent().toggleClass("disabled", page === (pagesCount-1));
-      pageSelectionButton.text("Page " + (page + 1) + " of " + pagesCount);
-      $('a.dropdown-item').removeClass("active");
-      $('a.dropdown-item[data-page="' + page + '"]').addClass("active");
-      
-      var offset = Math.trunc(page*itemsPerPage);
-      transactionsLoadingShade.prop("hidden", false);
-      var params = {offset: offset, limit: itemsPerPage};
-      for (var p in filterParams)
-        params[p] = filterParams[p];  
-      $.post("api/transactions/getpage", params, null, "json").done(function(data) {
-        var transactions = data;
-        transactionsLoadingShade.prop("hidden", true);
-        updateTransactions(transactions);
-      }).fail(function() {
-        loadFailedAlert("Failed to load transactions page.")
-      });
-    }
-
-    for (var i=0;i<pagesCount;i++){
-      var pageButton = $('<a class="dropdown-item" href="#page' + (i+1) + '" data-page="' + i + '">' + (i+1) + '</a>');
-      pageSelectionMenu.append(pageButton);
-    }
-
-    previousPageButton.on('click', function(e){
-      e.preventDefault();
-      setPage(currentPage-1);
-    });
-    nextPageButton.on('click', function(e){
-      e.preventDefault();
-      setPage(currentPage+1);
-    });
-
-    if (pagesCount > 0)
-      paginationTarget.append($('<nav aria-label="Transactions pagination"></nav>').append(paginationElement));
+    paginationTarget.hidden = count <= itemsPerPage;
     setPage(0);
   }
-  
-  $(document).on('click', 'a.dropdown-item[data-page]', function(e) {
-    e.preventDefault();
-    var pageButton = jQuery(this);
-    var page = parseInt(pageButton.attr('data-page'));
-    setPage(page);
+  previousPageButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setPage(currentPage-1);
   });
-
-  var updateTransactionsForFilter = function() {
-    return $.post("api/transactions/getcount", filterParams).done(function(data) {
+  nextPageButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setPage(currentPage+1);
+  });
+  
+  var updateTransactionsForFilter = function(callback) {
+    reqPostForm("api/transactions/getcount", filterParams, function(data){
       count = data;
       updatePagination();
-    }).fail(function() {
+      if (callback !== undefined) callback();
+    }, function() {
       loadFailedAlert("Failed to load transactions count.")
+      if (callback !== undefined) callback();
     });
-  }
+  };
 
-  $('#transactionsFilterComponents').on('show.bs.collapse', function(){
-    var form = $(this).find("form");
-    var filterButton = $("#filterButton");
-    var filterButtonSpinner = filterButton.find('span[role="status"]');
-    filterButtonSpinner.prop("hidden", false);
-    filterButton.addClass("active");
-    form.find("input,select,button").prop("disabled", true);
-    form.find("select").empty();
-    form.find("#filterIncludeExpenseIncome,#filterIncludeTransfer").prop("checked", true);
-
-    var tagsSelectElement = form.find('#filterTransactionTags');
-    var accountsSelectElement = form.find('#filterTransactionAccounts');
+  var lockFilterForm = function() {
+    filterForm.querySelectorAll("input,select,button").forEach(function(element){
+      element.disabled = true;
+    });
+    filterForm.querySelectorAll("select").forEach(removeChildren);
+    filterForm.querySelectorAll("input[type=text]").forEach(function(element){
+      element.value = "";
+    });
+    filterForm.querySelector("#filterIncludeExpenseIncome").checked = true;
+    filterForm.querySelector("#filterIncludeTransfer").checked = true;
+  };
+  var prepareFilterForm = function() {
+    filterButton.classList.add("is-loading");
+    lockFilterForm();
+    var tagsSelectElement = filterForm.querySelector('#filterTransactionTags');
+    var accountsSelectElement = filterForm.querySelector('#filterTransactionAccounts');
     for (var i in accounts) {
       var account = accounts[i];
-      var accountItem = $('<option value="' + account.ID + '" selected></option>').text(account.Name);
+      var accountItem = document.createElement("option");
+      accountItem.value = account.ID;
+      accountItem.textContent = account.Name;
+      accountItem.selected = true;
       accountsSelectElement.append(accountItem);
     }
-    $.getJSON("api/tags").done(function(data) {
-      form.find("input,select,button").prop("disabled", false);
-      filterButtonSpinner.prop("hidden", true);
-      var tags = data;
+    reqGet("api/tags", function(data) {
+      filterForm.querySelectorAll("input,select,button").forEach(function(element){
+        element.disabled = false;
+      });
+      filterButton.classList.remove("is-loading");
+      var tags = JSON.parse(data);
       for (var i in tags) {
         var tag = tags[i];
-        var tagItem = $('<option selected></option>').text(tag).prop("value", tag);
+        var tagItem = document.createElement("option");
+        tagItem.value = tag;
+        tagItem.textContent = tag;
+        tagItem.selected = true;
         tagsSelectElement.append(tagItem);
       }
-    }).fail(function() {
+    },function() {
       loadFailedAlert("Failed to load tags.")
     });
+    document.querySelector("#selectAllTags").checked = true;
+    document.querySelector("#selectAllAccounts").checked = true;
+  };
 
-    $('#selectAllTags').prop('checked', true);
-    $('#selectAllAccounts').prop('checked', true);
-  });
-  $('#transactionsFilterComponents').on('hide.bs.collapse', function(){
-    var form = $(this).find("form");
-    form.find("input,select,button").prop("disabled", true);
-    form.find("select").empty();
-    form.find("input").val("");
-    form.find("#filterIncludeExpenseIncome,#filterIncludeTransfer").prop("checked", true);
+  var cleanupFilterForm = function() {
+    lockFilterForm();
     filterParams = {};
     updateTransactionsForFilter();
-  });
-  $('#transactionsFilterComponents').on('hidden.bs.collapse', function(){
-    $('#filterButton').removeClass("active");
-  });
+  };
   var updateFilterForm = function() {
     if (accounts === null) return;
-    $("#filterButton").prop("disabled", false);
-  }
-  var getFilterFormValues = function() {
-    var form = $('#filterForm');
-    return {
-      filterDescription: form.find('#inputFilterDescription').val(),
-      filterFrom: form.find('#inputFilterFrom').val(),
-      filterTo: form.find('#inputFilterTo').val(),
-      filterTags: form.find('#filterTransactionTags').val().join(","),
-      filterAccounts: form.find('#filterTransactionAccounts').val().join(","),
-      filterIncludeExpenseIncome: form.find('#filterIncludeExpenseIncome').prop("checked"),
-      filterIncludeTransfer: form.find('#filterIncludeTransfer').prop("checked")
+    document.getElementById("filterButton").disabled = false;
+  };
+  filterButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (filterButton.classList.contains("is-outlined")) {
+      transactionsFilterComponents.hidden = false;
+      filterButton.classList.remove("is-outlined");
+      transactionsFilterComponents.classList.add("animate__fadeInDown");
+      transactionsFilterComponents.classList.remove("animate__fadeOutDown");
+      prepareFilterForm();
+    } else {
+      filterButton.classList.add("is-outlined");
+      transactionsFilterComponents.classList.add("animate__fadeOutDown");
+      transactionsFilterComponents.classList.remove("animate__fadeInDown");
+      cleanupFilterForm();
     }
-  }
-  $('#filterForm').submit(function(event) {
+  });
+  transactionsFilterComponents.addEventListener('animationend', () => {
+    if (transactionsFilterComponents.classList.contains("animate__fadeOutDown")){
+      transactionsFilterComponents.hidden = true;
+      transactionsFilterComponents.classList.remove("animate__fadeOutDown");
+    }
+  });
+  var getFilterFormValues = function() {
+    var getSelectedOptions = function(options) {
+      var values = [];
+      for (var i = 0; i < options.length; ++i){
+        values.push(options[i].value)
+      }
+      return values;
+    };
+    return {
+      filterDescription: filterForm.querySelector('#inputFilterDescription').value,
+      filterFrom: filterForm.querySelector('#inputFilterFrom').value,
+      filterTo: filterForm.querySelector('#inputFilterTo').value,
+      filterTags: getSelectedOptions(filterForm.querySelectorAll('#filterTransactionTags option:checked')).join(","),
+      filterAccounts: getSelectedOptions(filterForm.querySelectorAll('#filterTransactionAccounts option:checked')).join(","),
+      filterIncludeExpenseIncome: filterForm.querySelector('#filterIncludeExpenseIncome').checked,
+      filterIncludeTransfer: filterForm.querySelector('#filterIncludeTransfer').checked
+    }
+  };
+  filterForm.addEventListener("submit", function(event){
     event.preventDefault();
-    var applyButton = $("#applyButton");
-    var applyButtonSpinner = applyButton.find('span[role="status"]');
-    applyButton.prop("disabled", true);
-    applyButtonSpinner.prop("hidden", false);
-    var form = $(this);
+    var applyButton = document.getElementById("applyButton");
+    applyButton.classList.add("is-loading");
+    applyButton.disabled = true;
     filterParams = getFilterFormValues();
-    updateTransactionsForFilter().always(function() {
-      applyButton.prop("disabled", false);
-      applyButtonSpinner.prop("hidden", true);
+    updateTransactionsForFilter(function() {
+      applyButton.disabled = false;
+      applyButton.classList.remove("is-loading");
     });
   });
-  $('#createReportButton').click(function(event){
+
+  document.getElementById("createReportButton").addEventListener("click", (event) => {
+    event.preventDefault();
     var params = getFilterFormValues();
     postHiddenForm("report", params);
   });
-  $(document).on('change', 'input[data-selectall]', function(e) {
-    e.preventDefault();
-    var checkBox = $(this);
-    var target = $(checkBox.attr('data-selectall'));
-    $(target).find($('option')).prop('selected', this.checked);
-  });
-  $(document).on('change', 'select[data-selectall]', function(e) {
-    e.preventDefault();
-    var selectAllCheckbox = $(this).attr('data-selectall');
-    var selectedItems = $(this).val();
-    var items = $.map($(this).find('option'), function(e) { return e.value; })
-    var some = false;
-    var all = true;
-    
-    for (var i in items) {
-      var item = items[i];
-      if (selectedItems.includes(item)) {
-        some = true;
+  var toggleCheckAllItems = function(checkbox, select) {
+    checkbox.addEventListener("change", function(event){
+      event.preventDefault();
+      select.querySelectorAll("option").forEach(function(item) {
+        item.selected = checkbox.checked;
+      });
+    });
+    select.addEventListener("change", function(event){
+      event.preventDefault();
+      var some = false;
+      var all = true;
+      select.querySelectorAll("option").forEach(function(item) {
+        if (item.selected) some = true;
+        else all = false;
+      });
+      
+      if (all) {
+        checkbox.checked = true;
+        checkbox.indeterminate = false;
+      } else if (some) {
+        checkbox.indeterminate = true;
       } else {
-        all = false;
+        checkbox.checked = false;
+        checkbox.indeterminate = false;
       }
-    }
-    if (all) {
-      $(selectAllCheckbox).prop('checked', true).prop('indeterminate', false)
-    } else if (some) {
-      $(selectAllCheckbox).prop('indeterminate', true)
-    } else {
-      $(selectAllCheckbox).prop('checked', false).prop('indeterminate', false)
-    }
-  });
+    });
+  };
+  toggleCheckAllItems(document.getElementById("selectAllTags"), document.getElementById("filterTransactionTags"));
+  toggleCheckAllItems(document.getElementById("selectAllAccounts"), document.getElementById("filterTransactionAccounts"));
 
   var loadTransactions = function() {
     addProgress();
     var updateIfReady = function() {
       if (accounts === null || count === null) return;
-      updateVisibility();
+      removeInitialProgressBar();
       updatePagination();
       updateFilterForm();
     }
-    $.post("api/transactions/getcount").done(function(data) {
-      count = data;
+    reqPostForm("api/transactions/getcount", null, function(data) {
+      count = JSON.parse(data);
       updateIfReady();
-    }).fail(function() {
+    }, function() {
       loadFailedAlert("Failed to load transactions count.")
     });
-    $.getJSON("api/accounts").done(function(data) {
+    reqGet("api/accounts", function(data) {
+      data = JSON.parse(data);
       accounts = {};
       data.forEach(function (account) { 
         if (account.ShowInList) accounts[account.ID] = account; 
       });
       updateIfReady();
-    }).fail(function() {
+    }, function() {
       loadFailedAlert("Failed to load accounts.")
     });
   }

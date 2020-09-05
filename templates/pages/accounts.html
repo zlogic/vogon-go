@@ -1,7 +1,7 @@
 {{ define "content" }}
 <p class="title">Accounts</p>
-<div class="content">
-  <div class="container is-widescreen">
+<div class="container is-widescreen">
+  <div class="content">
     <p>
       <label class="checkbox">
         <input type="checkbox" id="showAllAccounts">
@@ -18,7 +18,6 @@
             <th>Name</th>
             <th><div class="has-text-right">Balance</div></th>
             <th>Currency</th>
-            <th></th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -52,15 +51,18 @@ document.addEventListener('DOMContentLoaded', () => {
       var account = accounts[i];
       if (!showAllAccounts && !account.ShowInList)
         continue
-      var editColumn = document.createElement("a");
-      editColumn.setAttribute("class", "button")
-      editColumn.setAttribute("href", "accounteditor?action=edit&id=" + account.ID);
-      editColumn.setAttribute("role", "button");
-      editColumn.textContent = "Edit";
       var accountRow = document.createElement("tr");
       var accountCell = document.createElement("td");
-      accountCell.textContent = account.Name;
-      accountRow.append(accountCell);
+      if (account.TotalAccount) {
+        accountCell.textContent = account.Name;
+        accountRow.append(accountCell);
+      } else {
+        var accountNameLink = document.createElement("a");
+        accountNameLink.setAttribute("href", "accounteditor?action=edit&id=" + account.ID);
+        accountNameLink.textContent = account.Name;
+        accountCell.append(accountNameLink);
+        accountRow.append(accountCell);
+      }
       accountCell = document.createElement("td");
       var balanceDiv = document.createElement("div")
       balanceDiv.setAttribute("class", "has-text-right");
@@ -69,9 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
       accountRow.append(accountCell);
       accountCell = document.createElement("td");
       accountCell.textContent = account.Currency;
-      accountRow.append(accountCell);
-      accountCell = document.createElement("td");
-      accountCell.append(editColumn);
       accountRow.append(accountCell);
       if (account.TotalAccount) 
         accountRow.classList.add("has-background-primary-light");
