@@ -63,10 +63,14 @@
           <p class="control">
             <button type="submit" class="button is-primary">Save</button>
           </p>
-          <div class="content">
-            <div id="saveSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Saved successfully</div>
-            <div id="saveFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Save failed</div>
-          </div>
+        </div>
+      </div>
+    </div>
+    <div class="field is-horizontal">
+      <div class="field-label is-normal"></div>
+      <div class="field-body">
+        <div class="field">
+          <div id="saveResult" class="notification animate__animated animate__flipInX" role="alert" hidden></div>
         </div>
       </div>
     </div>
@@ -90,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
   var restoreBackupFileWarning = document.querySelector('#restoreWarning');
   var submit = document.querySelector('button[type="submit"]');
   var configurationForm = document.getElementById("configurationForm");
+  var saveResult = document.getElementById("saveResult");
   var updateRestoreWarning = function(){
     restoreBackupFileWarning.hidden = !(restoreBackupFile.files.length > 0);
   };
@@ -110,9 +115,17 @@ document.addEventListener('DOMContentLoaded', () => {
     else submit.classList.remove("is-loading");
     updateRestoreWarning();
   }
-  var showResultAlert = function(alertDiv){
-    alertDiv.hidden = false;
-  }
+  var showResultAlert = function(isSuccessful, msg){
+    saveResult.hidden = false;
+    saveResult.textContent = msg;
+    if (isSuccessful) {
+      saveResult.classList.add("is-success");
+      saveResult.classList.remove("is-danger");
+    } else {
+      saveResult.classList.remove("is-success");
+      saveResult.classList.add("is-danger");
+    }
+  };
   
   var updateFormValues = function(settings) {
     username.value = settings.Username;
@@ -139,10 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     event.preventDefault();
     lockConfiguration(true);
     // Prepare request
-    var saveSuccessful = configurationForm.querySelector("#saveSuccessful");
-    var saveFailed = configurationForm.querySelector("#saveFailed");
-    saveSuccessful.hidden = true;
-    saveFailed.hidden = true;
+    saveResult.hidden = true;
     
     var postData = {Username: username.value, Password: password.value};
     if(postData.Password === null || postData.Password === undefined || postData.Password === '')
@@ -155,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
       formData.append("restorefile", restoreBackupFile.files[0]);
 
     var showError = function() {
-      showResultAlert(saveFailed);
+      showResultAlert(false, "Save failed");
       lockConfiguration(false);
     };
 
@@ -163,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     request.open("POST", "api/settings", true);
     request.onload = function() {
       if (this.status >= 200 && this.status < 400) {
-        showResultAlert(saveSuccessful);
+        showResultAlert(true, "Saved successfully");
         updateFormValues(JSON.parse(this.response));
         lockConfiguration(false);
       } else {

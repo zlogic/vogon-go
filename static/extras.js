@@ -1,66 +1,83 @@
 var initTagsInput = function(tagsInput, tagsDropdown, tagsList, suggestTags) {
+  var focused = false;
 
   var addTag = function(tag) {
     tag = tag.trim();
     if (tag === "") return;
-    var removeTag = $('<button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>');
-    tagsList.append($('<span class="badge badge-light tag"></span>').append($('<span></span>').text(tag)).append(removeTag));
-  }
+    var tagElement = document.createElement("span");
+    tagElement.setAttribute("class", "tag");
+    tagElement.textContent = tag;
+    var deleteTagButton = document.createElement("button");
+    deleteTagButton.setAttribute("class", "delete is-small");
+    deleteTagButton.type = "button";
+
+    deleteTagButton.addEventListener("click", function(event){
+      event.preventDefault();
+      tagElement.remove();
+    });
+
+    tagElement.append(deleteTagButton);
+    tagsList.append(tagElement);
+    tagsList.append(" ")
+  };
 
   var getTags = function() {
-    return tagsList.find('span.badge>span')
-      .map(function() { return $( this ).text(); })
-      .get();
-  }
+    var tagList = [];
+    tagsList.querySelectorAll('span.tag').forEach(function(tagElement) { tagList.push(tagElement.textContent); });
+    return tagList;
+  };
 
-  var updateDropdownMenu = function(focused) {
-    if (focused === undefined)
-      focused = tagsInput.is(":focus");
-    tagsDropdown.empty();
-    var userInput = tagsInput.val().toLowerCase();
+  var updateDropdownMenu = function() {
+    var suggestionsList = tagsDropdown.querySelector(".dropdown-content");
+    removeChildren(suggestionsList);
+    var userInput = tagsInput.value.toLowerCase();
     var autoCompleteSuggestions = suggestTags(userInput);
-    if (autoCompleteSuggestions.length == 0 || !focused) {
-      tagsDropdown.removeClass('show');
+    if (autoCompleteSuggestions.length == 0 || !focused || userInput === "") {
+      tagsDropdown.classList.remove("is-active", "dropdown");
+      tagsDropdown.hidden = true;
     } else {
-      tagsDropdown.addClass('show');
+      tagsDropdown.classList.add("is-active", "dropdown");
+      tagsDropdown.hidden = false;
     }
     autoCompleteSuggestions.forEach(function (tag) {
-      tagsDropdown.append($('<a class="dropdown-item" href="#" tabindex="0"></a>').text(tag));
-    });
-  }
+      var tagSuggestion = document.createElement("a");
+      suggestionsList.append(tagSuggestion);
+      tagSuggestion.setAttribute("href", "javascript:void(0);");
+      tagSuggestion.setAttribute("class", "dropdown-item");
+      tagSuggestion.setAttribute("tabIndex", 0); // safari blur fix
+      tagSuggestion.textContent = tag;
 
-  tagsInput.keypress(function(e){
+      tagSuggestion.addEventListener("click", function(e){
+        event.preventDefault();
+        addTag(tag);
+        tagsInput.value = "";
+        updateDropdownMenu();
+      });
+    });
+  };
+
+  tagsInput.addEventListener("keypress", function(e){
     if (e.key === "," || e.key === "Enter"){
       e.preventDefault();
-      var tags = tagsInput.val().split(",");
+      var tags = tagsInput.value.split(",");
       var tag = tags.shift();
-      tagsInput.val(tags.join(","));
+      tagsInput.value = tags.join(",");
       addTag(tag);
     }
   });
-  tagsInput.keyup(function(e){
+  tagsInput.addEventListener("keyup", function(e){
     updateDropdownMenu();
   });
-  tagsInput.focus(function(e){
-    updateDropdownMenu(true);
-  })
-  tagsInput.blur(function(e){
-    if (tagsDropdown.children().is(e.relatedTarget))
+  tagsInput.addEventListener("focus", function(e){
+    focused = true;
+    updateDropdownMenu();
+  });
+  tagsInput.addEventListener("blur", function(e){
+    focused = false;
+    if (tagsDropdown.contains(e.relatedTarget))
       return;
-    tagsDropdown.removeClass('show');
-  })
-  $(document).on('click', 'a.dropdown-item', function(event) {
-    event.preventDefault();
-    var autocompleteItem = $(this);
-    addTag(autocompleteItem.text());
-    tagsInput.val("");
-    updateDropdownMenu();
-  });
-
-  $(document).on('click', '.tag>.close', function(event) {
-    event.preventDefault();
-    var close = $(this);
-    close.parent().remove();
+    tagsDropdown.classList.remove("is-active", "dropdown");
+    tagsDropdown.hidden = true;
   });
 
   updateDropdownMenu();

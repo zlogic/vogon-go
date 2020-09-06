@@ -1,64 +1,77 @@
 {{ define "content" }}
-<h2>Trasaction</h2>
-<div id="loadAlerts"></div>
-<form id="transactionForm" accept-charset="utf-8" autocomplete="off">
-  <div class="form-row">
-    <div class="form-group col-md-9">
-      <label for="editDescription">Description</label>
-      <input type="text" class="form-control" id="editDescription" placeholder="Enter transaction description" required>
-    </div>
-    <div class="form-group col-md-3">
-      <label for="editDate">Date</label>
-      <input type="date" class="form-control" id="editDate" placeholder="Enter transaction date" required>
-    </div>
-  </div>
-  <div class="form-row">
-    <div class="form-group col-md-12">
-      <div class="custom-control custom-radio custom-control-inline">
-        <input type="radio" id="typeExpenseIncome" name="selectType" class="custom-control-input" value="0" required>
-        <label class="custom-control-label" for="typeExpenseIncome">Expense/Income</label>
+<p class="title">Trasaction</p>
+<div class="container is-widescreen">
+  <div class="content" id="loadAlerts"></div>
+  <form id="transactionForm" accept-charset="utf-8" autocomplete="off">
+    <div class="columns">
+      <div class="column is-two-thirds">
+        <div class="field">
+          <label for="editDescription" class="label">Description</label>
+          <input type="text" class="input" id="editDescription" placeholder="Enter transaction description" required>
+        </div>
       </div>
-      <div class="custom-control custom-radio custom-control-inline">
-        <input type="radio" id="typeTransfer" name="selectType" class="custom-control-input" value="1">
-        <label class="custom-control-label" for="typeTransfer">Transfer</label>
+      <div class="column">
+        <div class="field">
+          <label for="editDate" class="label">Date</label>
+          <div class="control">
+            <input type="date" class="input" id="editDate" placeholder="Enter transaction date" required>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="form-group">
-    <label for="addTag">Tags <div id="tagsList"></div></label>
-    <div class="dropdown">
-      <input type="text" class="form-control dropdown-toggle" id="addTag" aria-haspopup="true" aria-expanded="false" placeholder="Enter a tag">
-      <div class="dropdown-menu" id="tagSuggestions"></div>
+    <div class="field">
+      <div class="control">
+        <label class="radio">
+          <input type="radio" id="typeExpenseIncome" name="selectType" value="0" required>
+          Expense/Income
+        </label>
+        <label class="radio">
+          <input type="radio" id="typeTransfer" name="selectType" value="1">
+          Transfer
+        </label>
+      </div>
     </div>
-    <small id="tagsHelp" class="form-text text-muted">Press Enter or the comma character to add the tag</small>
-  </div>
-  <div id="components"></div>
-  <div class="form-group">
-    <button id="addComponent" type="button" class="btn btn-outline-primary">Add component</button>
-  </div>
-  <div class="form-group">
-    <button type="submit" class="btn btn-primary">
-      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
-      Save</button>
-  </div>
-  <div class="row">
-    <div class="form-group col-md-12">
-      <div id="saveSuccessful" class="alert alert-success" role="alert" hidden>Saved successfully</div>
-      <div id="saveFailed" class="alert alert-danger" role="alert" hidden>Save failed</div>
+    <div class="field">
+      <label class="label">Tags</label>
+      <div class="field" id="tagsList"></div>
+      <div class="field">
+        <p class="control is-expanded">
+          <input class="input" type="text" id="addTag" placeholder="Enter a tag">
+        </p>
+        <div id="tagSuggestions" class="dropdown">
+          <div class="dropdown-menu" role="menu">
+            <div class="dropdown-content"></div>
+          </div>
+        </div>
+      </div>
+      <p class="help">Press Enter or the comma character to add the tag</p>
     </div>
-  </div>
-  <div class="form-group">
-    <button id="deleteButton" type="button" class="btn btn-danger">
-      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" hidden></span>
-      Delete</button>
-  </div>
-  <div class="row">
-    <div class="form-group col-md-12">
-      <div id="deleteSuccessful" class="alert alert-success" role="alert" hidden>Deleted successfully</div>
-      <div id="deleteFailed" class="alert alert-danger" role="alert" hidden>Delete failed</div>
+    <div id="components" class="field"></div>
+    <div class="field">
+      <div class="field">
+        <p class="control">
+          <button id="addComponent" type="button" class="button is-primary is-outlined">Add component</button>
+        </p>
+      </div>
     </div>
-  </div>
-</form>
+    <div class="field">
+      <p class="control">
+        <button type="submit" class="button is-primary">Save</button>
+      </p>
+    </div>
+    <div class="field">
+      <div id="saveResult" class="notification  animate__animated animate__flipInX" role="alert" hidden></div>
+    </div>
+    <div class="field">
+      <p class="control">
+        <button id="deleteButton" class="button is-danger">Delete</button>
+      </p>
+    </div>
+    <div class="field">
+      <div id="deleteResult" class="notification  animate__animated animate__flipInX" role="alert" hidden></div>
+    </div>
+  </form>
+</div>
 <script type="text/javascript" src="static/extras.js"></script>
 {{ if .Form.id }}
 <script>
@@ -69,7 +82,7 @@
   var action = '{{ index .Form "action" 0 }}';
 </script>
 <script>
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', () => {
   var getCurrentDate = function() {
     let currentDate = new Date();
     let month = currentDate.getMonth()+1;
@@ -81,19 +94,23 @@ $(document).ready(function() {
   var componentsCounter = 0;
   var autocompleteTags = null;
 
-  var loadAlerts = $('#loadAlerts')
+  var loadAlerts = document.getElementById("loadAlerts");
   var loadFailed = false;
 
-  var description = $('input[id="editDescription"]');
-  var date = $('input[id="editDate"]');
-  var submit = $('button[type="submit"]');
-  var deleteButton = $('button[id="deleteButton"]');
-  var spinner = $('button[type="submit"] span[role="status"]');
-  var deleteSpinner = $('button[id="deleteButton"] span[role="status"]');
+  var description = document.querySelector('input[id="editDescription"]');
+  var date = document.querySelector('input[id="editDate"]');
+  var submit = document.querySelector('button[type="submit"]');
+  var deleteButton = document.querySelector('button[id="deleteButton"]');
   
-	var tagsInput = $('input[id="addTag"]');
-	var tagsDropdown = $(".dropdown-menu#tagSuggestions");
-	var tagsList = $("#tagsList");
+	var tagsInput = document.querySelector('input[id="addTag"]');
+	var tagsDropdown = document.getElementById("tagSuggestions");
+  var tagsList = document.getElementById("tagsList");
+  
+  var transactionForm = document.getElementById("transactionForm");
+  var componentsTarget = document.getElementById("components");
+
+  var saveResult = document.getElementById("saveResult");
+  var deleteResult = document.getElementById("deleteResult");
 
   // Init tags input components
   var suggestTags = function(currentInput) {
@@ -105,67 +122,134 @@ $(document).ready(function() {
   var tagsInputComponent = initTagsInput(tagsInput, tagsDropdown, tagsList, suggestTags);
 
   var lockForm = function(lock) {
-     $("#transactionForm").find("input").prop("readonly", lock);
-     $("#transactionForm").find("select,button").prop("disabled", lock);
-  }
+    transactionForm.querySelectorAll("input,select,button").forEach(function (control) { control.disabled = lock });
+  };
 
   var updateCurrencyLabel = function(componentRow) {
-    var accountID = $(componentRow).find("select").val();
+    var accountID = componentRow.querySelector("select").value;
     var currency = accountID ? accounts[accountID].Currency : "";
-    componentRow.find(".input-group-text").text(currency);
-  }
+    componentRow.querySelector("a.button.is-static").textContent = currency;
+  };
 
-  var showResultAlert = function(alertDiv){
-    alertDiv.hide();
-    alertDiv.prop("hidden", false);
-    alertDiv.slideDown();
-  }
+  var showResultAlert = function(alertDiv, isSuccessful, msg){
+    alertDiv.hidden = false;
+    alertDiv.textContent = msg;
+    if (isSuccessful) {
+      alertDiv.classList.add("is-success");
+      alertDiv.classList.remove("is-danger");
+    } else {
+      alertDiv.classList.remove("is-success");
+      alertDiv.classList.add("is-danger");
+    }
+  };
 
   var addComponent = function(component) {
     var index = componentsCounter++;
-    var componentsTarget = $("#components");
-    var componentRow = $('<div class="row align-items-end"></div>');
-    var accountSelect = $('<select class="form-control custom-select" id="account' + index + '" required><option></option></select>');
+    
+    var componentFieldDiv = document.createElement("div");
+    componentsTarget.append(componentFieldDiv);
+    componentFieldDiv.setAttribute("class", "field animate__animated animate__fadeIn");
+    componentFieldBody = document.createElement("div");
+    componentFieldDiv.append(componentFieldBody);
+    componentFieldBody.setAttribute("class", "field-body");
+    
+    // Account selector field
+    var componentField = document.createElement("div");
+    componentFieldBody.append(componentField);
+    componentField.setAttribute("class", "field");
+    var componentFieldLabel = document.createElement("label");
+    componentField.append(componentFieldLabel);
+    componentFieldLabel.setAttribute("class", "label");
+    componentFieldLabel.textContent = "Account";
+
+    var componentParent = document.createElement("div");
+    componentField.append(componentParent);
+    componentParent.setAttribute("class", "control is-expanded");
+    var newComponentParent = document.createElement("div");
+    componentParent.append(newComponentParent);
+    componentParent = newComponentParent;
+    newComponentParent.setAttribute("class", "select is-fullwidth");
+    var accountSelect = document.createElement("select");
+    componentParent.append(accountSelect);
+    accountSelect.textContent = "Account";
+    accountSelect.required = true;
+    var option = document.createElement("option");
+    accountSelect.append(option);
+
     for (var i in accounts) {
       var account = accounts[i];
       if (!account.ShowInList) continue;
-      var option = $('<option value="' + account.ID + '">' + account.Name + '</option>');
+      var option = document.createElement("option");
+      option.value = account.ID;
+      option.textContent = account.Name;
       if (component.AccountID === account.ID)
-        option.prop("selected", true);
+        option.selected = true;
       accountSelect.append(option);
     }
-    var componentRowFormColumn = $('<div class="col-md-10 col-9"></div>').appendTo(componentRow);
-    var componentFormRow = $('<div class="form-row align-items-end"></div>').appendTo(componentRowFormColumn);
-    componentFormRow.append($('<div class="form-group col-md-6"></div>')
-      .append('<label id="account' + index + '">Account</label>')
-      .append(accountSelect)
-    );
-    var amountInput = $('<input type="number" class="form-control text-right" id="amount' + index + '" step="0.01" required></input>');
-    amountInput.val((component.Amount/100).toFixed(2));
-    componentFormRow.append($('<div class="form-group col-md-6"></div>')
-      .append('<label for="amount' + index + '">Amount</label>')
-      .append($('<div class="input-group"></div>').append(amountInput).append('<div class="input-group-append"><div class="input-group-text"></div></div>'))
-    );
-    componentRow.append($('<div class="col-md-2 col-3"></div>')
-      .append($('<div class="form-group"></div>')
-        .append('<button type="button" class="btn btn-outline-danger" data-delete="component">Delete</a>'))
-    );
-    componentsTarget.append(componentRow);
-    updateCurrencyLabel(componentRow);
-    componentRow.hide().slideDown();
+
+    var createAccountChangedHandler = function(accountSelect, componentFieldDiv){
+      accountSelect.addEventListener("change", function() {
+        updateCurrencyLabel(componentFieldDiv);
+      });
+    };
+    createAccountChangedHandler(accountSelect, componentFieldDiv);
+
+    // Amount field
+    componentField = document.createElement("div");
+    componentFieldBody.append(componentField);
+    componentField.setAttribute("class", "field");
+    componentFieldLabel = document.createElement("label");
+    componentField.append(componentFieldLabel);
+    componentFieldLabel.setAttribute("class", "label");
+    componentFieldLabel.textContent = "Amount";
+
+    componentParent = document.createElement("div");
+    componentField.append(componentParent);
+    componentParent.setAttribute("class", "field has-addons");
+    newComponentParent = document.createElement("p");
+    componentParent.append(newComponentParent);
+    componentParent = newComponentParent;
+    componentParent.setAttribute("class", "control is-expanded");
+    var amountInput = document.createElement("input");
+    componentParent.append(amountInput);
+    amountInput.setAttribute("class", "input has-text-right");
+    amountInput.setAttribute("placeholder", "Amount");
+    amountInput.type = "number";
+    amountInput.required = true;
+    amountInput.step = 0.01;
+    amountInput.value = (component.Amount/100).toFixed(2);
+    componentParent.parentElement.insertAdjacentHTML("beforeend", '<p class="control"><a class="button is-static"></a></p>');
+    
+    // Delete button
+    componentParent = document.createElement("div");
+    componentFieldBody.append(componentParent);
+    componentParent.setAttribute("class", "is-align-self-flex-end");
+    var deleteComponentButton = document.createElement("button");
+    componentParent.append(deleteComponentButton);
+    deleteComponentButton.setAttribute("class", "button is-danger is-outlined");
+    deleteComponentButton.textContent = "Delete";
+    deleteComponentButton.type = "button";
+    var createDeleteButtonHandler = function(deleteButton, componentFieldDiv){
+      deleteButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        componentFieldDiv.remove();
+      });
+    };
+    createDeleteButtonHandler(deleteComponentButton, componentFieldDiv);
+
+    updateCurrencyLabel(componentFieldDiv);
   }
 
   var updateIfReady = function() {
     if (transaction === null || accounts === null || autocompleteTags === null) return;
-    description.val(transaction.Description);
-    $('input[name=selectType][value="' + transaction.Type +'"]').prop("checked", true);
+    description.value = transaction.Description;
+    document.querySelector('input[name=selectType][value="' + transaction.Type +'"]').checked = true;
     if (transaction.Tags !== null && transaction.Tags !== undefined)
       transaction.Tags.forEach(tagsInputComponent.addTag);
-    date.val(transaction.Date);
+    date.value = transaction.Date;
     lockForm(false);
 
-    var componentsTarget = $("#components");
-    componentsTarget.empty();
+    removeChildren(componentsTarget);
     for (var i in transaction.Components) {
       var component = transaction.Components[i];
       addComponent(component);
@@ -173,114 +257,94 @@ $(document).ready(function() {
   }
 
   var loadFailedAlert = function(msg) {
-    $("#transactionForm").empty();
-    var alertDiv = $('<div class="alert alert-danger" role="alert"></div>').text(msg);
+    removeChildren(transactionForm);
+    var alertDiv = document.createElement("div");
+    alertDiv.setAttribute("class", "notification is-danger animate__animated animate__flipInX")
+    alertDiv.setAttribute("role", "alert");
+    alertDiv.textContent = msg;
     loadAlerts.append(alertDiv);
-    alertDiv.hide();
-    alertDiv.slideDown();
   }
 
   //Add component button
-  $("#addComponent").click(function(e){
+  document.getElementById("addComponent").addEventListener("click", function(e){
     event.preventDefault();
     addComponent({});
   });
 
-  //Delete component button
-  $(document).on('click', 'button[data-delete="component"]', function(e) {
-    e.preventDefault();
-    var deleteButton = jQuery(this);
-    deleteButton.parent().parent().parent().slideUp(function(){deleteButton.parent().parent().parent().remove()});
-  });
-
-  //Account changed
-  $(document).on('change', 'select', function() {
-    var selectAccountElement = jQuery(this);
-    updateCurrencyLabel(selectAccountElement.parent().parent());
-  });
-    
   // Submit handler
-  $("#transactionForm").submit(function(event) {
+  transactionForm.addEventListener("submit", function(event) {
     event.preventDefault();
     lockForm(true);
-    $("#saveFailed").prop("hidden", true);
-    $("#saveSuccessful").prop("hidden", true);
-    spinner.prop("hidden", false);
-    transaction.Description = description.val();
-    transaction.Type = parseInt($('input[name=selectType]:checked').val());
+    saveResult.hidden = true;
+    submit.classList.add("is-loading");
+    transaction.Description = description.value;
+    transaction.Type = parseInt(transactionForm.querySelector('input[name=selectType]:checked').value);
     transaction.Tags = tagsInputComponent.getTags();
-    transaction.Date = date.val();
+    transaction.Date = date.value;
     transaction.Components = [];
-    $("#components").children("div").each(function(i, componentRow){
-      var accountID = parseInt($(componentRow).find('select').val());
-      var amount = Math.round(parseFloat($(componentRow).find('input').val()) * 100);
+    transactionForm.querySelectorAll("#components>div").forEach(function(componentFieldDiv){
+      var accountID = parseInt(componentFieldDiv.querySelector("select").value);
+      var amount = Math.round(parseFloat(componentFieldDiv.querySelector("input").value) * 100);
       transaction.Components.push({AccountID: accountID, Amount: amount});
     });
     var id = transaction.ID || "new";
-    $.ajax("api/transaction/" + id, {
-      data : JSON.stringify(transaction),
-      contentType : 'application/json',
-      type : 'POST'
-    }).done(function() {
+    reqPostJSON("api/transaction/" + id, transaction, function() {
       window.location.href = "transactions";
-      showResultAlert($("#saveSuccessful"));
-    }).fail(function(data){
-      showResultAlert($("#saveFailed"));
+      showResultAlert(saveResult, true, "Saved successfully");
+      submit.classList.remove("is-loading");
+    }, function(data){
+      showResultAlert(saveResult, false, "Save failed");
       lockForm(false);
-    }).always(function(){
-      spinner.prop("hidden", true);
+      submit.classList.remove("is-loading");
     });
   });
 
   // Delete handler
-  $("#deleteButton").click(function(event) {
+  deleteButton.addEventListener("click", function(event) {
     event.preventDefault();
     lockForm(true);
-    $("#deleteFailed").prop("hidden", true);
-    $("#deleteSuccessful").prop("hidden", true);
-    deleteSpinner.prop("hidden", false);
-    $.ajax("api/transaction/" + transactionID, {
-      type : 'DELETE'
-    }).done(function() {
+    deleteResult.hidden = true;
+    deleteButton.classList.add("is-loading");
+    reqDelete("api/transaction/" + transactionID, function() {
       window.location.href = "transactions";
-      showResultAlert($("#deleteSuccessful"));
-    }).fail(function(data){
-      showResultAlert($("#deleteFailed"));
+      showResultAlert(deleteResult, true, "Deleted successfully");
+      deleteButton.classList.remove("is-loading");
+    }, function(data){
+      showResultAlert(deleteResult, false, "Delete failed");
       lockForm(false);
-    }).always(function(){
-      deleteSpinner.prop("hidden", true);
+      deleteButton.classList.remove("is-loading");
     });
   });
   if (action !== "edit")
-    $("#deleteButton").remove();
+    deleteButton.remove();
 
   // Load transaction details
   var loadTransaction = function() {
     lockForm(true);
     if (action === "edit" || action === "duplicate") {
       transaction = null;
-      $.getJSON("api/transaction/" + transactionID).done(function(data) {
-        transaction = data;
+      reqGet("api/transaction/" + transactionID, function(data) {
+        transaction = JSON.parse(data);
         if(action === "duplicate"){
           delete transaction.ID;
           transaction.Date = getCurrentDate();
         }
         updateIfReady();
-      }).fail(function() {
+      }, function() {
         loadFailedAlert("Failed to load transaction.");
       });
     }
-    $.getJSON("api/accounts").done(function(data) {
+    reqGet("api/accounts", function(data) {
       accounts = {};
-      data.forEach(function (account) { accounts[account.ID] = account; });
+      JSON.parse(data).forEach(function (account) { accounts[account.ID] = account; });
       updateIfReady();
-    }).fail(function() {
+    }, function() {
       loadFailedAlert("Failed to load accounts.");
     });
-    $.getJSON("api/tags").done(function(data) {
-      autocompleteTags = data;
+    reqGet("api/tags", function(data) {
+      autocompleteTags = JSON.parse(data);
       updateIfReady();
-    }).fail(function() {
+    }, function() {
       loadFailedAlert("Failed to load tags.");
     });
   }

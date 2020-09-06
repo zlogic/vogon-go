@@ -34,19 +34,17 @@
       <p class="control">
         <button type="submit" class="button is-primary">Save</button>
       </p>
-      <div class="content">
-        <div id="saveSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Saved successfully</div>
-        <div id="saveFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Save failed</div>
-      </div>
+    </div>
+    <div class="field">
+      <div id="saveResult" class="notification  animate__animated animate__flipInX" role="alert" hidden></div>
     </div>
     <div class="field">
       <p class="control">
         <button id="deleteButton" class="button is-danger">Delete</button>
       </p>
-      <div class="content">
-        <div id="deleteSuccessful" class="notification is-success animate__animated animate__flipInX" role="alert" hidden>Deleted successfully</div>
-        <div id="deleteFailed" class="notification is-danger animate__animated animate__flipInX" role="alert" hidden>Delete failed</div>
-      </div>
+    </div>
+    <div class="field">
+      <div id="deleteResult" class="notification  animate__animated animate__flipInX" role="alert" hidden></div>
     </div>
   </form>
 </div>
@@ -70,6 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
   var submit = document.querySelector('button[type="submit"]');
   var deleteButton = document.querySelector('button[id="deleteButton"]');
   var accountForm = document.getElementById("accountForm");
+  var saveResult = document.getElementById("saveResult");
+  var deleteResult = document.getElementById("deleteResult");
 
   var lockForm = function(lock) {
     var inputs = accountForm.querySelectorAll("input");
@@ -77,8 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
       inputs[i].disabled = lock;
   };
 
-  var showResultAlert = function(alertDiv){
+  var showResultAlert = function(alertDiv, isSuccessful, msg){
     alertDiv.hidden = false;
+    alertDiv.textContent = msg;
+    if (isSuccessful) {
+      alertDiv.classList.add("is-success");
+      alertDiv.classList.remove("is-danger");
+    } else {
+      alertDiv.classList.remove("is-success");
+      alertDiv.classList.add("is-danger");
+    }
   };
 
   var updateForm = function() {
@@ -93,10 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   accountForm.addEventListener("submit", function(event){
     event.preventDefault();
     lockForm(true);
-    var saveSuccessful = accountForm.querySelector("#saveSuccessful");
-    var saveFailed = accountForm.querySelector("#saveFailed");
-    saveSuccessful.hidden = true;
-    saveFailed.hidden = true;
+    saveResult.hidden = true;
     submit.classList.add("is-loading");
     account.Name = nameEditor.value;
     account.Currency = currencyEditor.value;
@@ -105,10 +110,10 @@ document.addEventListener('DOMContentLoaded', () => {
     var id = account.ID || "new";
     reqPostJSON("api/account/" + id, account, function() {
       window.location.href = "accounts";
-      showResultAlert(saveSuccessful);
+      showResultAlert(saveResult, true, "Saved successfully");
       submit.classList.remove("is-loading");
     }, function() {
-      showResultAlert(saveFailed);
+      showResultAlert(saveResult, false, "Save failed");
       lockForm(false);
       submit.classList.remove("is-loading");
     });
@@ -119,17 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
   deleteButton.addEventListener('click', (event) => {
     event.preventDefault();
     lockForm(true);
-    var deleteSuccessful = accountForm.querySelector("#deleteSuccessful");
-    var deleteFailed = accountForm.querySelector("#deleteFailed");
-    deleteSuccessful.hidden = true;
-    deleteFailed.hidden = true;
+    deleteResult.hidden = true;
     deleteButton.classList.add("is-loading");
     reqDelete("api/account/" + accountID, function() {
       window.location.href = "accounts";
-      showResultAlert(deleteSuccessful);
+      showResultAlert(deleteResult, true, "Deleted successfully");
       deleteButton.classList.remove("is-loading");
     }, function(){
-      showResultAlert(deleteFailed);
+      showResultAlert(deleteResult, false, "Delete failed");
       lockForm(false);
       deleteButton.classList.remove("is-loading");
     });

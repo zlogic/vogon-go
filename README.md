@@ -7,7 +7,7 @@ Development is in progress, and the project is not production-ready or useful in
 
 Simple web-based personal finance tracker using
 
-* jQuery and Bootstrap 4 on client-side
+* Plain Javascript and Bulma CSS on client-side
 * Go on the server side
 * Badger key-value DB for data storage
 

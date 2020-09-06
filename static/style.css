@@ -25,10 +25,7 @@ input[type="number"] {
     top: 50vh;
 }
 
-/* Tag editor */
-.badge .badge-light .tag {
-	line-height: normal;
-}
-.tag > .close {
-	font-size: 100%;
+/* Cherry-pick from unreleased Bulma PR */
+.is-align-self-flex-end {
+    align-self: flex-end;
 }
