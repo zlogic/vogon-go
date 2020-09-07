@@ -38,9 +38,10 @@ type viewData struct {
 // It redirects authenticated users to the default page and unauthenticated users to the login page.
 func RootHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		username := s.cookieHandler.GetUsername(w, r)
+		// Light check for authentication cookie - prevent errors from liveness probe
+		cookie := getAuthenticationCookie(r)
 		var url string
-		if username == "" {
+		if cookie == "" {
 			url = "login"
 		} else {
 			url = "transactions"
@@ -66,11 +67,6 @@ func FaviconHandler(w http.ResponseWriter, r *http.Request) {
 // HTMLLoginHandler serves the login page.
 func HTMLLoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		username := s.cookieHandler.GetUsername(w, r)
-		if username != "" {
-			http.Redirect(w, r, "transactions", http.StatusSeeOther)
-			return
-		}
 		t, err := loadTemplate("login")
 		if err != nil {
 			handleError(w, r, err)
