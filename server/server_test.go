@@ -7,7 +7,6 @@ import (
 	"path"
 
 	"github.com/dgraph-io/badger/v2"
-	"github.com/gorilla/securecookie"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"github.com/zlogic/vogon-go/data"
@@ -132,12 +131,10 @@ func (m *DBMock) Restore(user *data.User, value string) error {
 }
 
 func createTestCookieHandler() (*CookieHandler, error) {
-	hashKey := base64.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(64))
-	blockKey := base64.StdEncoding.EncodeToString(securecookie.GenerateRandomKey(32))
+	signKey := base64.StdEncoding.EncodeToString(generateRandomKey(64))
 	dbMock := new(DBMock)
 
-	dbMock.On("GetOrCreateConfigVariable", "cookie-hash-key", mock.AnythingOfType("func() (string, error)")).Return(hashKey, nil).Once()
-	dbMock.On("GetOrCreateConfigVariable", "cookie-block-key", mock.AnythingOfType("func() (string, error)")).Return(blockKey, nil).Once()
+	dbMock.On("GetOrCreateConfigVariable", "cookie-sign-key", mock.AnythingOfType("func() (string, error)")).Return(signKey, nil).Once()
 	return NewCookieHandler(dbMock)
 }
 
