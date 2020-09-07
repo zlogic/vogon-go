@@ -9,7 +9,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/gorilla/handlers"
 	"github.com/zlogic/vogon-go/data"
 	"github.com/zlogic/vogon-go/server"
 )
@@ -29,7 +28,7 @@ func serve(db *data.DBService) {
 
 	errs := make(chan error, 2)
 	go func() {
-		errs <- http.ListenAndServe(":8080", handlers.CompressHandler(router))
+		errs <- http.ListenAndServe(":8080", router)
 	}()
 
 	go func() {

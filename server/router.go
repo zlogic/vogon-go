@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -33,40 +33,52 @@ func registrationAllowed() bool {
 }
 
 // CreateRouter returns a router and all handlers.
-func CreateRouter(s *Services) (*mux.Router, error) {
+func CreateRouter(s *Services) (*chi.Mux, error) {
 	registrationAllowed := registrationAllowed()
 
-	r := mux.NewRouter()
-	r.HandleFunc("/", RootHandler(s)).Methods(http.MethodGet)
-	r.HandleFunc("/login", HTMLLoginHandler(s)).Methods(http.MethodGet)
+	r := chi.NewRouter()
+
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	r.Get("/", RootHandler(s))
+	r.Get("/login", HTMLLoginHandler(s))
 	if registrationAllowed {
-		r.HandleFunc("/register", HTMLRegisterHandler(s)).Methods(http.MethodGet)
+		r.Get("/register", HTMLRegisterHandler(s))
 	}
-	r.HandleFunc("/logout", LogoutHandler(s)).Methods(http.MethodGet)
-	r.HandleFunc("/transactions", HTMLUserPageHandler(s)).Methods(http.MethodGet).Name("transactions")
-	r.HandleFunc("/transactioneditor", HTMLUserPageHandler(s)).Methods(http.MethodGet).Name("transactioneditor")
-	r.HandleFunc("/report", HTMLUserPageHandler(s)).Methods(http.MethodPost).Name("report")
-	r.HandleFunc("/accounts", HTMLUserPageHandler(s)).Methods(http.MethodGet).Name("accounts")
-	r.HandleFunc("/accounteditor", HTMLUserPageHandler(s)).Methods(http.MethodGet).Name("accounteditor")
-	r.HandleFunc("/settings", HTMLUserPageHandler(s)).Methods(http.MethodGet).Name("settings")
+	r.Get("/logout", LogoutHandler(s))
+	r.Get("/transactions", HTMLUserPageHandler(s, "transactions"))
+	r.Get("/transactioneditor", HTMLUserPageHandler(s, "transactioneditor"))
+	r.Post("/report", HTMLUserPageHandler(s, "report"))
+	r.Get("/accounts", HTMLUserPageHandler(s, "accounts"))
+	r.Get("/accounteditor", HTMLUserPageHandler(s, "accounteditor"))
+	r.Get("/settings", HTMLUserPageHandler(s, "settings"))
 	r.HandleFunc("/favicon.ico", FaviconHandler)
 	fs := http.FileServer(staticResourceFileSystem{http.Dir("static")})
-	r.PathPrefix("/static/").Handler(http.StripPrefix(strings.TrimRight("/static", "/"), fs))
+	r.Handle("/static/*", http.StripPrefix("/static/", fs))
 
-	api := r.PathPrefix("/api").Subrouter()
-	api.Use(NoCacheHeaderMiddlewareFunc)
-	api.HandleFunc("/login", LoginHandler(s)).Methods(http.MethodPost)
-	if registrationAllowed {
-		api.HandleFunc("/register", RegisterHandler(s)).Methods(http.MethodPost)
-	}
-	api.HandleFunc("/settings", SettingsHandler(s)).Methods(http.MethodGet, http.MethodPost)
-	api.HandleFunc("/backup", BackupHandler(s)).Methods(http.MethodPost)
-	api.HandleFunc("/transactions/getcount", TransactionsCountHandler(s)).Methods(http.MethodPost)
-	api.HandleFunc("/transactions/getpage", TransactionsHandler(s)).Methods(http.MethodPost)
-	api.HandleFunc("/transaction/{id}", TransactionHandler(s)).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
-	api.HandleFunc("/report", ReportHandler(s)).Methods(http.MethodPost)
-	api.HandleFunc("/accounts", AccountsHandler(s)).Methods(http.MethodGet)
-	api.HandleFunc("/account/{id}", AccountHandler(s)).Methods(http.MethodGet, http.MethodPost, http.MethodDelete)
-	api.HandleFunc("/tags", TagsHandler(s)).Methods(http.MethodGet)
+	r.Route("/api", func(api chi.Router) {
+		api.Use(NoCacheHeaderMiddlewareFunc)
+		api.Post("/login", LoginHandler(s))
+		if registrationAllowed {
+			api.Post("/register", RegisterHandler(s))
+		}
+		api.Get("/settings", SettingsHandler(s))
+		api.Post("/settings", SettingsHandler(s))
+		api.Post("/backup", BackupHandler(s))
+		api.Post("/transactions/getcount", TransactionsCountHandler(s))
+		api.Post("/transactions/getpage", TransactionsHandler(s))
+		api.Get("/transaction/{id}", TransactionHandler(s))
+		api.Post("/transaction/{id}", TransactionHandler(s))
+		api.Delete("/transaction/{id}", TransactionHandler(s))
+		api.Post("/report", ReportHandler(s))
+		api.Get("/accounts", AccountsHandler(s))
+		api.Get("/account/{id}", AccountHandler(s))
+		api.Post("/account/{id}", AccountHandler(s))
+		api.Delete("/account/{id}", AccountHandler(s))
+		api.Get("/tags", TagsHandler(s))
+	})
 	return r, nil
 }

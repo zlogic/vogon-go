@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/mux"
+	"github.com/go-chi/chi"
 	log "github.com/sirupsen/logrus"
 	"github.com/zlogic/vogon-go/data"
 )
@@ -157,8 +157,7 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		vars := mux.Vars(r)
-		requestID := vars["id"]
+		requestID := chi.URLParam(r, "id")
 
 		if r.Method == http.MethodPost {
 			transaction := &data.Transaction{}

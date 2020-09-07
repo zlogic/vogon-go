@@ -6,7 +6,6 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/zlogic/vogon-go/data"
 )
@@ -103,7 +102,7 @@ func HTMLRegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 }
 
 // HTMLUserPageHandler serves a user-specific page.
-func HTMLUserPageHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+func HTMLUserPageHandler(s *Services, templateName string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := validateUser(w, r, s)
 		if username == "" {
@@ -114,8 +113,6 @@ func HTMLUserPageHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 			handleError(w, r, err)
 			return
 		}
-
-		templateName := mux.CurrentRoute(r).GetName()
 
 		t, err := loadTemplate(templateName)
 		if err != nil {
