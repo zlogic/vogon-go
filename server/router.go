@@ -40,7 +40,7 @@ func CreateRouter(s *Services) (*chi.Mux, error) {
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+	r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: log.New(), NoColor: true}))
 	r.Use(middleware.Recoverer)
 
 	r.Get("/", RootHandler(s))
