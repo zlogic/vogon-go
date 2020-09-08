@@ -18,29 +18,35 @@ func NoCacheHeaderMiddlewareFunc(next http.Handler) http.Handler {
 	})
 }
 
-func registrationAllowed() bool {
-	allowRegistrationStr, ok := os.LookupEnv("ALLOW_REGISTRATION")
-	var allowRegistration bool
-	if !ok {
-		allowRegistrationStr = "true"
+func parseBoolEnv(varName string, defaultValue bool) bool {
+	valueStr, _ := os.LookupEnv(varName)
+	if valueStr == "" {
+		return defaultValue
 	}
-	allowRegistration, err := strconv.ParseBool(allowRegistrationStr)
+	value, err := strconv.ParseBool(valueStr)
 	if err != nil {
-		log.WithField("allowregistration", allowRegistrationStr).WithError(err).Error("Cannot parse parameter specifying if registration is allowed")
-		return false
+		log.WithField("variable", varName).WithField("value", value).WithError(err).Error("Cannot parse environment value")
+		return defaultValue
 	}
-	return allowRegistration
+	return value
+}
+
+func registrationAllowed() bool {
+	return parseBoolEnv("ALLOW_REGISTRATION", true)
 }
 
 // CreateRouter returns a router and all handlers.
 func CreateRouter(s *Services) (*chi.Mux, error) {
 	registrationAllowed := registrationAllowed()
+	logRequests := parseBoolEnv("LOG_REQUESTS", true)
 
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: log.New(), NoColor: true}))
+	if logRequests {
+		r.Use(middleware.RequestLogger(&middleware.DefaultLogFormatter{Logger: log.New(), NoColor: true}))
+	}
 	r.Use(middleware.Recoverer)
 
 	r.Get("/", RootHandler(s))

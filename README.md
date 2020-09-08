@@ -29,6 +29,8 @@ If you do not want random people using your deployment, you may want to set the 
 
 You should set `ALLOW_REGISTRATION` to `false` only after registering yourself.
 
+To disable request logging, set the `LOG_REQUESTS` environment variable to `false`.
+
 ## How to run the Docker image
 
 To build the Docker image for Vogon container, run the following Docker command:
