@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/zlogic/vogon-go/data"
@@ -38,13 +38,10 @@ func TestLoginHandlerSuccessful(t *testing.T) {
 	if len(cookies) > 0 {
 		token, err := cookieHandler.jwtAuth.Decode(cookies[0].Value)
 		assert.NoError(t, err)
-		assert.True(t, token.Valid)
-		assert.IsType(t, jwt.MapClaims{}, token.Claims)
-		claims := token.Claims.(jwt.MapClaims)
-		_, ok := claims["exp"]
+		username, ok := token.Get(usernameClaim)
 		assert.True(t, ok)
-		delete(claims, "exp")
-		assert.Equal(t, jwt.MapClaims{"username": "user01"}, claims)
+		assert.Equal(t, "user01", username)
+		assert.True(t, token.Expiration().After(time.Now()))
 	}
 
 	dbMock.AssertExpectations(t)
@@ -129,13 +126,10 @@ func TestRegisterHandlerSuccessful(t *testing.T) {
 	if len(cookies) > 0 {
 		token, err := cookieHandler.jwtAuth.Decode(cookies[0].Value)
 		assert.NoError(t, err)
-		assert.True(t, token.Valid)
-		assert.IsType(t, jwt.MapClaims{}, token.Claims)
-		claims := token.Claims.(jwt.MapClaims)
-		_, ok := claims["exp"]
+		username, ok := token.Get(usernameClaim)
 		assert.True(t, ok)
-		delete(claims, "exp")
-		assert.Equal(t, jwt.MapClaims{"username": "user01"}, claims)
+		assert.Equal(t, "user01", username)
+		assert.True(t, token.Expiration().After(time.Now()))
 	}
 
 	dbMock.AssertExpectations(t)

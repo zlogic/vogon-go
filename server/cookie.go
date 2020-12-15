@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/jwtauth"
 	log "github.com/sirupsen/logrus"
@@ -76,7 +75,7 @@ func (handler *CookieHandler) SetCookieUsername(cookie *http.Cookie, username st
 	currentTime := time.Now()
 	if username != "" {
 		cookieExpires := currentTime.Add(handler.cookieExpires)
-		claims := jwt.MapClaims{usernameClaim: username}
+		claims := map[string]interface{}{usernameClaim: username}
 		jwtauth.SetExpiry(claims, cookieExpires)
 		_, value, err := handler.jwtAuth.Encode(claims)
 		if err != nil {
@@ -105,19 +104,14 @@ func (handler *CookieHandler) GetUsername(w http.ResponseWriter, r *http.Request
 			WithError(err).Error("Authentication failed")
 		return ""
 	}
-	mapClaims, ok := token.Claims.(jwt.MapClaims)
+	username, ok := token.Get(usernameClaim)
 	if !ok {
-		log.WithField("claims", token.Claims).Error("Cannot map claims")
-		return ""
-	}
-	username, ok := mapClaims[usernameClaim]
-	if !ok {
-		log.WithField("claims", mapClaims).Error("Username claim not found")
+		log.WithField("token", token).Error("Username claim not found")
 		return ""
 	}
 	usernameString, ok := username.(string)
 	if !ok {
-		log.WithField("claims", mapClaims).Error("Username is not a string")
+		log.WithField("token", token).Error("Username is not a string")
 		return ""
 	}
 	return usernameString
