@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const restoreData = `{
+const testRestoreData = `{
   "Accounts": [
     {
       "ID": 0,
@@ -137,7 +137,7 @@ const restoreData = `{
   ]
 }`
 
-const backupData = `{
+const testBackupData = `{
   "Accounts": [
     {
       "ID": 0,
@@ -352,20 +352,20 @@ func TestBackup(t *testing.T) {
 	transactions := createBackupTransactions(accounts)
 	transactions[4].Tags = []string{"Widgets", "Gadgets"}
 	for _, transaction := range transactions {
-		assert.NoError(t, transaction.Normalize())
+		assert.NoError(t, transaction.normalize())
 		dbService.CreateTransaction(&testUser, transaction)
 	}
 
 	json, err := dbService.Backup(&testUser)
 	assert.NoError(t, err)
-	assert.Equal(t, backupData, json)
+	assert.Equal(t, testBackupData, json)
 }
 
 func TestRestore(t *testing.T) {
 	err := resetDb()
 	assert.NoError(t, err)
 
-	err = dbService.Restore(&testUser, restoreData)
+	err = dbService.Restore(&testUser, testRestoreData)
 	assert.NoError(t, err)
 
 	expectedAccounts := createBackupAccounts()
@@ -414,11 +414,11 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 		},
 	})
 	for _, transaction := range transactions {
-		assert.NoError(t, transaction.Normalize())
+		assert.NoError(t, transaction.normalize())
 		dbService.CreateTransaction(&testUser, transaction)
 	}
 
-	err = dbService.Restore(&testUser, restoreData)
+	err = dbService.Restore(&testUser, testRestoreData)
 	assert.NoError(t, err)
 
 	expectedAccounts := createBackupAccounts()

@@ -16,7 +16,7 @@ func (s *DBService) GetTags(user *User) ([]string, error) {
 		return err
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get transactions for tags because of %w", err)
+		return nil, fmt.Errorf("failed to get transactions for tags: %w", err)
 	}
 
 	tags := make(map[string]bool)

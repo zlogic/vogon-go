@@ -40,7 +40,7 @@ func getAllUsers(s *DBService) ([]*User, error) {
 	users := make([]*User, 0)
 	err := s.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
-		opts.Prefix = []byte(UserKeyPrefix)
+		opts.Prefix = []byte(userKeyPrefix)
 		it := txn.NewIterator(opts)
 		defer it.Close()
 		for it.Rewind(); it.Valid(); it.Next() {
@@ -48,15 +48,15 @@ func getAllUsers(s *DBService) ([]*User, error) {
 
 			k := item.Key()
 
-			username, err := DecodeUserKey(k)
+			username, err := decodeUserKey(k)
 			if err != nil {
-				return fmt.Errorf("Failed to decode username of user because of %w", err)
+				return fmt.Errorf("failed to decode username from key %v: %w", string(k), err)
 			}
 
 			user := &User{}
 
-			if err := item.Value(user.Decode); err != nil {
-				return fmt.Errorf("Failed to read value of user because of %w", err)
+			if err := item.Value(user.decode); err != nil {
+				return fmt.Errorf("failed to read value of user %v: %w", username, err)
 			}
 
 			user.username = *username
@@ -65,7 +65,7 @@ func getAllUsers(s *DBService) ([]*User, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Cannot read users because of %w", err)
+		return nil, fmt.Errorf("cannot read users: %w", err)
 	}
 	return users, nil
 }

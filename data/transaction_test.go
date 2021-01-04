@@ -15,7 +15,7 @@ func TestNormalizeTransaction(t *testing.T) {
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"t1", "t2"},
 	}
-	err := typicalTransaction.Normalize()
+	err := typicalTransaction.normalize()
 	assert.NoError(t, err)
 	assert.Equal(t, Transaction{
 		Description: "t1",
@@ -25,32 +25,32 @@ func TestNormalizeTransaction(t *testing.T) {
 	}, typicalTransaction)
 
 	unsortedTagsUnformattedDateTransaction := Transaction{Date: "2019-3-2", Tags: []string{"t2", "t1", "ta"}}
-	err = unsortedTagsUnformattedDateTransaction.Normalize()
+	err = unsortedTagsUnformattedDateTransaction.normalize()
 	assert.NoError(t, err)
 	assert.Equal(t, Transaction{Date: "2019-03-02", Tags: []string{"t1", "t2", "ta"}}, unsortedTagsUnformattedDateTransaction)
 
 	noTagsTransaction := Transaction{Date: "2019-03-02"}
-	err = noTagsTransaction.Normalize()
+	err = noTagsTransaction.normalize()
 	assert.NoError(t, err)
 	assert.Equal(t, Transaction{Date: "2019-03-02"}, noTagsTransaction)
 
 	duplicateTagsTransaction := Transaction{Date: "2019-03-02", Tags: []string{"t2", "t1", "t1"}}
-	err = duplicateTagsTransaction.Normalize()
+	err = duplicateTagsTransaction.normalize()
 	assert.NoError(t, err)
 	assert.Equal(t, Transaction{Date: "2019-03-02", Tags: []string{"t1", "t2"}}, duplicateTagsTransaction)
 
 	emptyTagTransaction := Transaction{Date: "2019-03-02", Tags: []string{"t2", "t1", ""}}
-	err = emptyTagTransaction.Normalize()
+	err = emptyTagTransaction.normalize()
 	assert.NoError(t, err)
 	assert.Equal(t, Transaction{Date: "2019-03-02", Tags: []string{"t1", "t2"}}, emptyTagTransaction)
 
 	noDateTransaction := Transaction{Tags: []string{"t2", "t1", "ta"}}
-	err = noDateTransaction.Normalize()
+	err = noDateTransaction.normalize()
 	assert.Error(t, err)
 	assert.Equal(t, Transaction{Tags: []string{"t2", "t1", "ta"}}, noDateTransaction)
 
 	badDateTransaction := Transaction{Date: "helloworld", Tags: []string{"t2", "t1", "ta"}}
-	err = badDateTransaction.Normalize()
+	err = badDateTransaction.normalize()
 	assert.Error(t, err)
 	assert.Equal(t, Transaction{Date: "helloworld", Tags: []string{"t2", "t1", "ta"}}, badDateTransaction)
 }

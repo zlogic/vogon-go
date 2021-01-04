@@ -45,8 +45,13 @@ func Open(options badger.Options) (*DBService, error) {
 // GC deletes expired items and attempts to perform a database cleanup.
 func (service *DBService) GC() {
 	for {
-		if err := service.db.RunValueLogGC(0.5); err != nil {
+		err := service.db.RunValueLogGC(0.5)
+		if err == badger.ErrNoRewrite {
+			log.WithField("result", err).Debug("Cleanup didn't cause a log file rewrite")
+		} else if err != nil {
 			log.WithField("result", err).Info("Cleanup completed")
+		}
+		if err != nil {
 			break
 		}
 		log.Info("Cleanup reclaimed space")
@@ -64,4 +69,19 @@ func (service *DBService) Close() {
 		}
 		service.db = nil
 	}
+}
+
+// iteratorDoNotPrefetchOptions returns Badger iterator options with PrefetchValues = false.
+func iteratorDoNotPrefetchOptions() badger.IteratorOptions {
+	options := badger.DefaultIteratorOptions
+	options.PrefetchValues = false
+	return options
+}
+
+// iteratorIndexOptions returns optimal Badger iterator options for use when iterating through an index.
+func iteratorIndexOptions() badger.IteratorOptions {
+	options := badger.DefaultIteratorOptions
+	options.PrefetchValues = false
+	options.Reverse = true
+	return options
 }

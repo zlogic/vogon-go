@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/dgraph-io/badger/v2"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -27,8 +26,8 @@ func NewUser(username string) *User {
 	return &User{newUsername: username}
 }
 
-// Decode deserializes a User.
-func (user *User) Decode(val []byte) error {
+// decode deserializes a User.
+func (user *User) decode(val []byte) error {
 	return gob.NewDecoder(bytes.NewBuffer(val)).Decode(user)
 }
 
@@ -37,20 +36,20 @@ func (user *User) Decode(val []byte) error {
 func (s *DBService) GetUser(username string) (*User, error) {
 	user := &User{username: username}
 	err := s.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(user.CreateKey())
+		item, err := txn.Get(user.createKey())
 		if err == badger.ErrKeyNotFound {
 			user = nil
 			return nil
 		}
 
-		if err := item.Value(user.Decode); err != nil {
+		if err := item.Value(user.decode); err != nil {
 			user = nil
 			return err
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("Cannot read User %v because of %w", username, err)
+		return nil, fmt.Errorf("cannot read user %v: %w", username, err)
 	}
 	return user, nil
 }
@@ -60,18 +59,18 @@ func (s *DBService) SaveUser(user *User) error {
 	if user.newUsername == "" {
 		user.newUsername = user.username
 	}
-	key := CreateUserKey(user.newUsername)
+	key := createUserKey(user.newUsername)
 
 	newUser := user.username == ""
 	if newUser {
-		seq, err := s.db.GetSequence([]byte(SequenceUserKey), 1)
+		seq, err := s.db.GetSequence([]byte(sequenceUserKey), 1)
 		defer seq.Release()
 		if err != nil {
-			return fmt.Errorf("Cannot create user sequence object because of %w", err)
+			return fmt.Errorf("cannot create user sequence object: %w", err)
 		}
 		id, err := seq.Next()
 		if err != nil {
-			return fmt.Errorf("Cannot generate id for user because of %w", err)
+			return fmt.Errorf("cannot generate id for user: %w", err)
 		}
 		user.ID = id
 	}
@@ -87,22 +86,20 @@ func (s *DBService) SaveUser(user *User) error {
 
 		existingUser := &User{}
 		if existingItem != nil || (err != nil && err != badger.ErrKeyNotFound) {
-			if err := existingItem.Value(existingUser.Decode); err != nil {
-				return fmt.Errorf("Cannot get existing value for user because of %w", err)
+			if err := existingItem.Value(existingUser.decode); err != nil {
+				return fmt.Errorf("cannot get existing value for user %v: %w", string(key), err)
 			}
 			if user.newUsername != user.username {
-				log.WithField("key", key).Error("New username already in use")
 				return ErrUserAlreadyExists
 			}
 			if existingUser.ID != user.ID {
-				log.WithField("key", key).WithField("existingID", existingUser.ID).WithField("ID", user.ID).Error("ID conflict with existing user")
-				return ErrUserAlreadyExists
+				return fmt.Errorf("id %v for user %v conflicts with existing user id %v: %w", user.ID, string(key), existingUser.ID, ErrUserAlreadyExists)
 			}
 		}
 
 		// In case of rename, delete old username key
 		if !newUser && user.newUsername != user.username {
-			oldUserKey := CreateUserKey(user.username)
+			oldUserKey := createUserKey(user.username)
 			if err := txn.Delete(oldUserKey); err != nil {
 				return err
 			}
@@ -110,7 +107,7 @@ func (s *DBService) SaveUser(user *User) error {
 
 		var value bytes.Buffer
 		if err := gob.NewEncoder(&value).Encode(user); err != nil {
-			return fmt.Errorf("Cannot marshal user because of %w", err)
+			return fmt.Errorf("cannot encode user: %w", err)
 		}
 		return txn.Set(key, value.Bytes())
 	})
@@ -131,7 +128,7 @@ func (user *User) GetUsername() string {
 func (user *User) SetUsername(newUsername string) error {
 	newUsername = strings.TrimSpace(newUsername)
 	if newUsername == "" {
-		return fmt.Errorf("Cannot set username to an empty string")
+		return fmt.Errorf("cannot set username to an empty string")
 	}
 	user.newUsername = newUsername
 	return nil
