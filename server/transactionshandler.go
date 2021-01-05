@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi"
 	log "github.com/sirupsen/logrus"
 	"github.com/zlogic/vogon-go/data"
+	"github.com/zlogic/vogon-go/server/auth"
 )
 
 func parseFilterForm(r *http.Request) (data.TransactionFilterOptions, error) {
@@ -66,8 +67,9 @@ func parseFilterForm(r *http.Request) (data.TransactionFilterOptions, error) {
 // TransactionsCountHandler returns the number of transactions for an authenticated user.
 func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := validateUserForAPI(w, r, s)
+		user := auth.GetUser(r.Context())
 		if user == nil {
+			// This should never happen.
 			return
 		}
 
@@ -97,8 +99,9 @@ func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.R
 // TransactionsHandler returns a filtered, pages list of transactions for an authenticated user.
 func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := validateUserForAPI(w, r, s)
+		user := auth.GetUser(r.Context())
 		if user == nil {
+			// This should never happen.
 			return
 		}
 
@@ -110,7 +113,7 @@ func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 		parseFormValueInt := func(name string) (uint64, error) {
 			value := r.Form.Get(name)
 			if value == "" {
-				return 0, fmt.Errorf("Form parameter %v is empty", name)
+				return 0, fmt.Errorf("form parameter %v is empty", name)
 			}
 			return strconv.ParseUint(value, 10, 64)
 		}
@@ -152,8 +155,9 @@ func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 // TransactionHandler gets, updates or deletes a Transaction.
 func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := validateUserForAPI(w, r, s)
+		user := auth.GetUser(r.Context())
 		if user == nil {
+			// This should never happen.
 			return
 		}
 
@@ -179,8 +183,7 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 				return
 			}
 
-			_, err = io.WriteString(w, "OK")
-			if err != nil {
+			if _, err := io.WriteString(w, "OK"); err != nil {
 				log.WithError(err).Error("Failed to write response")
 			}
 			return
@@ -198,8 +201,7 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 				return
 			}
 
-			_, err = io.WriteString(w, "OK")
-			if err != nil {
+			if _, err := io.WriteString(w, "OK"); err != nil {
 				log.WithError(err).Error("Failed to write response")
 			}
 			return

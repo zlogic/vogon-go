@@ -1,15 +1,18 @@
 package server
 
 import (
-	"encoding/base64"
+	"context"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 
 	"github.com/dgraph-io/badger/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
+
 	"github.com/zlogic/vogon-go/data"
+	"github.com/zlogic/vogon-go/server/auth"
 )
 
 var testUser = data.User{ID: 11}
@@ -130,12 +133,36 @@ func (m *DBMock) Restore(user *data.User, value string) error {
 	return args.Error(0)
 }
 
-func createTestCookieHandler() (*CookieHandler, error) {
-	signKey := base64.StdEncoding.EncodeToString(generateRandomKey(64))
-	dbMock := new(DBMock)
+var testAuthCookie = "testusername"
 
-	dbMock.On("GetOrCreateConfigVariable", "cookie-sign-key", mock.AnythingOfType("func() (string, error)")).Return(signKey, nil).Once()
-	return NewCookieHandler(dbMock)
+type AuthHandlerMock struct {
+	mock.Mock
+	authUser *data.User
+}
+
+func (m *AuthHandlerMock) SetCookieUsername(w http.ResponseWriter, username string, rememberMe bool) error {
+	args := m.Called(w, username, rememberMe)
+	return args.Error(0)
+}
+
+func (m *AuthHandlerMock) AuthHandlerFunc(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		if m.authUser != nil {
+			ctx = context.WithValue(ctx, auth.UserContextKey, m.authUser)
+		}
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (m *AuthHandlerMock) HasAuthenticationCookie(r *http.Request) bool {
+	args := m.Called(r)
+	return args.Get(0).(bool)
+}
+
+func (m *AuthHandlerMock) AllowUser(user *data.User) *http.Cookie {
+	m.authUser = user
+	return nil
 }
 
 func prepareTempDir() (string, func(), error) {
@@ -173,18 +200,13 @@ func prepareExistingUser(username string) *data.User {
 		return &user
 	}
 
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
+	logger := log.New()
+	logger.SetLevel(log.FatalLevel)
 
-	var opts = badger.DefaultOptions(tempDir)
-	opts.Logger = log.New()
+	var opts = badger.DefaultOptions("")
+	opts.Logger = logger
 	opts.ValueLogFileSize = 1 << 20
-	opts.SyncWrites = false
-	opts.CompactL0OnClose = false
+	opts.InMemory = true
 
 	dbService, err := data.Open(opts)
 	if err != nil {

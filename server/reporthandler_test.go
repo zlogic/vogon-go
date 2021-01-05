@@ -95,23 +95,18 @@ func createReportTransactions() []*data.Transaction {
 
 func TestReportEverything(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader(""))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
@@ -136,27 +131,23 @@ func TestReportEverything(t *testing.T) {
 		"}}\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestReportFilterDescription(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterDescription=stuff&filterAccounts=0,1,2"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
@@ -180,27 +171,23 @@ func TestReportFilterDescription(t *testing.T) {
 		"}}\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestReportDateRange(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2&filterFrom=2015-11-02&filterTo=2015-11-04"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
@@ -225,27 +212,23 @@ func TestReportDateRange(t *testing.T) {
 		"}}\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestReportFilterTags(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2&filterTags=Gadgets,Widgets"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
@@ -270,27 +253,23 @@ func TestReportFilterTags(t *testing.T) {
 		"}}\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestReportAccounts012(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
@@ -315,27 +294,23 @@ func TestReportAccounts012(t *testing.T) {
 		"}}\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestReportOnlyAccount0(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
@@ -358,27 +333,23 @@ func TestReportOnlyAccount0(t *testing.T) {
 		"}}\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestReportOnlyAccount1(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=1"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
@@ -401,27 +372,23 @@ func TestReportOnlyAccount1(t *testing.T) {
 		"}}\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestReportFilterExcludeTransfer(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2&filterIncludeTransfer=false"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
@@ -446,27 +413,23 @@ func TestReportFilterExcludeTransfer(t *testing.T) {
 		"}}\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestReportFilterExcludeExpenseIncome(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader("filterAccounts=0,1,2&filterIncludeExpenseIncome=false"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	transactions := createReportTransactions()
 	options := data.GetAllTransactionsOptions
@@ -491,4 +454,5 @@ func TestReportFilterExcludeExpenseIncome(t *testing.T) {
 		"}}\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }

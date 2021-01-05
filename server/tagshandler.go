@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 	"sort"
+
+	"github.com/zlogic/vogon-go/server/auth"
 )
 
 // TagsHandler returns a sorted, deduplicated list of tags for an authenticated user.
 func TagsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := validateUserForAPI(w, r, s)
+		user := auth.GetUser(r.Context())
 		if user == nil {
+			// This should never happen.
 			return
 		}
 

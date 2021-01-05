@@ -12,22 +12,17 @@ import (
 
 func TestGetAccountsAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("GET", "/api/accounts", nil)
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	accounts := []*data.Account{
 		{ID: 0, Name: "a1", Currency: "USD", Balance: 100, IncludeInTotal: false, ShowInList: true},
@@ -43,14 +38,14 @@ func TestGetAccountsAuthorized(t *testing.T) {
 		"]\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestGetAccountsUnauthorized(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -62,51 +57,41 @@ func TestGetAccountsUnauthorized(t *testing.T) {
 	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestGetAccountsUserDoesNotExist(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
-
 	req, _ := http.NewRequest("GET", "/api/accounts", nil)
 	res := httptest.NewRecorder()
-
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
 	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestGetAccountAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("GET", "/api/account/42", nil)
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	account := &data.Account{ID: 42, Name: "a1", Currency: "USD", Balance: 100, IncludeInTotal: false, ShowInList: true}
 	dbMock.On("GetAccount", &user, uint64(42)).Return(account, nil).Once()
@@ -116,14 +101,14 @@ func TestGetAccountAuthorized(t *testing.T) {
 	assert.Equal(t, `{"ID":42,"Name":"a1","Balance":100,"Currency":"USD","IncludeInTotal":false,"ShowInList":true}`+"\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestGetAccountUnauthorized(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -135,51 +120,41 @@ func TestGetAccountUnauthorized(t *testing.T) {
 	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestGetAccountUserDoesNotExist(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
-
 	req, _ := http.NewRequest("GET", "/api/account/42", nil)
 	res := httptest.NewRecorder()
-
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
 	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestDeleteAccountAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("DELETE", "/api/account/42", nil)
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	dbMock.On("DeleteAccount", &user, uint64(42)).Return(nil).Once()
 
@@ -188,14 +163,14 @@ func TestDeleteAccountAuthorized(t *testing.T) {
 	assert.Equal(t, "OK", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestDeleteAccountUnauthorized(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -207,51 +182,41 @@ func TestDeleteAccountUnauthorized(t *testing.T) {
 	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestDeleteAccountUserDoesNotExist(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
-
 	req, _ := http.NewRequest("DELETE", "/api/account/42", nil)
 	res := httptest.NewRecorder()
-
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
 	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestPostCreateAccountAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/account/new", strings.NewReader(`{"ID":42,"Name":"a1","Balance":100,"Currency":"USD","IncludeInTotal":false,"ShowInList":true}`))
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	account := &data.Account{ID: 42, Name: "a1", Currency: "USD", Balance: 100, IncludeInTotal: false, ShowInList: true}
 	dbMock.On("CreateAccount", &user, account).Return(nil).Once()
@@ -261,26 +226,22 @@ func TestPostCreateAccountAuthorized(t *testing.T) {
 	assert.Equal(t, "OK", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestPostUpdateAccountAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
-
-	user := testUser
-	dbMock.On("GetUser", "user01").Return(&user, nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/account/42", strings.NewReader(`{"ID":42,"Name":"a1","Balance":100,"Currency":"USD","IncludeInTotal":false,"ShowInList":true}`))
 	res := httptest.NewRecorder()
 
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
+	user := testUser
+	authHandler.AllowUser(&user)
 
 	account := &data.Account{ID: 42, Name: "a1", Currency: "USD", Balance: 100, IncludeInTotal: false, ShowInList: true}
 	dbMock.On("UpdateAccount", &user, account).Return(nil).Once()
@@ -290,14 +251,14 @@ func TestPostUpdateAccountAuthorized(t *testing.T) {
 	assert.Equal(t, "OK", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestPostAccountUnauthorized(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -309,29 +270,24 @@ func TestPostAccountUnauthorized(t *testing.T) {
 	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestPostAccountUserDoesNotExist(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	dbMock.On("GetUser", "user01").Return(nil, nil).Once()
-
 	req, _ := http.NewRequest("POST", "/api/account/42", nil)
 	res := httptest.NewRecorder()
-
-	cookie := cookieHandler.NewCookie()
-	cookieHandler.SetCookieUsername(cookie, "user01")
-	req.AddCookie(cookie)
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
 	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }

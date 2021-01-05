@@ -9,13 +9,15 @@ import (
 	"github.com/go-chi/chi"
 	log "github.com/sirupsen/logrus"
 	"github.com/zlogic/vogon-go/data"
+	"github.com/zlogic/vogon-go/server/auth"
 )
 
 // AccountsHandler returns all Accounts for an authenticated user.
 func AccountsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := validateUserForAPI(w, r, s)
+		user := auth.GetUser(r.Context())
 		if user == nil {
+			// This should never happen.
 			return
 		}
 
@@ -34,8 +36,9 @@ func AccountsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 // AccountHandler gets, updates or deletes an Account.
 func AccountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := validateUserForAPI(w, r, s)
+		user := auth.GetUser(r.Context())
 		if user == nil {
+			// This should never happen.
 			return
 		}
 
@@ -61,8 +64,7 @@ func AccountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			_, err = io.WriteString(w, "OK")
-			if err != nil {
+			if _, err := io.WriteString(w, "OK"); err != nil {
 				log.WithError(err).Error("Failed to write response")
 			}
 			return
@@ -80,8 +82,7 @@ func AccountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			_, err = io.WriteString(w, "OK")
-			if err != nil {
+			if _, err := io.WriteString(w, "OK"); err != nil {
 				log.WithError(err).Error("Failed to write response")
 			}
 			return

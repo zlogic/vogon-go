@@ -8,24 +8,17 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/zlogic/vogon-go/server/auth"
 )
 
 // SettingsHandler gets or updates settings for an authenticated user.
 func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		username := s.cookieHandler.GetUsername(w, r)
-		if username == "" {
-			handleBadCredentials(w, r, fmt.Errorf("Unknown username %v", username))
-			return
-		}
-
-		user, err := s.db.GetUser(username)
-		if err != nil {
-			handleError(w, r, err)
-			return
-		}
+		user := auth.GetUser(r.Context())
 		if user == nil {
-			handleBadCredentials(w, r, fmt.Errorf("Unknown username %v", username))
+			// This should never happen.
 			return
 		}
 
@@ -38,7 +31,7 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			formPart, ok := r.MultipartForm.Value["form"]
 			defer r.MultipartForm.RemoveAll()
 			if !ok {
-				err := fmt.Errorf("Cannot extract form part")
+				err := fmt.Errorf("cannot extract form part")
 				handleError(w, r, err)
 				return
 			}
@@ -65,10 +58,12 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if username != newUsername {
-				// Force logout
-				cookie := s.cookieHandler.NewCookie()
-				http.SetCookie(w, cookie)
+			if user.GetUsername() != newUsername {
+				// Force logout.
+				err := s.cookieHandler.SetCookieUsername(w, "", false)
+				if err != nil {
+					log.WithError(err).Error("Error while clearing the cookie during logout")
+				}
 			}
 
 			restoreFile, ok := r.MultipartForm.File["restorefile"]
@@ -92,9 +87,8 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			//Reload user to return updated values
-			username = user.GetUsername()
-			user, err = s.db.GetUser(username)
+			// Reload user to return updated values.
+			user, err = s.db.GetUser(user.GetUsername())
 			if err != nil {
 				handleError(w, r, err)
 				return
@@ -105,7 +99,7 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			Username string
 		}
 
-		returnUser := &clientUser{Username: username}
+		returnUser := &clientUser{Username: user.GetUsername()}
 
 		if err := json.NewEncoder(w).Encode(returnUser); err != nil {
 			handleError(w, r, err)
@@ -116,8 +110,9 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 // BackupHandler returns a serialized backup of all data for an authenticated user.
 func BackupHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := validateUserForAPI(w, r, s)
+		user := auth.GetUser(r.Context())
 		if user == nil {
+			// This should never happen.
 			return
 		}
 

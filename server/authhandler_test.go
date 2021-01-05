@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -15,16 +14,22 @@ import (
 
 func TestLoginHandlerSuccessful(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
 	user := &data.User{ID: 1}
 	user.SetPassword("pass")
 	dbMock.On("GetUser", "user01").Return(user, nil).Once()
+
+	authHandler.On("SetCookieUsername", mock.Anything, "user01", false).
+		Run(func(args mock.Arguments) {
+			w := args.Get(0).(http.ResponseWriter)
+			http.SetCookie(w, &http.Cookie{Name: testAuthCookie})
+		}).
+		Return(nil).Once()
 
 	req, _ := http.NewRequest("POST", "/api/login", strings.NewReader("username=user01&password=pass"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
@@ -36,23 +41,18 @@ func TestLoginHandlerSuccessful(t *testing.T) {
 	cookies := res.Result().Cookies()
 	assert.Equal(t, 1, len(cookies))
 	if len(cookies) > 0 {
-		token, err := cookieHandler.jwtAuth.Decode(cookies[0].Value)
-		assert.NoError(t, err)
-		username, ok := token.Get(usernameClaim)
-		assert.True(t, ok)
-		assert.Equal(t, "user01", username)
-		assert.True(t, token.Expiration().After(time.Now()))
+		assert.Equal(t, testAuthCookie, cookies[0].Name)
 	}
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestLoginHandlerIncorrectPassword(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -70,14 +70,14 @@ func TestLoginHandlerIncorrectPassword(t *testing.T) {
 	assert.Empty(t, res.Result().Cookies())
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestLoginHandlerUnknownUsername(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -93,14 +93,14 @@ func TestLoginHandlerUnknownUsername(t *testing.T) {
 	assert.Empty(t, res.Result().Cookies())
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestRegisterHandlerSuccessful(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -114,6 +114,13 @@ func TestRegisterHandlerSuccessful(t *testing.T) {
 			assert.Equal(t, saveUser, userArg)
 		})
 
+	authHandler.On("SetCookieUsername", mock.Anything, "user01", false).
+		Run(func(args mock.Arguments) {
+			w := args.Get(0).(http.ResponseWriter)
+			http.SetCookie(w, &http.Cookie{Name: testAuthCookie})
+		}).
+		Return(nil).Once()
+
 	req, _ := http.NewRequest("POST", "/api/register", strings.NewReader("username=user01&password=pass"))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
@@ -124,23 +131,18 @@ func TestRegisterHandlerSuccessful(t *testing.T) {
 	cookies := res.Result().Cookies()
 	assert.Equal(t, 1, len(cookies))
 	if len(cookies) > 0 {
-		token, err := cookieHandler.jwtAuth.Decode(cookies[0].Value)
-		assert.NoError(t, err)
-		username, ok := token.Get(usernameClaim)
-		assert.True(t, ok)
-		assert.Equal(t, "user01", username)
-		assert.True(t, token.Expiration().After(time.Now()))
+		assert.Equal(t, testAuthCookie, cookies[0].Name)
 	}
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestRegisterHandlerUsernameAlreadyInUse(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -156,18 +158,18 @@ func TestRegisterHandlerUsernameAlreadyInUse(t *testing.T) {
 	assert.Empty(t, res.Result().Cookies())
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }
 
 func TestRegisterRegistrationNotAllowed(t *testing.T) {
 	dbMock := new(DBMock)
-	cookieHandler, err := createTestCookieHandler()
-	assert.NoError(t, err)
+	authHandler := AuthHandlerMock{}
 
-	err = os.Setenv("ALLOW_REGISTRATION", "false")
+	err := os.Setenv("ALLOW_REGISTRATION", "false")
 	defer func() { os.Unsetenv("ALLOW_REGISTRATION") }()
 	assert.NoError(t, err)
 
-	services := &Services{db: dbMock, cookieHandler: cookieHandler}
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -181,4 +183,5 @@ func TestRegisterRegistrationNotAllowed(t *testing.T) {
 	assert.Empty(t, res.Result().Cookies())
 
 	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
 }

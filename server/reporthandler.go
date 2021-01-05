@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/zlogic/vogon-go/data"
+	"github.com/zlogic/vogon-go/server/auth"
 )
 
+// getCurrency returns the currency for component.
 func getCurrency(component data.TransactionComponent, accounts []*data.Account) string {
 	for _, account := range accounts {
 		if account.ID == component.AccountID {
@@ -18,6 +20,7 @@ func getCurrency(component data.TransactionComponent, accounts []*data.Account) 
 	return ""
 }
 
+// filterComponents removes components with accounts not listed in accountIDs.
 func filterComponents(components *[]data.TransactionComponent, accountIDs []uint64) {
 	resultComponents := (*components)[:0]
 	for _, component := range *components {
@@ -31,6 +34,7 @@ func filterComponents(components *[]data.TransactionComponent, accountIDs []uint
 	*components = resultComponents
 }
 
+// filterTransactions removes transactions not matching filterOptions.
 func filterTransactions(transactions *[]*data.Transaction, filterOptions data.TransactionFilterOptions) {
 	if filterOptions.IsEmpty() {
 		return
@@ -45,6 +49,7 @@ func filterTransactions(transactions *[]*data.Transaction, filterOptions data.Tr
 	*transactions = result
 }
 
+// filterAccounts removes accounts not matching filterOptions.
 func filterAccounts(accounts []*data.Account, filterOptions data.TransactionFilterOptions) []*data.Account {
 	if filterOptions.IsEmpty() {
 		return accounts
@@ -72,6 +77,7 @@ type tagAmounts struct {
 }
 type currencyTagAmount map[string]tagAmounts
 
+// createBalanceChart returns a currency-date-balance map.
 func createBalanceChart(transactions []*data.Transaction, accounts []*data.Account, filterOptions data.TransactionFilterOptions) currencyDateBalance {
 	var chart = make(currencyDateBalance)
 	var totals = make(map[string]int64)
@@ -102,6 +108,7 @@ func createBalanceChart(transactions []*data.Transaction, accounts []*data.Accou
 	return chart
 }
 
+// createTagsChart returns a currency-tag-amout map.
 func createTagsChart(transactions []*data.Transaction, accounts []*data.Account) currencyTagAmount {
 	var chart = make(currencyTagAmount)
 	type transactionTotal struct {
@@ -150,8 +157,9 @@ func createTagsChart(transactions []*data.Transaction, accounts []*data.Account)
 // ReportHandler generates data for a report.
 func ReportHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user := validateUserForAPI(w, r, s)
+		user := auth.GetUser(r.Context())
 		if user == nil {
+			// This should never happen.
 			return
 		}
 

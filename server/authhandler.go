@@ -1,37 +1,26 @@
 package server
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/zlogic/vogon-go/data"
+	"github.com/zlogic/vogon-go/server/auth"
 )
 
-func handleBadCredentials(w http.ResponseWriter, r *http.Request, err error) {
-	log.WithError(err).Error("Bad credentials for user")
-	http.Error(w, "Bad credentials", http.StatusUnauthorized)
-}
-
-func validateUserForAPI(w http.ResponseWriter, r *http.Request, s *Services) *data.User {
-	username := s.cookieHandler.GetUsername(w, r)
-	if username == "" {
-		http.Error(w, "Bad credentials", http.StatusUnauthorized)
-		return nil
-	}
-
-	user, err := s.db.GetUser(username)
-	if err != nil {
-		handleError(w, r, err)
-		return nil
-	}
-	if user == nil {
-		handleBadCredentials(w, r, fmt.Errorf("Unknown username %v", username))
-	}
-	return user
+// APIAuthHandler checks to see if the API is accessed by an authorized user,
+// and returns an error if the request is done by an unauthorized user.
+func APIAuthHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := auth.GetUser(r.Context())
+		if user == nil {
+			http.Error(w, "Bad credentials", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // LoginHandler authenticates the user and sets the encrypted session cookie if the user provided valid credentials.
@@ -57,23 +46,23 @@ func LoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if user == nil {
-			handleBadCredentials(w, r, fmt.Errorf("User %v does not exist", username))
+			log.Errorf("User %v doesn't exist", username)
+			http.Error(w, "Bad credentials", http.StatusUnauthorized)
 			return
 		}
 		err = user.ValidatePassword(password)
 		if err != nil {
-			handleBadCredentials(w, r, fmt.Errorf("Invalid password for user %v (%w)", username, err))
+			log.WithError(err).Errorf("Invalid password for user %v", username)
+			http.Error(w, "Bad credentials", http.StatusUnauthorized)
 			return
 		}
-		cookie := s.cookieHandler.NewCookie()
-		s.cookieHandler.SetCookieUsername(cookie, username)
-		if !rememberMe {
-			cookie.Expires = time.Time{}
-			cookie.MaxAge = 0
-		}
-		http.SetCookie(w, cookie)
-		_, err = io.WriteString(w, "OK")
+		err = s.cookieHandler.SetCookieUsername(w, username, rememberMe)
 		if err != nil {
+			log.WithError(err).Error("Failed to set username cookie")
+			http.Error(w, "Failed to set username cookie", http.StatusInternalServerError)
+			return
+		}
+		if _, err := io.WriteString(w, "OK"); err != nil {
 			log.WithError(err).Error("Failed to write response")
 		}
 	}
@@ -109,15 +98,13 @@ func RegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
-		cookie := s.cookieHandler.NewCookie()
-		s.cookieHandler.SetCookieUsername(cookie, username)
-		if !rememberMe {
-			cookie.Expires = time.Time{}
-			cookie.MaxAge = 0
-		}
-		http.SetCookie(w, cookie)
-		_, err = io.WriteString(w, "OK")
+		err = s.cookieHandler.SetCookieUsername(w, username, rememberMe)
 		if err != nil {
+			log.WithError(err).Error("Failed to set username cookie")
+			http.Error(w, "Failed to set username cookie", http.StatusInternalServerError)
+			return
+		}
+		if _, err := io.WriteString(w, "OK"); err != nil {
 			log.WithError(err).Error("Failed to write response")
 		}
 	}
