@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/zlogic/vogon-go/data"
 	"github.com/zlogic/vogon-go/server/auth"
 )
