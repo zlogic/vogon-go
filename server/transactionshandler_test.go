@@ -156,26 +156,6 @@ func TestGetTransactionsUnauthorized(t *testing.T) {
 	authHandler.AssertExpectations(t)
 }
 
-func TestGetTransactionsUserDoesNotExist(t *testing.T) {
-	dbMock := new(DBMock)
-	authHandler := AuthHandlerMock{}
-
-	services := &Services{db: dbMock, cookieHandler: &authHandler}
-	router, err := CreateRouter(services)
-	assert.NoError(t, err)
-
-	req, _ := http.NewRequest("POST", "/api/transactions/getpage", strings.NewReader("offset=0&limit=0"))
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	res := httptest.NewRecorder()
-
-	router.ServeHTTP(res, req)
-	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
-
-	dbMock.AssertExpectations(t)
-	authHandler.AssertExpectations(t)
-}
-
 func TestGetTransactionsCountAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	authHandler := AuthHandlerMock{}
@@ -256,25 +236,6 @@ func TestGetTransactionsCountUnauthorized(t *testing.T) {
 	authHandler.AssertExpectations(t)
 }
 
-func TestGetTransactionsCountUserDoesNotExist(t *testing.T) {
-	dbMock := new(DBMock)
-	authHandler := AuthHandlerMock{}
-
-	services := &Services{db: dbMock, cookieHandler: &authHandler}
-	router, err := CreateRouter(services)
-	assert.NoError(t, err)
-
-	req, _ := http.NewRequest("POST", "/api/transactions/getcount", strings.NewReader(""))
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	res := httptest.NewRecorder()
-
-	router.ServeHTTP(res, req)
-	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
-
-	dbMock.AssertExpectations(t)
-	authHandler.AssertExpectations(t)
-}
 func TestGetTransactionAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	authHandler := AuthHandlerMock{}
@@ -319,25 +280,6 @@ func TestGetTransactionUnauthorized(t *testing.T) {
 	authHandler.AssertExpectations(t)
 }
 
-func TestGetTransactionUserDoesNotExist(t *testing.T) {
-	dbMock := new(DBMock)
-	authHandler := AuthHandlerMock{}
-
-	services := &Services{db: dbMock, cookieHandler: &authHandler}
-	router, err := CreateRouter(services)
-	assert.NoError(t, err)
-
-	req, _ := http.NewRequest("GET", "/api/transaction/42", nil)
-	res := httptest.NewRecorder()
-
-	router.ServeHTTP(res, req)
-	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
-
-	dbMock.AssertExpectations(t)
-	authHandler.AssertExpectations(t)
-}
-
 func TestDeleteTransactionAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	authHandler := AuthHandlerMock{}
@@ -363,25 +305,6 @@ func TestDeleteTransactionAuthorized(t *testing.T) {
 }
 
 func TestDeleteTransactionUnauthorized(t *testing.T) {
-	dbMock := new(DBMock)
-	authHandler := AuthHandlerMock{}
-
-	services := &Services{db: dbMock, cookieHandler: &authHandler}
-	router, err := CreateRouter(services)
-	assert.NoError(t, err)
-
-	req, _ := http.NewRequest("DELETE", "/api/transaction/42", nil)
-	res := httptest.NewRecorder()
-
-	router.ServeHTTP(res, req)
-	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
-
-	dbMock.AssertExpectations(t)
-	authHandler.AssertExpectations(t)
-}
-
-func TestDeleteTransactionUserDoesNotExist(t *testing.T) {
 	dbMock := new(DBMock)
 	authHandler := AuthHandlerMock{}
 
@@ -451,25 +374,6 @@ func TestPostUpdateTransactionAuthorized(t *testing.T) {
 }
 
 func TestPostTransactionUnauthorized(t *testing.T) {
-	dbMock := new(DBMock)
-	authHandler := AuthHandlerMock{}
-
-	services := &Services{db: dbMock, cookieHandler: &authHandler}
-	router, err := CreateRouter(services)
-	assert.NoError(t, err)
-
-	req, _ := http.NewRequest("POST", "/api/transaction/42", nil)
-	res := httptest.NewRecorder()
-
-	router.ServeHTTP(res, req)
-	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
-
-	dbMock.AssertExpectations(t)
-	authHandler.AssertExpectations(t)
-}
-
-func TestPostTransactionUserDoesNotExist(t *testing.T) {
 	dbMock := new(DBMock)
 	authHandler := AuthHandlerMock{}
 

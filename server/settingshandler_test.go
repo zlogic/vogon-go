@@ -37,26 +37,7 @@ func TestGetSettingsAuthorized(t *testing.T) {
 	authHandler.AssertExpectations(t)
 }
 
-func TestGetSettingsNotAuthorized(t *testing.T) {
-	dbMock := new(DBMock)
-	authHandler := AuthHandlerMock{}
-
-	services := &Services{db: dbMock, cookieHandler: &authHandler}
-	router, err := CreateRouter(services)
-	assert.NoError(t, err)
-
-	req, _ := http.NewRequest("GET", "/api/settings", nil)
-	res := httptest.NewRecorder()
-
-	router.ServeHTTP(res, req)
-	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
-
-	dbMock.AssertExpectations(t)
-	authHandler.AssertExpectations(t)
-}
-
-func TestGetSettingsUserDoesNotExist(t *testing.T) {
+func TestGetSettingsUnauthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	authHandler := AuthHandlerMock{}
 
@@ -282,31 +263,6 @@ func TestSaveSettingsUnauthorized(t *testing.T) {
 	authHandler.AssertExpectations(t)
 }
 
-func TestSaveSettingsUserDoesNotExist(t *testing.T) {
-	dbMock := new(DBMock)
-	authHandler := AuthHandlerMock{}
-
-	services := &Services{db: dbMock, cookieHandler: &authHandler}
-	router, err := CreateRouter(services)
-	assert.NoError(t, err)
-
-	body := new(bytes.Buffer)
-	writer := multipart.NewWriter(body)
-	writer.WriteField("form", "Username=user01")
-	writer.Close()
-
-	req, _ := http.NewRequest("POST", "/api/settings", body)
-	req.Header.Add("Content-Type", writer.FormDataContentType())
-	res := httptest.NewRecorder()
-
-	router.ServeHTTP(res, req)
-	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
-
-	dbMock.AssertExpectations(t)
-	authHandler.AssertExpectations(t)
-}
-
 func TestBackupAuthorized(t *testing.T) {
 	dbMock := new(DBMock)
 	authHandler := AuthHandlerMock{}
@@ -332,25 +288,6 @@ func TestBackupAuthorized(t *testing.T) {
 }
 
 func TestBackupUnauthorized(t *testing.T) {
-	dbMock := new(DBMock)
-	authHandler := AuthHandlerMock{}
-
-	services := &Services{db: dbMock, cookieHandler: &authHandler}
-	router, err := CreateRouter(services)
-	assert.NoError(t, err)
-
-	req, _ := http.NewRequest("POST", "/api/backup", nil)
-	res := httptest.NewRecorder()
-
-	router.ServeHTTP(res, req)
-	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
-
-	dbMock.AssertExpectations(t)
-	authHandler.AssertExpectations(t)
-}
-
-func TestBackupUserDoesNotExist(t *testing.T) {
 	dbMock := new(DBMock)
 	authHandler := AuthHandlerMock{}
 

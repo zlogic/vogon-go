@@ -457,3 +457,23 @@ func TestReportFilterExcludeExpenseIncome(t *testing.T) {
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
 }
+
+func TestReportUnauthorized(t *testing.T) {
+	dbMock := new(DBMock)
+	authHandler := AuthHandlerMock{}
+
+	services := &Services{db: dbMock, cookieHandler: &authHandler}
+	router, err := CreateRouter(services)
+	assert.NoError(t, err)
+
+	req, _ := http.NewRequest("POST", "/api/report", strings.NewReader(""))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	res := httptest.NewRecorder()
+
+	router.ServeHTTP(res, req)
+	assert.Equal(t, http.StatusUnauthorized, res.Code)
+	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
+
+	dbMock.AssertExpectations(t)
+	authHandler.AssertExpectations(t)
+}
