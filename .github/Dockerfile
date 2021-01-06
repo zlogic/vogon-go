@@ -1,8 +1,5 @@
 FROM alpine:latest as builder
 
-# Create non-root user
-RUN adduser -D -H -u 10001 vogon
-
 # Copy build artifact
 COPY . /usr/src/vogon
 
@@ -15,10 +12,9 @@ RUN mkdir -p /usr/local/vogon && \
 FROM scratch
 
 COPY --from=builder /usr/local/vogon /usr/local/vogon
-COPY --from=builder /etc/passwd /etc/passwd
 
 WORKDIR /usr/local/vogon
 
 EXPOSE 8080
-USER vogon
+USER 1001
 CMD [ "./vogon-go" ]
