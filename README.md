@@ -33,18 +33,23 @@ To disable request logging, set the `LOG_REQUESTS` environment variable to `fals
 
 ## How to run the Docker image
 
-To build the Docker image for Vogon container, run the following Docker command:
-
-`docker build -t vogon:latest .`
-
-To deploy create a Vogon container, run the following Docker command (change `[port]` to the port where Vogon will be accessible):
-
+To create a Vogon container, run the following Docker command (replace UID and port if necessary):
 ```
+# UID for the process
+VOGON_UID=10001
+# Listen port
+LISTEN_PORT=8080
+# Create volume and fix permissions
+docker volume create vogon-go
+docker run --rm -v vogon-go:/data/vogon alpine chown $VOGON_UID:0 /data/vogon
+# Create the container
 docker create \
-  --env DATABASE_DIR=/data/vogon \
-  --env ALLOW_REGISTRATION=true \
-  --publish [port]:8080 \
-  vogon:latest
+  --env DATABASE_DIR=/data/vogon \
+  --env ALLOW_REGISTRATION=true \
+  --publish $LISTEN_PORT:8080 \
+  --user $VOGON_UID \
+  -v vogon-go:/data/vogon:Z \
+  ghcr.io/zlogic/vogon-go:latest
 ```
 
 This will create a container with an embedded Badger DB and allow registration.
