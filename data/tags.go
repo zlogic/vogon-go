@@ -3,7 +3,7 @@ package data
 import (
 	"fmt"
 
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v3"
 )
 
 // GetTags returns an unsorted (but deduplicated) list of tags for user.

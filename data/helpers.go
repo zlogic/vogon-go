@@ -3,7 +3,7 @@ package data
 import (
 	"fmt"
 
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v3"
 )
 
 // getPrevviousValue returns the existing value for key and parsed the value with fn.
