@@ -297,13 +297,15 @@ func (s *DBService) getTransactions(user *User, options GetTransactionOptions) f
 	return func(txn *badger.Txn) ([]*Transaction, error) {
 		transactions := make([]*Transaction, 0)
 
-		opts := iteratorIndexOptions()
+		opts := iteratorDoNotPrefetchOptions()
 		opts.Prefix = []byte(user.createTransactionIndexKeyPrefix())
 		opts.Reverse = true
 		it := txn.NewIterator(opts)
 		defer it.Close()
-		//TODO: remove this workaround for Badger and just use it.Rewind()
-		reversePrefix := append([]byte(user.createTransactionIndexKeyPrefix()), 0xff)
+
+		// See https://github.com/dgraph-io/badger/blob/master/docs/content/faq/index.md#reverse-iteration-doesnt-give-me-the-right-results
+		// for explanation.
+		seekKey := append(opts.Prefix, 0xff)
 
 		var currentItem uint64
 		skipItem := func() bool {
@@ -311,7 +313,7 @@ func (s *DBService) getTransactions(user *User, options GetTransactionOptions) f
 			return currentItem < (options.Offset + 1)
 		}
 		emptyFilter := options.TransactionFilterOptions.IsEmpty()
-		for it.Seek(reversePrefix); it.Valid(); it.Next() {
+		for it.Seek(seekKey); it.Valid(); it.Next() {
 			if emptyFilter && skipItem() {
 				continue
 			}

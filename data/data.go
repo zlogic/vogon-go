@@ -77,11 +77,3 @@ func iteratorDoNotPrefetchOptions() badger.IteratorOptions {
 	options.PrefetchValues = false
 	return options
 }
-
-// iteratorIndexOptions returns optimal Badger iterator options for use when iterating through an index.
-func iteratorIndexOptions() badger.IteratorOptions {
-	options := badger.DefaultIteratorOptions
-	options.PrefetchValues = false
-	options.Reverse = true
-	return options
-}
