@@ -1,10 +1,12 @@
 package server
 
 import (
+	"io/fs"
 	"net/http"
 
 	"github.com/zlogic/vogon-go/data"
 	"github.com/zlogic/vogon-go/server/auth"
+	"github.com/zlogic/vogon-go/server/templates"
 )
 
 // DB provides functions to read and write items in the database.
@@ -43,6 +45,7 @@ type AuthHandler interface {
 type Services struct {
 	db            DB
 	cookieHandler AuthHandler
+	templates     fs.FS
 }
 
 // CreateServices creates a Services instance with db and default implementations of other services.
@@ -54,5 +57,6 @@ func CreateServices(db *data.DBService) (*Services, error) {
 	return &Services{
 		db:            db,
 		cookieHandler: cookieHandler,
+		templates:     templates.Templates,
 	}, nil
 }

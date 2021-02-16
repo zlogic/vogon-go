@@ -70,8 +70,8 @@ func CreateRouter(s *Services) (*chi.Mux, error) {
 		authorized.Get("/settings", HTMLUserPageHandler(s, "settings"))
 	})
 	r.HandleFunc("/favicon.ico", FaviconHandler)
-	fs := http.FileServer(staticResourceFileSystem{http.Dir("static")})
-	r.Handle("/static/*", http.StripPrefix("/static/", fs))
+	fs := http.FileServer(staticResourceFileSystem{http.FS(staticContent)})
+	r.Handle("/static/*", fs)
 
 	r.Route("/api", func(api chi.Router) {
 		api.Use(NoCacheHeaderMiddlewareFunc)

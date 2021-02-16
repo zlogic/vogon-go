@@ -1,12 +1,13 @@
 package server
 
 import (
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -18,8 +19,12 @@ const layoutTemplate = `{{ define "layout" }}User {{ .User }}
 Name {{ .Name }}
 Content {{ template "content" . }}{{ end }}`
 
-func prepareLayoutTemplateTestFile(tempDir string) error {
-	return prepareTestFile(path.Join(tempDir, "templates"), "layout.html", []byte(layoutTemplate))
+func prepareTemplate(pageName, tmpl string) fs.FS {
+	files := fstest.MapFS{
+		"layout.html":                 &fstest.MapFile{Data: []byte(layoutTemplate)},
+		"pages/" + pageName + ".html": &fstest.MapFile{Data: []byte(tmpl)},
+	}
+	return files
 }
 
 func TestRootHandlerNotLoggedIn(t *testing.T) {
@@ -83,15 +88,7 @@ func TestLogoutHandler(t *testing.T) {
 }
 
 func TestFaviconHandler(t *testing.T) {
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	faviconBytes := []byte("i am a favicon")
-	err = prepareTestFile(path.Join(tempDir, "static"), "favicon.ico", faviconBytes)
+	faviconBytes, err := staticContent.ReadFile(faviconFilename)
 	assert.NoError(t, err)
 
 	authHandler := AuthHandlerMock{}
@@ -110,22 +107,11 @@ func TestFaviconHandler(t *testing.T) {
 }
 
 func TestHtmlLoginHandlerNotLoggedIn(t *testing.T) {
-	loginTemplate := []byte(`{{ define "content" }}loginpage{{ end }}`)
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareLayoutTemplateTestFile(tempDir)
-	assert.NoError(t, err)
-	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "login.html", []byte(loginTemplate))
-	assert.NoError(t, err)
+	templates := prepareTemplate("login", `{{ define "content" }}loginpage{{ end }}`)
 
 	authHandler := AuthHandlerMock{}
 
-	services := &Services{cookieHandler: &authHandler}
+	services := &Services{cookieHandler: &authHandler, templates: templates}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -140,22 +126,11 @@ func TestHtmlLoginHandlerNotLoggedIn(t *testing.T) {
 }
 
 func TestHtmlLoginHandlerAlreadyLoggedIn(t *testing.T) {
-	loginTemplate := []byte(`{{ define "content" }}loginpage{{ end }}`)
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareLayoutTemplateTestFile(tempDir)
-	assert.NoError(t, err)
-	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "login.html", []byte(loginTemplate))
-	assert.NoError(t, err)
+	templates := prepareTemplate("login", `{{ define "content" }}loginpage{{ end }}`)
 
 	authHandler := AuthHandlerMock{}
 
-	services := &Services{cookieHandler: &authHandler}
+	services := &Services{cookieHandler: &authHandler, templates: templates}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -172,22 +147,11 @@ func TestHtmlLoginHandlerAlreadyLoggedIn(t *testing.T) {
 }
 
 func TestHtmlRegisterHandlerNotLoggedIn(t *testing.T) {
-	registerTemplate := []byte(`{{ define "content" }}registerpage{{ end }}`)
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareLayoutTemplateTestFile(tempDir)
-	assert.NoError(t, err)
-	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "register.html", []byte(registerTemplate))
-	assert.NoError(t, err)
+	templates := prepareTemplate("register", `{{ define "content" }}registerpage{{ end }}`)
 
 	authHandler := AuthHandlerMock{}
 
-	services := &Services{cookieHandler: &authHandler}
+	services := &Services{cookieHandler: &authHandler, templates: templates}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -244,22 +208,11 @@ func TestHtmlRegisterHandlerRegistrationNotAllowed(t *testing.T) {
 }
 
 func TestHtmlTransactionsHandlerLoggedIn(t *testing.T) {
-	transactionsTemplate := []byte(`{{ define "content" }}transactionspage{{ end }}`)
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareLayoutTemplateTestFile(tempDir)
-	assert.NoError(t, err)
-	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "transactions.html", []byte(transactionsTemplate))
-	assert.NoError(t, err)
+	templates := prepareTemplate("transactions", `{{ define "content" }}transactionspage{{ end }}`)
 
 	authHandler := AuthHandlerMock{}
 
-	services := &Services{cookieHandler: &authHandler}
+	services := &Services{cookieHandler: &authHandler, templates: templates}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -294,22 +247,11 @@ func TestHtmlTransactionsHandlerNotLoggedIn(t *testing.T) {
 }
 
 func TestHtmlTransactionEditorHandlerLoggedInEmptyValues(t *testing.T) {
-	transactionEditorTemplate := []byte(`{{ define "content" }}transactioneditor{{ if .Form }}values{{ end }}{{ end }}`)
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareLayoutTemplateTestFile(tempDir)
-	assert.NoError(t, err)
-	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "transactioneditor.html", []byte(transactionEditorTemplate))
-	assert.NoError(t, err)
+	templates := prepareTemplate("transactioneditor", `{{ define "content" }}transactioneditor{{ if .Form }}values{{ end }}{{ end }}`)
 
 	authHandler := AuthHandlerMock{}
 
-	services := &Services{cookieHandler: &authHandler}
+	services := &Services{cookieHandler: &authHandler, templates: templates}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -327,22 +269,11 @@ func TestHtmlTransactionEditorHandlerLoggedInEmptyValues(t *testing.T) {
 }
 
 func TestHtmlTransactionEditorHandlerLoggedInWithValues(t *testing.T) {
-	transactionEditorTemplate := []byte(`{{ define "content" }}transactioneditor{{ if .Form }} {{ index .Form "id" 0 }} {{ index .Form "action" 0 }}{{ end }}{{ end }}`)
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareLayoutTemplateTestFile(tempDir)
-	assert.NoError(t, err)
-	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "transactioneditor.html", []byte(transactionEditorTemplate))
-	assert.NoError(t, err)
+	templates := prepareTemplate("transactioneditor", `{{ define "content" }}transactioneditor{{ if .Form }} {{ index .Form "id" 0 }} {{ index .Form "action" 0 }}{{ end }}{{ end }}`)
 
 	authHandler := AuthHandlerMock{}
 
-	services := &Services{cookieHandler: &authHandler}
+	services := &Services{cookieHandler: &authHandler, templates: templates}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -377,22 +308,11 @@ func TestHtmlTransactionEditorHandlerNotLoggedIn(t *testing.T) {
 }
 
 func TestHtmlReportHandlerLoggedIn(t *testing.T) {
-	reportTemplate := []byte(`{{ define "content" }}report {{ index .Form "filterDescription" 0 }} {{ index .Form "filterAccounts" 0 }}{{ end }}`)
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareLayoutTemplateTestFile(tempDir)
-	assert.NoError(t, err)
-	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "report.html", []byte(reportTemplate))
-	assert.NoError(t, err)
+	templates := prepareTemplate("report", `{{ define "content" }}report {{ index .Form "filterDescription" 0 }} {{ index .Form "filterAccounts" 0 }}{{ end }}`)
 
 	authHandler := AuthHandlerMock{}
 
-	services := &Services{cookieHandler: &authHandler}
+	services := &Services{cookieHandler: &authHandler, templates: templates}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -428,22 +348,11 @@ func TestHtmlReportHandlerNotLoggedIn(t *testing.T) {
 }
 
 func TestHtmlAccountsHandlerLoggedIn(t *testing.T) {
-	transactionsTemplate := []byte(`{{ define "content" }}accountspage{{ end }}`)
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareLayoutTemplateTestFile(tempDir)
-	assert.NoError(t, err)
-	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "accounts.html", []byte(transactionsTemplate))
-	assert.NoError(t, err)
+	templates := prepareTemplate("accounts", `{{ define "content" }}accountspage{{ end }}`)
 
 	authHandler := AuthHandlerMock{}
 
-	services := &Services{cookieHandler: &authHandler}
+	services := &Services{cookieHandler: &authHandler, templates: templates}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
@@ -478,22 +387,11 @@ func TestHtmlAccountsHandlerNotLoggedIn(t *testing.T) {
 }
 
 func TestHtmlSettingsHandlerLoggedIn(t *testing.T) {
-	settingsTemplate := []byte(`{{ define "content" }}settingspage{{ end }}`)
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareLayoutTemplateTestFile(tempDir)
-	assert.NoError(t, err)
-	err = prepareTestFile(path.Join(tempDir, "templates", "pages"), "settings.html", []byte(settingsTemplate))
-	assert.NoError(t, err)
+	templates := prepareTemplate("settings", `{{ define "content" }}settingspage{{ end }}`)
 
 	authHandler := AuthHandlerMock{}
 
-	services := &Services{cookieHandler: &authHandler}
+	services := &Services{cookieHandler: &authHandler, templates: templates}
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 

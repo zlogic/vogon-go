@@ -3,30 +3,13 @@ package server
 import (
 	"net/http"
 	"net/http/httptest"
-	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-var staticFileBytes = []byte("Test data")
-
-const staticFileName = "test.txt"
-
-func prepareStaticTestFile(tempDir string) error {
-	return prepareTestFile(path.Join(tempDir, "static"), staticFileName, staticFileBytes)
-}
-
 func TestGetStaticResource(t *testing.T) {
-	// Prepare resources dir
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareStaticTestFile(tempDir)
+	staticFileBytes, err := staticContent.ReadFile("static/style.css")
 	assert.NoError(t, err)
 
 	dbMock := new(DBMock)
@@ -35,7 +18,7 @@ func TestGetStaticResource(t *testing.T) {
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	req, _ := http.NewRequest("GET", "/static/test.txt", nil)
+	req, _ := http.NewRequest("GET", "/static/style.css", nil)
 	res := newRecorder()
 	router.ServeHTTP(res, req)
 
@@ -47,16 +30,6 @@ func TestGetStaticResource(t *testing.T) {
 }
 
 func TestListingNotAllowed(t *testing.T) {
-	tempDir, recover, err := prepareTempDir()
-	defer func() {
-		if recover != nil {
-			recover()
-		}
-	}()
-	assert.NoError(t, err)
-	err = prepareStaticTestFile(tempDir)
-	assert.NoError(t, err)
-
 	dbMock := new(DBMock)
 	authHandler := AuthHandlerMock{}
 	services := &Services{db: dbMock, cookieHandler: &authHandler}

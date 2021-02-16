@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -76,7 +76,7 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 				}
 				defer file.Close()
 
-				data, err := ioutil.ReadAll(file)
+				data, err := io.ReadAll(file)
 				if err != nil {
 					handleError(w, r, err)
 					return

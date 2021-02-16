@@ -6,7 +6,7 @@ COPY . /usr/src/vogon
 # Create bin directory
 RUN mkdir -p /usr/local/vogon && \
   cd /usr/src/vogon && \
-  cp -r vogon-go static templates /usr/local/vogon
+  cp -r vogon-go /usr/local/vogon
 
 # Copy into a fresh image
 FROM scratch

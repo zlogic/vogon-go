@@ -1,6 +1,6 @@
 module github.com/zlogic/vogon-go
 
-go 1.15
+go 1.16
 
 require (
 	github.com/dgraph-io/badger/v3 v3.2011.1

@@ -1,9 +1,16 @@
 package server
 
 import (
+	"embed"
 	"net/http"
 	"os"
 )
+
+// staticContent is the static web content.
+//go:embed static
+var staticContent embed.FS
+
+const faviconFilename = "static/favicon.ico"
 
 type staticResourceFileSystem struct {
 	base http.FileSystem

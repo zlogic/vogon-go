@@ -1,4 +1,4 @@
-FROM golang:1.15-alpine as builder
+FROM golang:1.16-alpine as builder
 
 # Create app directory
 RUN mkdir -p /usr/src/vogon
@@ -16,7 +16,7 @@ RUN go test ./...
 # Build app
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" && \
   mkdir /usr/src/vogon/dist && \
-  cp -r vogon-go static templates /usr/src/vogon/dist
+  cp vogon-go /usr/src/vogon/dist
 
 # Copy into a fresh image
 FROM scratch
