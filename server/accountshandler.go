@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/zlogic/vogon-go/data"
