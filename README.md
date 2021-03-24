@@ -1,4 +1,7 @@
 # Vogon
+
+[![Build status](https://github.com/zlogic/vogon-go/actions/workflows/build-go.yml/badge.svg?branch=master)](https://github.com/zlogic/vogon-go/actions)
+
 Vogon is a simple web-based personal finance tracker written in Go.
 
 Development is in progress, and the project is not production-ready or useful in any way.
