@@ -32,18 +32,7 @@ func parseFilterForm(r *http.Request) (data.TransactionFilterOptions, error) {
 		return strconv.ParseBool(value)
 	}
 
-	filterAccountsStr := parseFormValueSet("filterAccounts")
-	var filterAccountIDs []uint64
-	if len(filterAccountsStr) > 0 {
-		filterAccountIDs = make([]uint64, len(filterAccountsStr))
-		for i, idStr := range filterAccountsStr {
-			accountID, err := strconv.ParseUint(idStr, 10, 64)
-			if err != nil {
-				return data.TransactionFilterOptions{}, err
-			}
-			filterAccountIDs[i] = accountID
-		}
-	}
+	filterAccountUUIDs := parseFormValueSet("filterAccounts")
 
 	includeExpenseIncome, err := parseFormValueBool("filterIncludeExpenseIncome", true)
 	if err != nil {
@@ -59,7 +48,7 @@ func parseFilterForm(r *http.Request) (data.TransactionFilterOptions, error) {
 		FilterFromDate:       r.Form.Get("filterFrom"),
 		FilterToDate:         r.Form.Get("filterTo"),
 		FilterTags:           parseFormValueSet("filterTags"),
-		FilterAccounts:       filterAccountIDs,
+		FilterAccounts:       filterAccountUUIDs,
 		ExcludeExpenseIncome: !includeExpenseIncome,
 		ExcludeTransfer:      !includeTransfer,
 	}, nil
@@ -162,7 +151,7 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		requestID := chi.URLParam(r, "id")
+		requestUUID := chi.URLParam(r, "uuid")
 
 		if r.Method == http.MethodPost {
 			transaction := &data.Transaction{}
@@ -173,9 +162,8 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 				return
 			}
 
-			if requestID == "new" {
+			if requestUUID == "new" {
 				err = s.db.CreateTransaction(user, transaction)
-				requestID = strconv.FormatUint(transaction.ID, 10)
 			} else {
 				err = s.db.UpdateTransaction(user, transaction)
 			}
@@ -190,14 +178,8 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		id, err := strconv.ParseUint(requestID, 10, 64)
-		if err != nil {
-			handleError(w, r, err)
-			return
-		}
-
 		if r.Method == http.MethodDelete {
-			if err := s.db.DeleteTransaction(user, id); err != nil {
+			if err := s.db.DeleteTransaction(user, requestUUID); err != nil {
 				handleError(w, r, err)
 				return
 			}
@@ -208,9 +190,13 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 			return
 		}
 
-		transaction, err := s.db.GetTransaction(user, id)
+		transaction, err := s.db.GetTransaction(user, requestUUID)
 		if err != nil {
 			handleError(w, r, err)
+			return
+		}
+		if transaction == nil {
+			handleNotFound(w, r, requestUUID)
 			return
 		}
 

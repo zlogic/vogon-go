@@ -18,6 +18,11 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	http.Error(w, "Internal server error", http.StatusInternalServerError)
 }
 
+func handleNotFound(w http.ResponseWriter, r *http.Request, key string) {
+	log.Errorf("Item %v not found", key)
+	http.Error(w, "Not found", http.StatusNotFound)
+}
+
 // PageAuthHandler checks to see if an HTML page is accessed by an authorized user,
 // and redirects to the login page if the request is done by an unauthorized user.
 func PageAuthHandler(next http.Handler) http.Handler {

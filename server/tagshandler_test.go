@@ -26,7 +26,7 @@ func TestGetTagsAuthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, `["t1","t2"]`+"\n", string(res.Body.Bytes()))
+	assert.Equal(t, `["t1","t2"]`+"\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -45,7 +45,7 @@ func TestGetTagsUnauthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
+	assert.Equal(t, "Bad credentials\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)

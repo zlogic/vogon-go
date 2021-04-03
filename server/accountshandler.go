@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	log "github.com/sirupsen/logrus"
@@ -43,7 +42,7 @@ func AccountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		requestID := chi.URLParam(r, "id")
+		requestUUID := chi.URLParam(r, "uuid")
 
 		if r.Method == http.MethodPost {
 			account := &data.Account{}
@@ -54,9 +53,8 @@ func AccountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			if requestID == "new" {
+			if requestUUID == "new" {
 				err = s.db.CreateAccount(user, account)
-				requestID = strconv.FormatUint(account.ID, 10)
 			} else {
 				err = s.db.UpdateAccount(user, account)
 			}
@@ -71,14 +69,8 @@ func AccountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		id, err := strconv.ParseUint(requestID, 10, 64)
-		if err != nil {
-			handleError(w, r, err)
-			return
-		}
-
 		if r.Method == http.MethodDelete {
-			if err := s.db.DeleteAccount(user, id); err != nil {
+			if err := s.db.DeleteAccount(user, requestUUID); err != nil {
 				handleError(w, r, err)
 				return
 			}
@@ -89,9 +81,13 @@ func AccountHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		account, err := s.db.GetAccount(user, id)
+		account, err := s.db.GetAccount(user, requestUUID)
 		if err != nil {
 			handleError(w, r, err)
+			return
+		}
+		if account == nil {
+			handleNotFound(w, r, requestUUID)
 			return
 		}
 

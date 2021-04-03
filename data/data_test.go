@@ -1,23 +1,24 @@
 package data
 
 import (
+	"bytes"
 	"fmt"
+	"testing"
 
-	"github.com/dgraph-io/badger/v3"
-	log "github.com/sirupsen/logrus"
+	"github.com/akrylysov/pogreb"
+	"github.com/akrylysov/pogreb/fs"
+	"github.com/stretchr/testify/assert"
 )
 
-var testUser = User{ID: 11}
+var testUser = User{UUID: "uuid11"}
 
 var testAccount1 = Account{
-	ID:             0,
 	Name:           "Test 1",
 	Currency:       "USD",
 	IncludeInTotal: false,
 	ShowInList:     true,
 }
 var testAccount2 = Account{
-	ID:             1,
 	Name:           "Test 2",
 	Currency:       "EUR",
 	IncludeInTotal: false,
@@ -27,10 +28,23 @@ var testAccount2 = Account{
 var dbService *DBService
 
 func resetDb() (err error) {
-	var opts = badger.DefaultOptions("")
-	opts.Logger = log.New()
-	opts.ValueLogFileSize = 1 << 20
-	opts.InMemory = true
+	if dbService != nil {
+		it := dbService.db.Items()
+		for {
+			k, _, err := it.Next()
+			if err == pogreb.ErrIterationDone {
+				break
+			} else if err != nil {
+				return err
+			}
+			err = dbService.db.Delete(k)
+			if err != nil {
+				return err
+			}
+		}
+		return
+	}
+	opts := pogreb.Options{FileSystem: fs.Mem}
 
 	dbService, err = Open(opts)
 	return
@@ -38,34 +52,31 @@ func resetDb() (err error) {
 
 func getAllUsers(s *DBService) ([]*User, error) {
 	users := make([]*User, 0)
-	err := s.db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
-		opts.Prefix = []byte(userKeyPrefix)
-		it := txn.NewIterator(opts)
-		defer it.Close()
-		for it.Rewind(); it.Valid(); it.Next() {
-			item := it.Item()
-
-			k := item.Key()
-
-			username, err := decodeUserKey(k)
-			if err != nil {
-				return fmt.Errorf("failed to decode username from key %v: %w", string(k), err)
-			}
-
-			user := &User{}
-
-			if err := item.Value(user.decode); err != nil {
-				return fmt.Errorf("failed to read value of user %v: %w", username, err)
-			}
-
-			user.username = *username
-			users = append(users, user)
+	it := s.db.Items()
+	for {
+		k, value, err := it.Next()
+		if err == pogreb.ErrIterationDone {
+			break
+		} else if err != nil {
+			return nil, err
 		}
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("cannot read users: %w", err)
+		if !bytes.HasPrefix(k, []byte(userKeyPrefix)) {
+			continue
+		}
+
+		username, err := decodeUserKey(k)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode username from key %v: %w", string(k), err)
+		}
+
+		user := &User{}
+
+		if err := user.decode(value); err != nil {
+			return nil, fmt.Errorf("failed to read value of user %v: %w", username, err)
+		}
+
+		user.username = *username
+		users = append(users, user)
 	}
 	return users, nil
 }
@@ -76,6 +87,21 @@ func createTestAccounts(s *DBService) error {
 	if err := s.CreateAccount(&saveUser, &saveAccount); err != nil {
 		return err
 	}
+	testAccount1.UUID = saveAccount.UUID
 	saveAccount = testAccount2
-	return s.CreateAccount(&saveUser, &saveAccount)
+	if err := s.CreateAccount(&saveUser, &saveAccount); err != nil {
+		return err
+	}
+	testAccount2.UUID = saveAccount.UUID
+	return nil
+}
+
+func assertIndexEquals(t *testing.T, prefix string, expectKeys ...string) {
+	index, err := dbService.getReferencedKeys([]byte(testUser.createAccountKeyPrefix()))
+	assert.NoError(t, err)
+	indexValues := make([]string, len(index))
+	for i := range index {
+		indexValues[i] = string(index[i])
+	}
+	assert.ElementsMatch(t, expectKeys, indexValues)
 }

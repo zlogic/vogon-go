@@ -21,12 +21,12 @@ type DB interface {
 	CountTransactions(*data.User, data.TransactionFilterOptions) (uint64, error)
 	CreateAccount(*data.User, *data.Account) error
 	UpdateAccount(*data.User, *data.Account) error
-	GetAccount(user *data.User, accountID uint64) (*data.Account, error)
-	DeleteAccount(user *data.User, transactionID uint64) error
+	GetAccount(user *data.User, accountUUID string) (*data.Account, error)
+	DeleteAccount(user *data.User, accountUUID string) error
 	CreateTransaction(*data.User, *data.Transaction) error
 	UpdateTransaction(*data.User, *data.Transaction) error
-	GetTransaction(user *data.User, transactionID uint64) (*data.Transaction, error)
-	DeleteTransaction(user *data.User, transactionID uint64) error
+	GetTransaction(user *data.User, transactionUUID string) (*data.Transaction, error)
+	DeleteTransaction(user *data.User, transactionUUID string) error
 
 	GetTags(user *data.User) ([]string, error)
 

@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         accountRow.append(accountCell);
       } else {
         var accountNameLink = document.createElement("a");
-        accountNameLink.setAttribute("href", "accounteditor?action=edit&id=" + account.ID);
+        accountNameLink.setAttribute("href", "accounteditor?action=edit&uuid=" + account.UUID);
         accountNameLink.textContent = account.Name;
         accountCell.append(accountNameLink);
         accountRow.append(accountCell);

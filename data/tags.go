@@ -2,17 +2,15 @@ package data
 
 import (
 	"fmt"
-
-	"github.com/dgraph-io/badger/v3"
 )
 
 // GetTags returns an unsorted (but deduplicated) list of tags for user.
 func (s *DBService) GetTags(user *User) ([]string, error) {
 	var transactions []*Transaction
 
-	err := s.db.View(func(txn *badger.Txn) error {
+	err := s.view(func() error {
 		var err error
-		transactions, err = s.getTransactions(user, GetAllTransactionsOptions)(txn)
+		transactions, err = s.getTransactions(user, GetAllTransactionsOptions)
 		return err
 	})
 	if err != nil {

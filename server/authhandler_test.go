@@ -21,7 +21,7 @@ func TestLoginHandlerSuccessful(t *testing.T) {
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	user := &data.User{ID: 1}
+	user := &data.User{UUID: "uuid1"}
 	user.SetPassword("pass")
 	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
@@ -38,7 +38,7 @@ func TestLoginHandlerSuccessful(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "OK", string(res.Body.Bytes()))
+	assert.Equal(t, "OK", res.Body.String())
 	cookies := res.Result().Cookies()
 	assert.Equal(t, 1, len(cookies))
 	if len(cookies) > 0 {
@@ -57,7 +57,7 @@ func TestLoginHandlerIncorrectPassword(t *testing.T) {
 	router, err := CreateRouter(services)
 	assert.NoError(t, err)
 
-	user := &data.User{ID: 1}
+	user := &data.User{UUID: "uuid1"}
 	user.SetPassword("pass")
 	dbMock.On("GetUser", "user01").Return(user, nil).Once()
 
@@ -67,7 +67,7 @@ func TestLoginHandlerIncorrectPassword(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
+	assert.Equal(t, "Bad credentials\n", res.Body.String())
 	assert.Empty(t, res.Result().Cookies())
 
 	dbMock.AssertExpectations(t)
@@ -90,7 +90,7 @@ func TestLoginHandlerUnknownUsername(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
+	assert.Equal(t, "Bad credentials\n", res.Body.String())
 	assert.Empty(t, res.Result().Cookies())
 
 	dbMock.AssertExpectations(t)
@@ -128,7 +128,7 @@ func TestRegisterHandlerSuccessful(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "OK", string(res.Body.Bytes()))
+	assert.Equal(t, "OK", res.Body.String())
 	cookies := res.Result().Cookies()
 	assert.Equal(t, 1, len(cookies))
 	if len(cookies) > 0 {
@@ -155,7 +155,7 @@ func TestRegisterHandlerUsernameAlreadyInUse(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusInternalServerError, res.Code)
-	assert.Equal(t, "Username is already in use\n", string(res.Body.Bytes()))
+	assert.Equal(t, "Username is already in use\n", res.Body.String())
 	assert.Empty(t, res.Result().Cookies())
 
 	dbMock.AssertExpectations(t)
@@ -180,7 +180,7 @@ func TestRegisterRegistrationNotAllowed(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusNotFound, res.Code)
-	assert.Equal(t, "404 page not found\n", string(res.Body.Bytes()))
+	assert.Equal(t, "404 page not found\n", res.Body.String())
 	assert.Empty(t, res.Result().Cookies())
 
 	dbMock.AssertExpectations(t)

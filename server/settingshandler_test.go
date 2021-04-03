@@ -31,7 +31,7 @@ func TestGetSettingsAuthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, `{"Username":"user01"}`+"\n", string(res.Body.Bytes()))
+	assert.Equal(t, `{"Username":"user01"}`+"\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -50,7 +50,7 @@ func TestGetSettingsUnauthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
+	assert.Equal(t, "Bad credentials\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -84,7 +84,7 @@ func TestSaveSettingsNoChangesAuthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, `{"Username":"user01"}`+"\n", string(res.Body.Bytes()))
+	assert.Equal(t, `{"Username":"user01"}`+"\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -122,7 +122,7 @@ func TestSaveSettingsChangePasswordAuthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, `{"Username":"user01"}`+"\n", string(res.Body.Bytes()))
+	assert.Equal(t, `{"Username":"user01"}`+"\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -161,7 +161,7 @@ func TestSaveSettingsChangeUsernameAuthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, `{"Username":"user02"}`+"\n", string(res.Body.Bytes()))
+	assert.Equal(t, `{"Username":"user02"}`+"\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -193,7 +193,7 @@ func TestSaveSettingsChangeUsernameFailedAuthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusInternalServerError, res.Code)
-	assert.Equal(t, "Internal server error\n", string(res.Body.Bytes()))
+	assert.Equal(t, "Internal server error\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -219,6 +219,7 @@ func TestSaveSettingsRestoreBackupAuthorized(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = fileWriter.Write([]byte("json backup"))
 	writer.Close()
+	assert.NoError(t, err)
 
 	req, _ := http.NewRequest("POST", "/api/settings", body)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
@@ -232,7 +233,7 @@ func TestSaveSettingsRestoreBackupAuthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, `{"Username":"user01"}`+"\n", string(res.Body.Bytes()))
+	assert.Equal(t, `{"Username":"user01"}`+"\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -257,7 +258,7 @@ func TestSaveSettingsUnauthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
+	assert.Equal(t, "Bad credentials\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -281,7 +282,7 @@ func TestBackupAuthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "json backup", string(res.Body.Bytes()))
+	assert.Equal(t, "json backup", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)
@@ -300,7 +301,7 @@ func TestBackupUnauthorized(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusUnauthorized, res.Code)
-	assert.Equal(t, "Bad credentials\n", string(res.Body.Bytes()))
+	assert.Equal(t, "Bad credentials\n", res.Body.String())
 
 	dbMock.AssertExpectations(t)
 	authHandler.AssertExpectations(t)

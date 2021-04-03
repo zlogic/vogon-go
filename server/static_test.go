@@ -42,7 +42,7 @@ func TestListingNotAllowed(t *testing.T) {
 		router.ServeHTTP(res, req)
 
 		assert.Equal(t, http.StatusNotFound, res.Code)
-		assert.Equal(t, "404 page not found\n", string(res.Body.Bytes()))
+		assert.Equal(t, "404 page not found\n", res.Body.String())
 	}
 
 	dbMock.AssertExpectations(t)

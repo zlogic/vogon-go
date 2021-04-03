@@ -1,6 +1,8 @@
 package data
 
 import (
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +11,7 @@ import (
 const testRestoreData = `{
   "Accounts": [
     {
-      "ID": 0,
+      "UUID": "uuid1",
       "Name": "Orange Bank",
       "Balance": 99000,
       "Currency": "PLN",
@@ -17,7 +19,7 @@ const testRestoreData = `{
       "ShowInList": true
     },
     {
-      "ID": 1,
+      "UUID": "uuid2",
       "Name": "Green Bank",
       "Balance": 90000,
       "Currency": "ALL",
@@ -25,7 +27,7 @@ const testRestoreData = `{
       "ShowInList": false
     },
     {
-      "ID": 2,
+      "UUID": "uuid3",
       "Name": "Purple Bank",
       "Balance": 80000,
       "Currency": "ZWL",
@@ -33,7 +35,7 @@ const testRestoreData = `{
       "ShowInList": false
     },
     {
-      "ID": 3,
+      "UUID": "uuid4",
       "Name": "Magical Credit Card",
       "Balance": -8000,
       "Currency": "PLN",
@@ -43,22 +45,7 @@ const testRestoreData = `{
   ],
   "Transactions": [
     {
-      "ID": 0,
-      "Description": "Widgets",
-      "Type": 0,
-      "Tags": [
-        "Widgets"
-      ],
-      "Date": "2015-11-02",
-      "Components": [
-        {
-          "Amount": -10000,
-          "AccountID": 1
-        }
-      ]
-    },
-    {
-      "ID": 1,
+      "UUID": "uuid2",
       "Description": "Salary",
       "Type": 0,
       "Tags": [
@@ -68,20 +55,35 @@ const testRestoreData = `{
       "Components": [
         {
           "Amount": 100000,
-          "AccountID": 0
+          "AccountUUID": "uuid1"
         },
         {
           "Amount": 100000,
-          "AccountID": 1
+          "AccountUUID": "uuid2"
         },
         {
           "Amount": 100000,
-          "AccountID": 2
+          "AccountUUID": "uuid3"
         }
       ]
     },
     {
-      "ID": 2,
+      "UUID": "uuid1",
+      "Description": "Widgets",
+      "Type": 0,
+      "Tags": [
+        "Widgets"
+      ],
+      "Date": "2015-11-02",
+      "Components": [
+        {
+          "Amount": -10000,
+          "AccountUUID": "uuid2"
+        }
+      ]
+    },
+    {
+      "UUID": "uuid3",
       "Description": "Gadgets",
       "Type": 0,
       "Tags": [
@@ -91,31 +93,12 @@ const testRestoreData = `{
       "Components": [
         {
           "Amount": -10000,
-          "AccountID": 3
+          "AccountUUID": "uuid4"
         }
       ]
     },
     {
-      "ID": 3,
-      "Description": "Credit card payment",
-      "Type": 1,
-      "Tags": [
-        "Credit"
-      ],
-      "Date": "2015-11-09",
-      "Components": [
-        {
-          "Amount": -10000,
-          "AccountID": 2
-        },
-        {
-          "Amount": 2000,
-          "AccountID": 3
-        }
-      ]
-    },
-    {
-      "ID": 4,
+      "UUID": "uuid5",
       "Description": "Stuff",
       "Type": 1,
       "Tags": [
@@ -126,11 +109,30 @@ const testRestoreData = `{
       "Components": [
         {
           "Amount": -1000,
-          "AccountID": 0
+          "AccountUUID": "uuid1"
         },
         {
           "Amount": -10000,
-          "AccountID": 2
+          "AccountUUID": "uuid3"
+        }
+      ]
+    },
+    {
+      "UUID": "uuid4",
+      "Description": "Credit card payment",
+      "Type": 1,
+      "Tags": [
+        "Credit"
+      ],
+      "Date": "2015-11-09",
+      "Components": [
+        {
+          "Amount": -10000,
+          "AccountUUID": "uuid3"
+        },
+        {
+          "Amount": 2000,
+          "AccountUUID": "uuid4"
         }
       ]
     }
@@ -140,7 +142,7 @@ const testRestoreData = `{
 const testBackupData = `{
   "Accounts": [
     {
-      "ID": 0,
+      "UUID": "uuid1",
       "Name": "Orange Bank",
       "Balance": 99000,
       "Currency": "PLN",
@@ -148,7 +150,7 @@ const testBackupData = `{
       "ShowInList": true
     },
     {
-      "ID": 1,
+      "UUID": "uuid2",
       "Name": "Green Bank",
       "Balance": 90000,
       "Currency": "ALL",
@@ -156,7 +158,7 @@ const testBackupData = `{
       "ShowInList": false
     },
     {
-      "ID": 2,
+      "UUID": "uuid3",
       "Name": "Purple Bank",
       "Balance": 80000,
       "Currency": "ZWL",
@@ -164,7 +166,7 @@ const testBackupData = `{
       "ShowInList": false
     },
     {
-      "ID": 3,
+      "UUID": "uuid4",
       "Name": "Magical Credit Card",
       "Balance": -8000,
       "Currency": "PLN",
@@ -174,7 +176,7 @@ const testBackupData = `{
   ],
   "Transactions": [
     {
-      "ID": 0,
+      "UUID": "uuid2",
       "Description": "Salary",
       "Type": 0,
       "Tags": [
@@ -184,20 +186,20 @@ const testBackupData = `{
       "Components": [
         {
           "Amount": 100000,
-          "AccountID": 0
+          "AccountUUID": "uuid1"
         },
         {
           "Amount": 100000,
-          "AccountID": 1
+          "AccountUUID": "uuid2"
         },
         {
           "Amount": 100000,
-          "AccountID": 2
+          "AccountUUID": "uuid3"
         }
       ]
     },
     {
-      "ID": 1,
+      "UUID": "uuid1",
       "Description": "Widgets",
       "Type": 0,
       "Tags": [
@@ -207,12 +209,12 @@ const testBackupData = `{
       "Components": [
         {
           "Amount": -10000,
-          "AccountID": 1
+          "AccountUUID": "uuid2"
         }
       ]
     },
     {
-      "ID": 2,
+      "UUID": "uuid3",
       "Description": "Gadgets",
       "Type": 0,
       "Tags": [
@@ -222,12 +224,12 @@ const testBackupData = `{
       "Components": [
         {
           "Amount": -10000,
-          "AccountID": 3
+          "AccountUUID": "uuid4"
         }
       ]
     },
     {
-      "ID": 3,
+      "UUID": "uuid5",
       "Description": "Stuff",
       "Type": 1,
       "Tags": [
@@ -238,16 +240,16 @@ const testBackupData = `{
       "Components": [
         {
           "Amount": -1000,
-          "AccountID": 0
+          "AccountUUID": "uuid1"
         },
         {
           "Amount": -10000,
-          "AccountID": 2
+          "AccountUUID": "uuid3"
         }
       ]
     },
     {
-      "ID": 4,
+      "UUID": "uuid4",
       "Description": "Credit card payment",
       "Type": 1,
       "Tags": [
@@ -257,11 +259,11 @@ const testBackupData = `{
       "Components": [
         {
           "Amount": -10000,
-          "AccountID": 2
+          "AccountUUID": "uuid3"
         },
         {
           "Amount": 2000,
-          "AccountID": 3
+          "AccountUUID": "uuid4"
         }
       ]
     }
@@ -270,21 +272,25 @@ const testBackupData = `{
 
 func createBackupAccounts() []*Account {
 	return []*Account{{
+		UUID:           "uuid1",
 		Name:           "Orange Bank",
 		Currency:       "PLN",
 		IncludeInTotal: true,
 		ShowInList:     true,
 	}, {
+		UUID:           "uuid2",
 		Name:           "Green Bank",
 		Currency:       "ALL",
 		IncludeInTotal: true,
 		ShowInList:     false,
 	}, {
+		UUID:           "uuid3",
 		Name:           "Purple Bank",
 		Currency:       "ZWL",
 		IncludeInTotal: true,
 		ShowInList:     false,
 	}, {
+		UUID:           "uuid4",
 		Name:           "Magical Credit Card",
 		Currency:       "PLN",
 		IncludeInTotal: false,
@@ -294,48 +300,53 @@ func createBackupAccounts() []*Account {
 
 func createBackupTransactions(accounts []*Account) []*Transaction {
 	return []*Transaction{{
+		UUID:        "uuid1",
 		Description: "Widgets",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"Widgets"},
 		Date:        "2015-11-02",
 		Components: []TransactionComponent{
-			{AccountID: accounts[1].ID, Amount: -10000},
+			{AccountUUID: accounts[1].UUID, Amount: -10000},
 		},
 	}, {
+		UUID:        "uuid2",
 		Description: "Salary",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"Salary"},
 		Date:        "2015-11-01",
 		Components: []TransactionComponent{
-			{AccountID: accounts[0].ID, Amount: 100000},
-			{AccountID: accounts[1].ID, Amount: 100000},
-			{AccountID: accounts[2].ID, Amount: 100000},
+			{AccountUUID: accounts[0].UUID, Amount: 100000},
+			{AccountUUID: accounts[1].UUID, Amount: 100000},
+			{AccountUUID: accounts[2].UUID, Amount: 100000},
 		},
 	}, {
+		UUID:        "uuid3",
 		Description: "Gadgets",
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"Gadgets"},
 		Date:        "2015-11-03",
 		Components: []TransactionComponent{
-			{AccountID: accounts[3].ID, Amount: -10000},
+			{AccountUUID: accounts[3].UUID, Amount: -10000},
 		},
 	}, {
+		UUID:        "uuid4",
 		Description: "Credit card payment",
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"Credit"},
 		Date:        "2015-11-09",
 		Components: []TransactionComponent{
-			{AccountID: accounts[2].ID, Amount: -10000},
-			{AccountID: accounts[3].ID, Amount: 2000},
+			{AccountUUID: accounts[2].UUID, Amount: -10000},
+			{AccountUUID: accounts[3].UUID, Amount: 2000},
 		},
 	}, {
+		UUID:        "uuid5",
 		Description: "Stuff",
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"Gadgets", "Widgets"},
 		Date:        "2015-11-07",
 		Components: []TransactionComponent{
-			{AccountID: accounts[0].ID, Amount: -1000},
-			{AccountID: accounts[2].ID, Amount: -10000},
+			{AccountUUID: accounts[0].UUID, Amount: -1000},
+			{AccountUUID: accounts[2].UUID, Amount: -10000},
 		},
 	}}
 }
@@ -346,14 +357,14 @@ func TestBackup(t *testing.T) {
 
 	accounts := createBackupAccounts()
 	for _, account := range accounts {
-		dbService.CreateAccount(&testUser, account)
+		dbService.createAccount(&testUser, account)
 	}
 
 	transactions := createBackupTransactions(accounts)
 	transactions[4].Tags = []string{"Widgets", "Gadgets"}
 	for _, transaction := range transactions {
 		assert.NoError(t, transaction.normalize())
-		dbService.CreateTransaction(&testUser, transaction)
+		dbService.createTransaction(&testUser, transaction)
 	}
 
 	json, err := dbService.Backup(&testUser)
@@ -369,19 +380,15 @@ func TestRestore(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedAccounts := createBackupAccounts()
-	for i, account := range expectedAccounts {
-		account.ID = uint64(i)
-	}
 	expectedAccounts[0].Balance = 99000
 	expectedAccounts[1].Balance = 90000
 	expectedAccounts[2].Balance = 80000
 	expectedAccounts[3].Balance = -8000
 
 	expectedTransactions := createBackupTransactions(expectedAccounts)
-	for i, transaction := range expectedTransactions {
-		transaction.ID = uint64(i)
-	}
-	sortTransactionsAsc(expectedTransactions)
+	sort.Slice(expectedTransactions, func(i, j int) bool {
+		return strings.Compare(expectedTransactions[i].Date, expectedTransactions[j].Date) > 0
+	})
 
 	dbAccounts, err := dbService.GetAccounts(&testUser)
 	assert.NoError(t, err)
@@ -389,7 +396,6 @@ func TestRestore(t *testing.T) {
 
 	dbTransactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
-	sortTransactionsAsc(dbTransactions)
 	assert.Equal(t, expectedTransactions, dbTransactions)
 }
 
@@ -409,8 +415,8 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 		Description: "Extra transaction",
 		Type:        TransactionTypeTransfer, Tags: []string{"Extra"}, Date: "2019-03-23",
 		Components: []TransactionComponent{
-			{AccountID: accounts[0].ID, Amount: -8800},
-			{AccountID: accounts[4].ID, Amount: -42000},
+			{AccountUUID: accounts[0].UUID, Amount: -8800},
+			{AccountUUID: accounts[4].UUID, Amount: -42000},
 		},
 	})
 	for _, transaction := range transactions {
@@ -422,19 +428,15 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedAccounts := createBackupAccounts()
-	for i, account := range expectedAccounts {
-		account.ID = uint64(len(accounts)) + uint64(i)
-	}
 	expectedAccounts[0].Balance = 99000
 	expectedAccounts[1].Balance = 90000
 	expectedAccounts[2].Balance = 80000
 	expectedAccounts[3].Balance = -8000
 
 	expectedTransactions := createBackupTransactions(expectedAccounts)
-	for i, transaction := range expectedTransactions {
-		transaction.ID = uint64(len(transactions)) + uint64(i)
-	}
-	sortTransactionsAsc(expectedTransactions)
+	sort.Slice(expectedTransactions, func(i, j int) bool {
+		return strings.Compare(expectedTransactions[i].Date, expectedTransactions[j].Date) > 0
+	})
 
 	dbAccounts, err := dbService.GetAccounts(&testUser)
 	assert.NoError(t, err)
@@ -442,6 +444,5 @@ func TestRestoreOverwriteExistingData(t *testing.T) {
 
 	dbTransactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
-	sortTransactionsAsc(dbTransactions)
 	assert.Equal(t, expectedTransactions, dbTransactions)
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dgraph-io/badger/v3"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -14,14 +14,14 @@ import (
 type User struct {
 	username    string
 	newUsername string
-	ID          uint64
+	UUID        string
 	Password    string
 }
 
 // ErrUserAlreadyExists is an error when a user cannot be renamed because their username is already in use.
-var ErrUserAlreadyExists = fmt.Errorf("id conflicts with existing user")
+var ErrUserAlreadyExists = fmt.Errorf("uuid conflicts with existing user")
 
-// NewUser creates a User with the provided username and a generated ID.
+// NewUser creates a User with the provided username and a generated UUID.
 func NewUser(username string) *User {
 	return &User{newUsername: username}
 }
@@ -35,18 +35,17 @@ func (user *User) decode(val []byte) error {
 // If user doesn't exist, returns nil.
 func (s *DBService) GetUser(username string) (*User, error) {
 	user := &User{username: username}
-	err := s.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(user.createKey())
-		if err == badger.ErrKeyNotFound {
+	err := s.view(func() error {
+		value, err := s.db.Get(user.createKey())
+		if err != nil {
+			return err
+		}
+		if value == nil {
 			user = nil
 			return nil
 		}
 
-		if err := item.Value(user.decode); err != nil {
-			user = nil
-			return err
-		}
-		return nil
+		return user.decode(value)
 	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot read user %v: %w", username, err)
@@ -63,44 +62,33 @@ func (s *DBService) SaveUser(user *User) error {
 
 	newUser := user.username == ""
 	if newUser {
-		seq, err := s.db.GetSequence([]byte(sequenceUserKey), 1)
-		defer seq.Release()
-		if err != nil {
-			return fmt.Errorf("cannot create user sequence object: %w", err)
-		}
-		id, err := seq.Next()
-		if err != nil {
-			return fmt.Errorf("cannot generate id for user: %w", err)
-		}
-		user.ID = id
+		user.UUID = uuid.NewString()
 	}
 
-	err := s.db.Update(func(txn *badger.Txn) error {
-		// Check for username/id conflicts
-		_, err := txn.Get(key)
-		existingItem, err := txn.Get(key)
-
-		if newUser && err != badger.ErrKeyNotFound {
-			return ErrUserAlreadyExists
+	err := s.update(func() error {
+		// Check for username/id conflicts.
+		existingUserValue, err := s.db.Get(key)
+		if err != nil {
+			return fmt.Errorf("cannot get existing value for user %v: %w", string(key), err)
 		}
 
 		existingUser := &User{}
-		if existingItem != nil || (err != nil && err != badger.ErrKeyNotFound) {
-			if err := existingItem.Value(existingUser.decode); err != nil {
-				return fmt.Errorf("cannot get existing value for user %v: %w", string(key), err)
+		if existingUserValue != nil {
+			if err := existingUser.decode(existingUserValue); err != nil {
+				return fmt.Errorf("cannot decode existing value for user %v: %w", string(key), err)
 			}
 			if user.newUsername != user.username {
 				return ErrUserAlreadyExists
 			}
-			if existingUser.ID != user.ID {
-				return fmt.Errorf("id %v for user %v conflicts with existing user id %v: %w", user.ID, string(key), existingUser.ID, ErrUserAlreadyExists)
+			if existingUser.UUID != user.UUID {
+				return fmt.Errorf("id %v for user %v conflicts with existing user id %v: %w", user.UUID, string(key), existingUser.UUID, ErrUserAlreadyExists)
 			}
 		}
 
 		// In case of rename, delete old username key
 		if !newUser && user.newUsername != user.username {
 			oldUserKey := createUserKey(user.username)
-			if err := txn.Delete(oldUserKey); err != nil {
+			if err := s.db.Delete(oldUserKey); err != nil {
 				return err
 			}
 		}
@@ -109,7 +97,7 @@ func (s *DBService) SaveUser(user *User) error {
 		if err := gob.NewEncoder(&value).Encode(user); err != nil {
 			return fmt.Errorf("cannot encode user: %w", err)
 		}
-		return txn.Set(key, value.Bytes())
+		return s.db.Put(key, value.Bytes())
 	})
 
 	if err == nil {

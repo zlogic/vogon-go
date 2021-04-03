@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -139,8 +140,8 @@ func TestGetTransactionsFilterAccounts(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		saveTransaction := transaction
 		saveTransaction.Components = []TransactionComponent{
-			{AccountID: uint64(i)},
-			{AccountID: 42},
+			{AccountUUID: fmt.Sprintf("uuid%v", i)},
+			{AccountUUID: "uuid42"},
 		}
 		err = dbService.CreateTransaction(&testUser, &saveTransaction)
 		assert.NoError(t, err)
@@ -148,27 +149,27 @@ func TestGetTransactionsFilterAccounts(t *testing.T) {
 	}
 
 	getTransactionOptions := GetAllTransactionsOptions
-	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []uint64{42}}
+	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []string{"uuid42"}}
 	dbTransactions, err := dbService.GetTransactions(&testUser, getTransactionOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, transactions, dbTransactions)
 
-	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []uint64{42, 88}}
+	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []string{"uuid42", "uuid88"}}
 	dbTransactions, err = dbService.GetTransactions(&testUser, getTransactionOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, transactions, dbTransactions)
 
-	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []uint64{1}}
+	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []string{"uuid1"}}
 	dbTransactions, err = dbService.GetTransactions(&testUser, getTransactionOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, transactions[8:9], dbTransactions)
 
-	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []uint64{1, 2}}
+	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []string{"uuid1", "uuid2"}}
 	dbTransactions, err = dbService.GetTransactions(&testUser, getTransactionOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, transactions[7:9], dbTransactions)
 
-	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []uint64{88}}
+	getTransactionOptions.TransactionFilterOptions = TransactionFilterOptions{FilterAccounts: []string{"uuid88"}}
 	dbTransactions, err = dbService.GetTransactions(&testUser, getTransactionOptions)
 	assert.NoError(t, err)
 	assert.Empty(t, dbTransactions)
@@ -340,34 +341,34 @@ func TestCountTransactionsFilterAccounts(t *testing.T) {
 	for i := 0; i < 10; i++ {
 		saveTransaction := transaction
 		saveTransaction.Components = []TransactionComponent{
-			{AccountID: uint64(i)},
-			{AccountID: 42},
+			{AccountUUID: fmt.Sprintf("uuid%v", i)},
+			{AccountUUID: "uuid42"},
 		}
 		err = dbService.CreateTransaction(&testUser, &saveTransaction)
 		assert.NoError(t, err)
 	}
 
-	filterOptions := TransactionFilterOptions{FilterAccounts: []uint64{42}}
+	filterOptions := TransactionFilterOptions{FilterAccounts: []string{"uuid42"}}
 	count, err := dbService.CountTransactions(&testUser, filterOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(10), count)
 
-	filterOptions = TransactionFilterOptions{FilterAccounts: []uint64{42, 88}}
+	filterOptions = TransactionFilterOptions{FilterAccounts: []string{"uuid42", "uuid88"}}
 	count, err = dbService.CountTransactions(&testUser, filterOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(10), count)
 
-	filterOptions = TransactionFilterOptions{FilterAccounts: []uint64{1}}
+	filterOptions = TransactionFilterOptions{FilterAccounts: []string{"uuid1"}}
 	count, err = dbService.CountTransactions(&testUser, filterOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(1), count)
 
-	filterOptions = TransactionFilterOptions{FilterAccounts: []uint64{1, 2}}
+	filterOptions = TransactionFilterOptions{FilterAccounts: []string{"uuid1", "uuid2"}}
 	count, err = dbService.CountTransactions(&testUser, filterOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(2), count)
 
-	filterOptions = TransactionFilterOptions{FilterAccounts: []uint64{88}}
+	filterOptions = TransactionFilterOptions{FilterAccounts: []string{"uuid88"}}
 	count, err = dbService.CountTransactions(&testUser, filterOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(0), count)
