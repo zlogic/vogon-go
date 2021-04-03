@@ -2,7 +2,6 @@ package data
 
 import (
 	"fmt"
-	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -68,8 +67,9 @@ func TestCreateTransactionNoComponents(t *testing.T) {
 
 	saveTransaction := transaction1
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction1.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(0), saveTransaction.ID)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
 	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
@@ -84,10 +84,11 @@ func TestCreateTransactionNoComponents(t *testing.T) {
 
 	saveTransaction = transaction2
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction2.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(1), saveTransaction.ID)
+	assert.NotEmpty(t, saveTransaction.UUID)
+	assert.NotEqual(t, transaction1.UUID, saveTransaction.UUID)
 
-	transaction2.ID = 1
 	transactions, err = dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Transaction{&transaction2, &transaction1}, transactions)
@@ -112,15 +113,17 @@ func TestGetTransactionsPaging(t *testing.T) {
 
 	saveTransaction := transaction1
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction1.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
 	saveTransaction = transaction2
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction2.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
-	transaction2.ID = 1
-
-	saveTransactions := make([]*Transaction, 0, 5)
+	saveTransactions := make([]*Transaction, 5)
 	for i := 0; i < 5; i++ {
 		saveTransaction := Transaction{
 			Description: fmt.Sprintf("s%v", i),
@@ -129,9 +132,9 @@ func TestGetTransactionsPaging(t *testing.T) {
 		}
 		err = dbService.CreateTransaction(&testUser, &saveTransaction)
 		assert.NoError(t, err)
-		saveTransactions = append(saveTransactions, &saveTransaction)
+		assert.NotEmpty(t, saveTransaction.UUID)
+		saveTransactions[len(saveTransactions)-1-i] = &saveTransaction
 	}
-	sort.Slice(saveTransactions, func(i, j int) bool { return saveTransactions[i].ID > saveTransactions[j].ID })
 
 	expectedTransactions := make([]*Transaction, 0)
 	expectedTransactions = append(expectedTransactions, &transaction2, &transaction1)
@@ -180,14 +183,16 @@ func TestGetTransactionNoComponents(t *testing.T) {
 
 	err = dbService.CreateTransaction(&testUser, &transaction1)
 	assert.NoError(t, err)
+	assert.NotEmpty(t, transaction1.UUID)
 	err = dbService.CreateTransaction(&testUser, &transaction2)
 	assert.NoError(t, err)
+	assert.NotEmpty(t, transaction2.UUID)
 
-	transaction, err := dbService.GetTransaction(&testUser, 0)
+	transaction, err := dbService.GetTransaction(&testUser, transaction1.UUID)
 	assert.NoError(t, err)
 	assert.Equal(t, &transaction1, transaction)
 
-	transaction, err = dbService.GetTransaction(&testUser, 1)
+	transaction, err = dbService.GetTransaction(&testUser, transaction2.UUID)
 	assert.NoError(t, err)
 	assert.Equal(t, &transaction2, transaction)
 }
@@ -196,8 +201,8 @@ func TestGetTransactionDoesNotExist(t *testing.T) {
 	err := resetDb()
 	assert.NoError(t, err)
 
-	transaction, err := dbService.GetTransaction(&testUser, 0)
-	assert.Error(t, err)
+	transaction, err := dbService.GetTransaction(&testUser, "non-existing")
+	assert.NoError(t, err)
 	assert.Nil(t, transaction)
 }
 
@@ -253,17 +258,20 @@ func TestUpdateTransactionNoComponents(t *testing.T) {
 
 	saveTransaction := transaction1
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction1.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
 	saveTransaction = transaction2
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction2.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
 	transaction2.Date = "2019-03-19"
 	transaction2.Description = "t2-"
 	transaction2.Tags = []string{"t1", "t3", "t4"}
 	transaction2.Type = TransactionTypeTransfer
-	transaction2.ID = 1
 	saveTransaction = transaction2
 	err = dbService.UpdateTransaction(&testUser, &saveTransaction)
 	assert.NoError(t, err)
@@ -292,22 +300,24 @@ func TestDeleteTransactionNoComponents(t *testing.T) {
 
 	saveTransaction := transaction1
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction1.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
 	saveTransaction = transaction2
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction2.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
-	transaction2.ID = 1
-
-	err = dbService.DeleteTransaction(&testUser, transaction2.ID)
+	err = dbService.DeleteTransaction(&testUser, transaction2.UUID)
 	assert.NoError(t, err)
 
 	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Transaction{&transaction1}, transactions)
 
-	err = dbService.DeleteTransaction(&testUser, transaction1.ID)
+	err = dbService.DeleteTransaction(&testUser, transaction1.UUID)
 	assert.NoError(t, err)
 
 	transactions, err = dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
@@ -328,12 +338,11 @@ func TestDeleteNonExistingTransaction(t *testing.T) {
 
 	saveTransaction := transaction
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
-	deleteTransaction := transaction
-	deleteTransaction.ID = 1
-
-	err = dbService.DeleteTransaction(&testUser, deleteTransaction.ID)
+	err = dbService.DeleteTransaction(&testUser, "non-existing")
 	assert.Error(t, err)
 
 	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
@@ -354,15 +363,16 @@ func TestCreateTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"t1", "t2"},
 		Components: []TransactionComponent{
-			{AccountID: 0, Amount: -1},
-			{AccountID: 1, Amount: 2},
+			{AccountUUID: testAccount1.UUID, Amount: -1},
+			{AccountUUID: testAccount2.UUID, Amount: 2},
 		},
 	}
 
 	saveTransaction := transaction1
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction1.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(0), saveTransaction.ID)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
 	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
@@ -382,18 +392,18 @@ func TestCreateTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"t1", "t3"},
 		Components: []TransactionComponent{
-			{AccountID: 0, Amount: 100},
-			{AccountID: 0, Amount: 100},
-			{AccountID: 1, Amount: 100},
+			{AccountUUID: testAccount1.UUID, Amount: 100},
+			{AccountUUID: testAccount1.UUID, Amount: 100},
+			{AccountUUID: testAccount2.UUID, Amount: 100},
 		},
 	}
 
 	saveTransaction = transaction2
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction2.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(1), saveTransaction.ID)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
-	transaction2.ID = 1
 	transactions, err = dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
 	assert.NoError(t, err)
 	assert.Equal(t, []*Transaction{&transaction2, &transaction1}, transactions)
@@ -418,8 +428,8 @@ func TestUpdateTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"t1", "t2"},
 		Components: []TransactionComponent{
-			{AccountID: 0, Amount: -1},
-			{AccountID: 1, Amount: 2},
+			{AccountUUID: testAccount1.UUID, Amount: -1},
+			{AccountUUID: testAccount2.UUID, Amount: 2},
 		},
 	}
 	transaction2 := Transaction{
@@ -428,27 +438,30 @@ func TestUpdateTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"t1", "t3"},
 		Components: []TransactionComponent{
-			{AccountID: 0, Amount: 100},
-			{AccountID: 0, Amount: 100},
-			{AccountID: 1, Amount: 100},
+			{AccountUUID: testAccount1.UUID, Amount: 100},
+			{AccountUUID: testAccount1.UUID, Amount: 100},
+			{AccountUUID: testAccount2.UUID, Amount: 100},
 		},
 	}
 
 	saveTransaction := transaction1
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction1.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
 	saveTransaction = transaction2
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction2.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
 	transaction2.Components = []TransactionComponent{
-		{AccountID: 0, Amount: 5},
-		{AccountID: 0, Amount: 10},
-		{AccountID: 0, Amount: 17},
-		{AccountID: 1, Amount: 4},
+		{AccountUUID: testAccount1.UUID, Amount: 5},
+		{AccountUUID: testAccount1.UUID, Amount: 10},
+		{AccountUUID: testAccount1.UUID, Amount: 17},
+		{AccountUUID: testAccount2.UUID, Amount: 4},
 	}
-	transaction2.ID = 1
 
 	saveTransaction = transaction1
 	err = dbService.UpdateTransaction(&testUser, &saveTransaction)
@@ -484,8 +497,8 @@ func TestDeleteTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeExpenseIncome,
 		Tags:        []string{"t1", "t2"},
 		Components: []TransactionComponent{
-			{AccountID: 0, Amount: -1},
-			{AccountID: 1, Amount: 2},
+			{AccountUUID: testAccount1.UUID, Amount: -1},
+			{AccountUUID: testAccount2.UUID, Amount: 2},
 		},
 	}
 	transaction2 := Transaction{
@@ -494,23 +507,25 @@ func TestDeleteTransactionWithComponents(t *testing.T) {
 		Type:        TransactionTypeTransfer,
 		Tags:        []string{"t1", "t3"},
 		Components: []TransactionComponent{
-			{AccountID: 0, Amount: 100},
-			{AccountID: 0, Amount: 100},
-			{AccountID: 1, Amount: 100},
+			{AccountUUID: testAccount1.UUID, Amount: 100},
+			{AccountUUID: testAccount1.UUID, Amount: 100},
+			{AccountUUID: testAccount2.UUID, Amount: 100},
 		},
 	}
 
 	saveTransaction := transaction1
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction1.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
 	saveTransaction = transaction2
 	err = dbService.CreateTransaction(&testUser, &saveTransaction)
+	transaction2.UUID = saveTransaction.UUID
 	assert.NoError(t, err)
+	assert.NotEmpty(t, saveTransaction.UUID)
 
-	transaction2.ID = 1
-
-	err = dbService.DeleteTransaction(&testUser, transaction2.ID)
+	err = dbService.DeleteTransaction(&testUser, transaction2.UUID)
 	assert.NoError(t, err)
 
 	transactions, err := dbService.GetTransactions(&testUser, GetAllTransactionsOptions)
@@ -525,7 +540,7 @@ func TestDeleteTransactionWithComponents(t *testing.T) {
 	expectedAccount2.Balance = 2
 	assert.Equal(t, []*Account{&expectedAccount1, &expectedAccount2}, accounts)
 
-	err = dbService.DeleteTransaction(&testUser, transaction1.ID)
+	err = dbService.DeleteTransaction(&testUser, transaction1.UUID)
 	assert.NoError(t, err)
 
 	transactions, err = dbService.GetTransactions(&testUser, GetAllTransactionsOptions)

@@ -73,9 +73,9 @@
   </form>
 </div>
 <script type="text/javascript" src="static/extras.js"></script>
-{{ if .Form.id }}
+{{ if .Form.uuid }}
 <script>
-  var transactionID = parseInt('{{ index .Form "id" 0 }}');
+  var transactionUUID = '{{ index .Form "uuid" 0 }}';
 </script>
 {{ end }}
 <script>
@@ -126,8 +126,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   var updateCurrencyLabel = function(componentRow) {
-    var accountID = componentRow.querySelector("select").value;
-    var currency = accountID ? accounts[accountID].Currency : "";
+    var accountUUID = componentRow.querySelector("select").value;
+    var currency = accountUUID ? accounts[accountUUID].Currency : "";
     componentRow.querySelector("a.button.is-static").textContent = currency;
   };
 
@@ -180,9 +180,9 @@ document.addEventListener('DOMContentLoaded', () => {
       var account = accounts[i];
       if (!account.ShowInList) continue;
       var option = document.createElement("option");
-      option.value = account.ID;
+      option.value = account.UUID;
       option.textContent = account.Name;
-      if (component.AccountID === account.ID)
+      if (component.AccountUUID === account.UUID)
         option.selected = true;
       accountSelect.append(option);
     }
@@ -283,12 +283,12 @@ document.addEventListener('DOMContentLoaded', () => {
     transaction.Date = date.value;
     transaction.Components = [];
     transactionForm.querySelectorAll("#components>div").forEach(function(componentFieldDiv){
-      var accountID = parseInt(componentFieldDiv.querySelector("select").value);
+      var accountUUID = componentFieldDiv.querySelector("select").value;
       var amount = Math.round(parseFloat(componentFieldDiv.querySelector("input").value) * 100);
-      transaction.Components.push({AccountID: accountID, Amount: amount});
+      transaction.Components.push({AccountUUID: accountUUID, Amount: amount});
     });
-    var id = transaction.ID || "new";
-    reqPostJSON("api/transaction/" + id, transaction, function() {
+    var uuid = transaction.UUID || "new";
+    reqPostJSON("api/transaction/" + uuid, transaction, function() {
       window.location.href = "transactions";
       showResultAlert(saveResult, true, "Saved successfully");
       submit.classList.remove("is-loading");
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     lockForm(true);
     deleteResult.hidden = true;
     deleteButton.classList.add("is-loading");
-    reqDelete("api/transaction/" + transactionID, function() {
+    reqDelete("api/transaction/" + transactionUUID, function() {
       window.location.href = "transactions";
       showResultAlert(deleteResult, true, "Deleted successfully");
       deleteButton.classList.remove("is-loading");
@@ -323,10 +323,10 @@ document.addEventListener('DOMContentLoaded', () => {
     lockForm(true);
     if (action === "edit" || action === "duplicate") {
       transaction = null;
-      reqGet("api/transaction/" + transactionID, function(data) {
+      reqGet("api/transaction/" + transactionUUID, function(data) {
         transaction = JSON.parse(data);
         if(action === "duplicate"){
-          delete transaction.ID;
+          delete transaction.UUID;
           transaction.Date = getCurrentDate();
         }
         updateIfReady();
@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     reqGet("api/accounts", function(data) {
       accounts = {};
-      JSON.parse(data).forEach(function (account) { accounts[account.ID] = account; });
+      JSON.parse(data).forEach(function (account) { accounts[account.UUID] = account; });
       updateIfReady();
     }, function() {
       loadFailedAlert("Failed to load accounts.");

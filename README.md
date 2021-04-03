@@ -12,7 +12,7 @@ Simple web-based personal finance tracker using
 
 * Plain Javascript and Bulma CSS on client-side
 * Go on the server side
-* Badger key-value DB for data storage
+* [Pogreb](https://github.com/akrylysov/pogreb) key-value store for data storage
 
 Named after the Vogons (http://en.wikipedia.org/wiki/Vogon) race who were known to be extremely boring accountants.
 
@@ -55,7 +55,7 @@ docker create \
   ghcr.io/zlogic/vogon-go:latest
 ```
 
-This will create a container with an embedded Badger DB and allow registration.
+This will create a container with an embedded data store and allow registration.
 
 Configuration of Vogon can be done via environment variables, as described in the [Configuration](#configuration) section above.
 
@@ -74,3 +74,8 @@ Run tests:
 Run Vogon:
 
 `vogon-go`
+
+# Other versions
+
+Vogon was previously using [Badger](https://github.com/dgraph-io/badger) DB for storing data.
+That version is available in the [Badger branch](../../tree/badger).

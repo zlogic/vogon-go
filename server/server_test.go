@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/dgraph-io/badger/v3"
+	"github.com/akrylysov/pogreb"
+	"github.com/akrylysov/pogreb/fs"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 
@@ -14,7 +15,7 @@ import (
 	"github.com/zlogic/vogon-go/server/auth"
 )
 
-var testUser = data.User{ID: 11}
+var testUser = data.User{UUID: "uuid11"}
 
 var testExistingUsers = make(map[string]data.User)
 
@@ -77,8 +78,8 @@ func (m *DBMock) UpdateAccount(user *data.User, account *data.Account) error {
 	return args.Error(0)
 }
 
-func (m *DBMock) GetAccount(user *data.User, accountID uint64) (*data.Account, error) {
-	args := m.Called(user, accountID)
+func (m *DBMock) GetAccount(user *data.User, accountUUID string) (*data.Account, error) {
+	args := m.Called(user, accountUUID)
 	account := args.Get(0)
 	var returnAccount *data.Account
 	if account != nil {
@@ -87,8 +88,8 @@ func (m *DBMock) GetAccount(user *data.User, accountID uint64) (*data.Account, e
 	return returnAccount, args.Error(1)
 }
 
-func (m *DBMock) DeleteAccount(user *data.User, accountID uint64) error {
-	args := m.Called(user, accountID)
+func (m *DBMock) DeleteAccount(user *data.User, accountUUID string) error {
+	args := m.Called(user, accountUUID)
 	return args.Error(0)
 }
 
@@ -102,8 +103,8 @@ func (m *DBMock) UpdateTransaction(user *data.User, transaction *data.Transactio
 	return args.Error(0)
 }
 
-func (m *DBMock) GetTransaction(user *data.User, transactionID uint64) (*data.Transaction, error) {
-	args := m.Called(user, transactionID)
+func (m *DBMock) GetTransaction(user *data.User, transactionUUID string) (*data.Transaction, error) {
+	args := m.Called(user, transactionUUID)
 	transaction := args.Get(0)
 	var returnTransaction *data.Transaction
 	if transaction != nil {
@@ -112,8 +113,8 @@ func (m *DBMock) GetTransaction(user *data.User, transactionID uint64) (*data.Tr
 	return returnTransaction, args.Error(1)
 }
 
-func (m *DBMock) DeleteTransaction(user *data.User, transactionID uint64) error {
-	args := m.Called(user, transactionID)
+func (m *DBMock) DeleteTransaction(user *data.User, transactionUUID string) error {
+	args := m.Called(user, transactionUUID)
 	return args.Error(0)
 }
 
@@ -187,10 +188,7 @@ func prepareExistingUser(username string) *data.User {
 	logger := log.New()
 	logger.SetLevel(log.FatalLevel)
 
-	var opts = badger.DefaultOptions("")
-	opts.Logger = logger
-	opts.ValueLogFileSize = 1 << 20
-	opts.InMemory = true
+	opts := pogreb.Options{FileSystem: fs.Mem}
 
 	dbService, err := data.Open(opts)
 	if err != nil {

@@ -48,9 +48,9 @@
     </div>
   </form>
 </div>
-{{ if .Form.id }}
+{{ if .Form.uuid }}
 <script>
-  var accountID = parseInt('{{ index .Form "id" 0 }}');
+  var accountUUID = '{{ index .Form "uuid" 0 }}';
 </script>
 {{ end }} 
 <script>
@@ -107,8 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
     account.Currency = currencyEditor.value;
     account.IncludeInTotal = includeInTotal.checked;
     account.ShowInList = showInList.checked;
-    var id = account.ID || "new";
-    reqPostJSON("api/account/" + id, account, function() {
+    var uuid = account.UUID || "new";
+    reqPostJSON("api/account/" + uuid, account, function() {
       window.location.href = "accounts";
       showResultAlert(saveResult, true, "Saved successfully");
       submit.classList.remove("is-loading");
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     lockForm(true);
     deleteResult.hidden = true;
     deleteButton.classList.add("is-loading");
-    reqDelete("api/account/" + accountID, function() {
+    reqDelete("api/account/" + accountUUID, function() {
       window.location.href = "accounts";
       showResultAlert(deleteResult, true, "Deleted successfully");
       deleteButton.classList.remove("is-loading");
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
   var loadAccount = function() {
     lockForm(true);
     if (action === "edit") {
-      reqGet("api/account/" + accountID, function(data){
+      reqGet("api/account/" + accountUUID, function(data){
         account = JSON.parse(data);
         updateForm();
       }, function() {

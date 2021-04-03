@@ -257,12 +257,12 @@ document.addEventListener('DOMContentLoaded', () => {
       var duplicateButton = document.createElement("a");
       descriptionTagsColumnText.append(duplicateButton);
       duplicateButton.setAttribute("class", "button is-small is-pulled-right");
-      duplicateButton.setAttribute("href", "transactioneditor?action=duplicate&id=" + transaction.ID);
+      duplicateButton.setAttribute("href", "transactioneditor?action=duplicate&uuid=" + transaction.UUID);
       duplicateButton.textContent = "Duplicate";
       descriptionTagsColumn.append(descriptionTagsColumnText);
       var descriptionLink = document.createElement("a");
       descriptionTagsColumnText.append(descriptionLink)
-      descriptionLink.setAttribute("href", "transactioneditor?action=edit&id=" + transaction.ID);
+      descriptionLink.setAttribute("href", "transactioneditor?action=edit&uuid=" + transaction.UUID);
       descriptionLink.textContent = transaction.Description;
 
       var tagsDiv = document.createElement("div");
@@ -286,12 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
       var amountOk = true;
       for (i in transaction.Components) {
         var component = transaction.Components[i];
-        if (component.Amount >= 0 && !incomeAccounts.includes(component.AccountID))
-          incomeAccounts.push(component.AccountID);
-        if (component.Amount <= 0 && !expenseAccounts.includes(component.AccountID))
-          expenseAccounts.push(component.AccountID);
+        if (component.Amount >= 0 && !incomeAccounts.includes(component.AccountUUID))
+          incomeAccounts.push(component.AccountUUID);
+        if (component.Amount <= 0 && !expenseAccounts.includes(component.AccountUUID))
+          expenseAccounts.push(component.AccountUUID);
         
-        var currency = (accounts[component.AccountID] || {Currency:""}).Currency;
+        var currency = (accounts[component.AccountUUID] || {Currency:""}).Currency;
         currencyTotal = currencyAmounts[currency] || {negative: 0, positive: 0};
         if (component.Amount > 0 || isExpenseIncome(transaction))
           currencyTotal.positive += component.Amount;
@@ -299,9 +299,9 @@ document.addEventListener('DOMContentLoaded', () => {
           currencyTotal.negative -= component.Amount;
         currencyAmounts[currency] = currencyTotal;
       }
-      var appendAccount = function (accountID){
+      var appendAccount = function (accountUUID){
         var accountNameDiv = document.createElement("div");
-        accountNameDiv.textContent = (accounts[accountID] || {Name:""}).Name;
+        accountNameDiv.textContent = (accounts[accountUUID] || {Name:""}).Name;
         accountsColumn.append(accountNameDiv);
       }
       var appendCurrencyAmounts = function (){
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (isExpenseIncome(transaction)) {
         var mergedAccounts = [];
-        var appendUnique = function(accountID) { if (!mergedAccounts.includes(accountID)) mergedAccounts.push(accountID); };
+        var appendUnique = function(accountUUID) { if (!mergedAccounts.includes(accountUUID)) mergedAccounts.push(accountUUID); };
         incomeAccounts.forEach(appendUnique);
         expenseAccounts.forEach(appendUnique);
         mergedAccounts.forEach(appendAccount);
@@ -405,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
     for (var i in accounts) {
       var account = accounts[i];
       var accountItem = document.createElement("option");
-      accountItem.value = account.ID;
+      accountItem.value = account.UUID;
       accountItem.textContent = account.Name;
       accountItem.selected = true;
       accountsSelectElement.append(accountItem);
@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
       data = JSON.parse(data);
       accounts = {};
       data.forEach(function (account) { 
-        if (account.ShowInList) accounts[account.ID] = account; 
+        if (account.ShowInList) accounts[account.UUID] = account;
       });
       updateIfReady();
     }, function() {

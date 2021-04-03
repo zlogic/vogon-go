@@ -120,7 +120,7 @@ func TestHtmlLoginHandlerNotLoggedIn(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User <nil>\nName \nContent loginpage", string(res.Body.Bytes()))
+	assert.Equal(t, "User <nil>\nName \nContent loginpage", res.Body.String())
 
 	authHandler.AssertExpectations(t)
 }
@@ -141,7 +141,7 @@ func TestHtmlLoginHandlerAlreadyLoggedIn(t *testing.T) {
 
 	router.ServeHTTP(res, req)
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User <nil>\nName \nContent loginpage", string(res.Body.Bytes()))
+	assert.Equal(t, "User <nil>\nName \nContent loginpage", res.Body.String())
 
 	authHandler.AssertExpectations(t)
 }
@@ -160,7 +160,7 @@ func TestHtmlRegisterHandlerNotLoggedIn(t *testing.T) {
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User <nil>\nName \nContent registerpage", string(res.Body.Bytes()))
+	assert.Equal(t, "User <nil>\nName \nContent registerpage", res.Body.String())
 
 	authHandler.AssertExpectations(t)
 }
@@ -201,7 +201,7 @@ func TestHtmlRegisterHandlerRegistrationNotAllowed(t *testing.T) {
 	authHandler.AllowUser(&data.User{})
 
 	router.ServeHTTP(res, req)
-	assert.Equal(t, "404 page not found\n", string(res.Body.Bytes()))
+	assert.Equal(t, "404 page not found\n", res.Body.String())
 	assert.Empty(t, res.Result().Cookies())
 
 	authHandler.AssertExpectations(t)
@@ -219,12 +219,12 @@ func TestHtmlTransactionsHandlerLoggedIn(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/transactions", nil)
 	res := httptest.NewRecorder()
 
-	authHandler.AllowUser(&data.User{})
+	authHandler.AllowUser(&data.User{UUID: "uuid1"})
 
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User {  0 }\nName transactions\nContent transactionspage", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  uuid1 }\nName transactions\nContent transactionspage", res.Body.String())
 
 	authHandler.AssertExpectations(t)
 }
@@ -258,12 +258,12 @@ func TestHtmlTransactionEditorHandlerLoggedInEmptyValues(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/transactioneditor", nil)
 	res := httptest.NewRecorder()
 
-	authHandler.AllowUser(&data.User{})
+	authHandler.AllowUser(&data.User{UUID: "uuid1"})
 
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User {  0 }\nName transactioneditor\nContent transactioneditor", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  uuid1 }\nName transactioneditor\nContent transactioneditor", res.Body.String())
 
 	authHandler.AssertExpectations(t)
 }
@@ -281,12 +281,12 @@ func TestHtmlTransactionEditorHandlerLoggedInWithValues(t *testing.T) {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	authHandler.AllowUser(&data.User{})
+	authHandler.AllowUser(&data.User{UUID: "uuid1"})
 
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User {  0 }\nName transactioneditor\nContent transactioneditor 1 duplicate", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  uuid1 }\nName transactioneditor\nContent transactioneditor 1 duplicate", res.Body.String())
 
 	authHandler.AssertExpectations(t)
 }
@@ -320,12 +320,12 @@ func TestHtmlReportHandlerLoggedIn(t *testing.T) {
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	res := httptest.NewRecorder()
 
-	authHandler.AllowUser(&data.User{})
+	authHandler.AllowUser(&data.User{UUID: "uuid1"})
 
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User {  0 }\nName report\nContent report test 1,2", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  uuid1 }\nName report\nContent report test 1,2", res.Body.String())
 
 	authHandler.AssertExpectations(t)
 }
@@ -359,12 +359,12 @@ func TestHtmlAccountsHandlerLoggedIn(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/accounts", nil)
 	res := httptest.NewRecorder()
 
-	authHandler.AllowUser(&data.User{})
+	authHandler.AllowUser(&data.User{UUID: "uuid1"})
 
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User {  0 }\nName accounts\nContent accountspage", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  uuid1 }\nName accounts\nContent accountspage", res.Body.String())
 
 	authHandler.AssertExpectations(t)
 }
@@ -398,12 +398,12 @@ func TestHtmlSettingsHandlerLoggedIn(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/settings", nil)
 	res := httptest.NewRecorder()
 
-	authHandler.AllowUser(&data.User{})
+	authHandler.AllowUser(&data.User{UUID: "uuid1"})
 
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)
-	assert.Equal(t, "User {  0 }\nName settings\nContent settingspage", string(res.Body.Bytes()))
+	assert.Equal(t, "User {  uuid1 }\nName settings\nContent settingspage", res.Body.String())
 
 	authHandler.AssertExpectations(t)
 }

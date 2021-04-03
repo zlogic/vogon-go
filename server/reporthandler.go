@@ -13,19 +13,19 @@ import (
 // getCurrency returns the currency for component.
 func getCurrency(component data.TransactionComponent, accounts []*data.Account) string {
 	for _, account := range accounts {
-		if account.ID == component.AccountID {
+		if account.UUID == component.AccountUUID {
 			return account.Currency
 		}
 	}
 	return ""
 }
 
-// filterComponents removes components with accounts not listed in accountIDs.
-func filterComponents(components *[]data.TransactionComponent, accountIDs []uint64) {
+// filterComponents removes components with accounts not listed in accountUUIDs.
+func filterComponents(components *[]data.TransactionComponent, accountUUIDs []string) {
 	resultComponents := (*components)[:0]
 	for _, component := range *components {
-		for _, accountID := range accountIDs {
-			if component.AccountID == accountID {
+		for _, accountUUID := range accountUUIDs {
+			if component.AccountUUID == accountUUID {
 				resultComponents = append(resultComponents, component)
 				break
 			}
@@ -57,7 +57,7 @@ func filterAccounts(accounts []*data.Account, filterOptions data.TransactionFilt
 	filteredAccounts := make([]*data.Account, 0, len(filterOptions.FilterAccounts))
 	for _, accountID := range filterOptions.FilterAccounts {
 		for _, account := range accounts {
-			if account.ID == accountID {
+			if account.UUID == accountID {
 				filteredAccounts = append(filteredAccounts, account)
 				break
 			}

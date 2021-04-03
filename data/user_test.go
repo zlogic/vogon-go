@@ -18,11 +18,17 @@ func TestNewUser(t *testing.T) {
 
 	err = dbService.SaveUser(user1)
 	assert.NoError(t, err)
-	assert.Equal(t, &User{username: "user01", ID: 0}, user1)
+	assert.Equal(t, "user01", user1.username)
+	assert.NotEmpty(t, user1.UUID)
+	assert.Empty(t, user1.newUsername)
+	assert.Empty(t, user1.Password)
 
 	err = dbService.SaveUser(user2)
 	assert.NoError(t, err)
-	assert.Equal(t, &User{username: "user02", ID: 1}, user2)
+	assert.Equal(t, "user02", user2.username)
+	assert.NotEmpty(t, user1.UUID)
+	assert.Empty(t, user1.newUsername)
+	assert.Empty(t, user1.Password)
 }
 
 func TestGetUserEmpty(t *testing.T) {
@@ -123,6 +129,7 @@ func TestSetUsername(t *testing.T) {
 	assert.Equal(t, "user02", user.username)
 
 	dbUser, err := dbService.GetUser(user.username)
+	assert.NoError(t, err)
 	assert.Equal(t, user, *dbUser)
 
 	dbUsers, err := getAllUsers(dbService)
@@ -144,6 +151,7 @@ func TestSaveUsernameAndOtherFields(t *testing.T) {
 	err = user.SetUsername("user02")
 	assert.NoError(t, err)
 	err = dbService.SaveUser(user)
+	assert.NoError(t, err)
 
 	dbUser, err := dbService.GetUser("user1")
 	assert.NoError(t, err)
@@ -153,6 +161,7 @@ func TestSaveUsernameAndOtherFields(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, user, dbUser)
 }
+
 func TestSetUsernameAlreadyExists(t *testing.T) {
 	err := resetDb()
 	assert.NoError(t, err)
@@ -178,14 +187,16 @@ func TestSetUsernameAlreadyExists(t *testing.T) {
 	user1.newUsername = ""
 
 	dbUser1, err := dbService.GetUser("user01")
+	assert.NoError(t, err)
 	assert.Equal(t, user1, *dbUser1)
 
 	dbUser2, err := dbService.GetUser("user02")
+	assert.NoError(t, err)
 	assert.Equal(t, user2, *dbUser2)
 
 	dbUsers, err := getAllUsers(dbService)
 	assert.NoError(t, err)
-	assert.EqualValues(t, users, dbUsers)
+	assert.ElementsMatch(t, users, dbUsers)
 }
 
 func TestSetUsernameEmptyString(t *testing.T) {
@@ -205,6 +216,7 @@ func TestSetUsernameEmptyString(t *testing.T) {
 	assert.NoError(t, err)
 
 	dbUser, err := dbService.GetUser(user.username)
+	assert.NoError(t, err)
 	assert.Equal(t, user, *dbUser)
 
 	dbUsers, err := getAllUsers(dbService)
@@ -219,14 +231,14 @@ func TestSaveUserIdConflict(t *testing.T) {
 	user := User{
 		Password: "pass1",
 		username: "user01",
-		ID:       1,
+		UUID:     "uuid1",
 	}
 	users := []*User{&user}
 	saveUser := user
 	err = dbService.SaveUser(&saveUser)
 	assert.NoError(t, err)
 	saveUser = user
-	saveUser.ID = 2
+	saveUser.UUID = "uuid2"
 	err = dbService.SaveUser(&saveUser)
 	assert.Error(t, err)
 
