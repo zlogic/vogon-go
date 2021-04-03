@@ -15,7 +15,7 @@ import (
 )
 
 // SettingsHandler gets or updates settings for an authenticated user.
-func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
+func SettingsHandler(s *Services, maxUploadSize int64) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user := auth.GetUser(r.Context())
 		if user == nil {
@@ -24,7 +24,7 @@ func SettingsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if r.Method == http.MethodPost {
-			if err := r.ParseMultipartForm(1 << 10); err != nil {
+			if err := r.ParseMultipartForm(maxUploadSize); err != nil {
 				handleError(w, r, err)
 				return
 			}

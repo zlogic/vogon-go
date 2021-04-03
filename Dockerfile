@@ -18,10 +18,15 @@ RUN CGO_ENABLED=0 go build -ldflags="-s -w" && \
   mkdir /usr/src/vogon/dist && \
   cp vogon-go /usr/src/vogon/dist
 
+# Create tmp for multipart uploads
+RUN mkdir -p /usr/src/vogon/tmp && \
+  chmod ug+rwx /usr/src/vogon/tmp
+
 # Copy into a fresh image
 FROM scratch
 
 COPY --from=builder /usr/src/vogon/dist /usr/local/vogon
+COPY --from=builder --chown=1001:1001 /usr/src/vogon/tmp /
 
 WORKDIR /usr/local/vogon
 

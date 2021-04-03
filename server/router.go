@@ -31,14 +31,32 @@ func parseBoolEnv(varName string, defaultValue bool) bool {
 	return value
 }
 
+func parseInt64Env(varName string, defaultValue int64) int64 {
+	valueStr, _ := os.LookupEnv(varName)
+	if valueStr == "" {
+		return defaultValue
+	}
+	value, err := strconv.ParseInt(valueStr, 10, 64)
+	if err != nil {
+		log.WithField("variable", varName).WithField("value", value).WithError(err).Error("Cannot parse environment value")
+		return defaultValue
+	}
+	return value
+}
+
 func registrationAllowed() bool {
 	return parseBoolEnv("ALLOW_REGISTRATION", true)
+}
+
+func maxUploadSize() int64 {
+	return parseInt64Env("MAX_UPLOAD_SIZE", 10*(1<<20))
 }
 
 // CreateRouter returns a router and all handlers.
 func CreateRouter(s *Services) (*chi.Mux, error) {
 	registrationAllowed := registrationAllowed()
 	logRequests := parseBoolEnv("LOG_REQUESTS", true)
+	maxUploadSize := maxUploadSize()
 
 	r := chi.NewRouter()
 
@@ -82,8 +100,8 @@ func CreateRouter(s *Services) (*chi.Mux, error) {
 		api.Group(func(authorized chi.Router) {
 			authorized.Use(s.cookieHandler.AuthHandlerFunc)
 			authorized.Use(APIAuthHandler)
-			authorized.Get("/settings", SettingsHandler(s))
-			authorized.Post("/settings", SettingsHandler(s))
+			authorized.Get("/settings", SettingsHandler(s, maxUploadSize))
+			authorized.Post("/settings", SettingsHandler(s, maxUploadSize))
 			authorized.Post("/backup", BackupHandler(s))
 			authorized.Post("/transactions/getcount", TransactionsCountHandler(s))
 			authorized.Post("/transactions/getpage", TransactionsHandler(s))
