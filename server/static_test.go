@@ -19,7 +19,7 @@ func TestGetStaticResource(t *testing.T) {
 	assert.NoError(t, err)
 
 	req, _ := http.NewRequest("GET", "/static/style.css", nil)
-	res := newRecorder()
+	res := httptest.NewRecorder()
 	router.ServeHTTP(res, req)
 
 	assert.Equal(t, http.StatusOK, res.Code)

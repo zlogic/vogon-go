@@ -273,7 +273,7 @@ func TestBackupAuthorized(t *testing.T) {
 	assert.NoError(t, err)
 
 	req, _ := http.NewRequest("POST", "/api/backup", nil)
-	res := newRecorder()
+	res := httptest.NewRecorder()
 
 	user := testUser
 	authHandler.AllowUser(&user)
