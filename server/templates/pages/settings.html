@@ -111,8 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
     [restoreBackupFile, username, password, submit].forEach(function(control){
       control.disabled = processing;
     });
-    if(processing) submit.classList.add("is-loading");
-    else submit.classList.remove("is-loading");
     updateRestoreWarning();
   }
   var showResultAlert = function(isSuccessful, msg){
@@ -151,9 +149,10 @@ document.addEventListener('DOMContentLoaded', () => {
   configurationForm.addEventListener("submit", function(event){
     event.preventDefault();
     lockConfiguration(true);
-    // Prepare request
     saveResult.hidden = true;
-    
+    submit.classList.add("is-loading");
+
+    // Prepare request
     var postData = {Username: username.value, Password: password.value};
     if(postData.Password === null || postData.Password === undefined || postData.Password === '')
       delete postData.Password;
@@ -167,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     var showError = function() {
       showResultAlert(false, "Save failed");
       lockConfiguration(false);
+      submit.classList.remove("is-loading");
     };
 
     var request = new XMLHttpRequest();
@@ -176,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showResultAlert(true, "Saved successfully");
         updateFormValues(JSON.parse(this.response));
         lockConfiguration(false);
+        submit.classList.remove("is-loading");
       } else {
         showError();
       }
