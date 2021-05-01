@@ -3,12 +3,9 @@
 <div class="container is-widescreen">
   <div id="reportTarget" class="content"></div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js" integrity="sha512-vBmx0N/uQOXznm/Nbkp7h0P1RfLSj0HQrFSzV8m7rOGyj30fYAOKHYvCNez+yM8IrfnW0TCodDEjRqf6fodf/Q==" crossorigin="anonymous"></script>
-<script>
-  // Load CSS
-  Chart.platform.disableCSSInjection = true;
-  document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.css" integrity="sha512-/zs32ZEJh+/EO2N1b0PEdoA10JkdC3zJ8L5FTiQu82LR9S/rOQNfQN7U59U9BC12swNeRAz3HSzIL2vpp4fv3w==" crossorigin="anonymous" />');
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.0/chart.min.js" integrity="sha512-asxKqQghC1oBShyhiBwA+YgotaSYKxGP1rcSYTDrB0U6DxwlJjU59B67U8+5/++uFjcuVM8Hh5cokLjZlhm3Vg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js" integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-moment/1.0.0/chartjs-adapter-moment.min.js" integrity="sha512-oh5t+CdSBsaVVAvxcZKy3XJdP7ZbYUBSRCXDTVn0ODewMDDNnELsrG9eDm8rVZAQg7RsDD/8K3MjPAFB13o6eA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
   var params = {
     filterDescription: '{{ index .Form "filterDescription" 0 }}',
@@ -25,19 +22,24 @@ document.addEventListener('DOMContentLoaded', () => {
   var reportTarget = document.getElementById("reportTarget");
   var balanceChartOptions = {
     responsive: true,
-    tooltips: {
+    interaction: {
       mode: 'nearest',
       intersect: false,
     },
-    legend: {
-      display: false,
-    },
-    hover: {
-      mode: 'nearest',
-      intersect: false
+    plugins:{
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          title: function(context) {
+            return context[0].raw.x
+          }
+        }
+      }
     },
     scales: {
-      xAxes: [{
+      x: {
         type: 'time',
         distribution: 'linear',
         time: {
@@ -48,34 +50,42 @@ document.addEventListener('DOMContentLoaded', () => {
           source: 'auto',
           autoSkip: true
         }
-      }],
-      yAxes: [{
-        scaleLabel: {
-          display: true,
-          labelString: 'value'
+      },
+      y: {
+        title: {
+          display: false
         }
-      }]
-    }
-  };
-  var tagsChartOptions = {
-    responsive: true,
-    tooltips: {
-      mode: 'point',
-      intersect: false,
-      callbacks: {
-        title: function() {}
       }
     },
-    legend: {
-      display: false,
+    fill: true,
+  };
+  var tagsChartOptions = {
+    indexAxis: 'y',
+    responsive: true,
+    interaction: {
+      mode: 'point',
+      intersect: false,
+    },
+    tooltips: {
+      intersect: false,
+    },
+    plugins:{
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          title: function() {}
+        }
+      }
     },
     scales: {
-      xAxes: [{
+      x: {
         stacked: true,
-      }],
-      yAxes: [{
+      },
+      y: {
         stacked: true
-      }]
+      }
     }
   };
   var colors = [
@@ -105,14 +115,14 @@ document.addEventListener('DOMContentLoaded', () => {
       var currencyChart = report.BalanceChart[currency];
       var data = [];
       for (var date in currencyChart)
-        data.push({t: date, y: (currencyChart[date]/100).toFixed(2)});
+        data.push({x: date, y: (currencyChart[date]/100).toFixed(2)});
       var dataset = {
         datasets: [{
           radius: 0,
           data: data,
           backgroundColor: colors[0],
           borderColor: colors[0],
-          steppedLine: 'before'
+          stepped: 'before'
         }]
       }
       var ctx = document.createElement("canvas");
@@ -155,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
       for (var i in tags) {
         var tag = tags[i];
         tagDatasets.push({
+          axis: 'y',
           label: tags[i],
           data: [
             convertAmount(tagsChart.Positive[tag]),
@@ -171,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
       var ctx = document.createElement("canvas");
       tagsChartDiv.append(ctx);
       var tagsChart = new Chart(ctx, {
-        type: 'horizontalBar',
+        type: 'bar',
         data: dataset,
         options: tagsChartOptions
       });
