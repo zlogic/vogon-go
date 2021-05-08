@@ -102,6 +102,7 @@ func SettingsHandler(s *Services, maxUploadSize int64) func(w http.ResponseWrite
 
 		returnUser := &clientUser{Username: user.GetUsername()}
 
+		w.Header().Add("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(returnUser); err != nil {
 			handleError(w, r, err)
 		}

@@ -79,6 +79,7 @@ func CreateRouter(s *Services) (*chi.Mux, error) {
 	r.Group(func(authorized chi.Router) {
 		authorized.Use(s.cookieHandler.AuthHandlerFunc)
 		authorized.Use(PageAuthHandler)
+		authorized.Use(middleware.Compress(5))
 		authorized.Get("/logout", LogoutHandler(s))
 		authorized.Get("/transactions", HTMLUserPageHandler(s, "transactions"))
 		authorized.Get("/transactioneditor", HTMLUserPageHandler(s, "transactioneditor"))
@@ -100,6 +101,7 @@ func CreateRouter(s *Services) (*chi.Mux, error) {
 		api.Group(func(authorized chi.Router) {
 			authorized.Use(s.cookieHandler.AuthHandlerFunc)
 			authorized.Use(APIAuthHandler)
+			authorized.Use(middleware.Compress(5))
 			authorized.Get("/settings", SettingsHandler(s, maxUploadSize))
 			authorized.Post("/settings", SettingsHandler(s, maxUploadSize))
 			authorized.Post("/backup", BackupHandler(s))

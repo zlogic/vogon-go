@@ -109,6 +109,8 @@ func HTMLLoginHandler(s *Services) func(w http.ResponseWriter, r *http.Request) 
 			viewData
 			RegistrationAllowed bool
 		}
+
+		w.Header().Add("Content-Type", "text/html")
 		t.ExecuteTemplate(w, "layout", &loginData{RegistrationAllowed: registrationAllowed()})
 	}
 }
@@ -126,6 +128,8 @@ func HTMLRegisterHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 			handleError(w, r, err)
 			return
 		}
+
+		w.Header().Add("Content-Type", "text/html")
 		t.ExecuteTemplate(w, "layout", &viewData{})
 	}
 }
@@ -150,6 +154,7 @@ func HTMLUserPageHandler(s *Services, templateName string) func(w http.ResponseW
 			return
 		}
 
+		w.Header().Add("Content-Type", "text/html")
 		t.ExecuteTemplate(w, "layout", &viewData{User: user, Username: user.GetUsername(), Name: templateName, Form: r.Form})
 	}
 }

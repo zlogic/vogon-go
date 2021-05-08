@@ -25,6 +25,7 @@ func TagsHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 
 		sort.Strings(tags)
 
+		w.Header().Add("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(tags); err != nil {
 			handleError(w, r, err)
 		}

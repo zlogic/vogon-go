@@ -196,6 +196,7 @@ func ReportHandler(s *Services) func(w http.ResponseWriter, r *http.Request) {
 			TagsChart    currencyTagAmount
 		}
 
+		w.Header().Add("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(report{BalanceChart: chart, TagsChart: tags}); err != nil {
 			handleError(w, r, err)
 		}

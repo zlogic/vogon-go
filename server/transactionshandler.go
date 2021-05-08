@@ -80,6 +80,7 @@ func TransactionsCountHandler(s *Services) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
+		w.Header().Add("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(count); err != nil {
 			handleError(w, r, err)
 		}
@@ -136,6 +137,7 @@ func TransactionsHandler(s *Services) func(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
+		w.Header().Add("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(transactions); err != nil {
 			handleError(w, r, err)
 		}
@@ -172,6 +174,7 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 				return
 			}
 
+			w.Header().Add("Content-Type", "text/plain")
 			if _, err := io.WriteString(w, "OK"); err != nil {
 				log.WithError(err).Error("Failed to write response")
 			}
@@ -184,6 +187,7 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 				return
 			}
 
+			w.Header().Add("Content-Type", "text/plain")
 			if _, err := io.WriteString(w, "OK"); err != nil {
 				log.WithError(err).Error("Failed to write response")
 			}
@@ -200,6 +204,7 @@ func TransactionHandler(s *Services) func(w http.ResponseWriter, r *http.Request
 			return
 		}
 
+		w.Header().Add("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(transaction); err != nil {
 			handleError(w, r, err)
 		}
