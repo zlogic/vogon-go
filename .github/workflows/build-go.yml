@@ -35,10 +35,10 @@ jobs:
       run: CGO_ENABLED=0 GOOS=linux GOARCH=${{ matrix.arch }} go build -v -ldflags="-s -w" -o dist/vogon-go .
 
     - name: Create image
-      run: podman build --tag vogon-go:${{ github.ref_name }}-${{ matrix.arch }} --arch=${{ matrix.arch }} --file .github/Dockerfile dist
+      run: podman build --tag ghcr.io/zlogic/vogon-go:${{ github.ref_name }}-${{ matrix.arch }} --arch=${{ matrix.arch }} --file .github/Dockerfile dist
 
     - name: Save image file
-      run: podman save vogon-go:${{ github.ref_name }}-${{ matrix.arch }} > vogon-go.tar
+      run: podman save ghcr.io/zlogic/vogon-go:${{ github.ref_name }}-${{ matrix.arch }} > vogon-go.tar
 
     - name: Upload image artifact
       uses: actions/upload-artifact@v2
@@ -47,7 +47,7 @@ jobs:
         path: vogon-go.tar
         retention-days: 1
 
-  push:
+  push-images:
     name: Combine and push images
     runs-on: ubuntu-latest
     needs: build
@@ -63,10 +63,30 @@ jobs:
     - name: Import images into Podman
       run: |
         for img in ${{ steps.download.outputs.download-path }}/*/vogon-go.tar; do
+          podman load < ${img}
           podman manifest add vogon-go:${{ github.ref_name }} docker-archive:${img}
         done
 
-    - name: Push image
+    - name: Login into container registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Push manifest
+      run: podman manifest push --all vogon-go:${{ github.ref_name }} docker://ghcr.io/zlogic/vogon-go:${{ github.ref_name }}
+
+    - name: Push images
       run: |
-        echo "${{ secrets.GITHUB_TOKEN }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
-        podman manifest push --all vogon-go docker://ghcr.io/zlogic/vogon-go:${{ github.ref_name }}
+        podman images --noheading --format="{{.Repository}}:{{.Tag}}" --filter "reference=ghcr.io/zlogic/vogon-go:${{ github.ref_name }}-*" | \
+        xargs -I '{}' podman push '{}'
+
+    - name: Cleanup untagged images
+      run: |
+        curl -sS \
+          --header "Accept: application/vnd.github.v3+json" \
+          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+          https://api.github.com/user/packages/container/vogon-go/versions | \
+        jq --raw-output '.[] | select(.metadata.container.tags | length == 0) | .id' | \
+        xargs -I '{}' curl -sS \
+          -X DELETE \
+          --header "Accept: application/vnd.github.v3+json" \
+          --header 'authorization: Bearer ${{ secrets.DELETE_TOKEN }}' \
+          "https://api.github.com/user/packages/container/vogon-go/versions/{}"
