@@ -77,16 +77,3 @@ jobs:
       run: |
         podman images --noheading --format="{{.Repository}}:{{.Tag}}" --filter "reference=ghcr.io/zlogic/vogon-go:${{ github.ref_name }}-*" | \
         xargs -I '{}' podman push '{}'
-
-    - name: Cleanup untagged images
-      run: |
-        curl -sS \
-          --header "Accept: application/vnd.github.v3+json" \
-          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
-          https://api.github.com/user/packages/container/vogon-go/versions | \
-        jq --raw-output '.[] | select(.metadata.container.tags | length == 0) | .id' | \
-        xargs -I '{}' curl -sS \
-          -X DELETE \
-          --header "Accept: application/vnd.github.v3+json" \
-          --header 'authorization: Bearer ${{ secrets.DELETE_TOKEN }}' \
-          "https://api.github.com/user/packages/container/vogon-go/versions/{}"
