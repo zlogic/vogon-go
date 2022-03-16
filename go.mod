@@ -8,7 +8,7 @@ require (
 	github.com/go-chi/jwtauth/v5 v5.0.2
 	github.com/google/uuid v1.3.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
 )
 
