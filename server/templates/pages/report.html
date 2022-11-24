@@ -3,9 +3,9 @@
 <div class="container is-widescreen">
   <div id="reportTarget" class="content"></div>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.2.0/chart.umd.min.js" integrity="sha512-0gS26t/01v98xlf2QF4QS1k32/YHWfFs8HfBM/j7gS97Tr8WxpJqoiDND8r1HgFwGGYRs0aRt33EY8xE91ZgJw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js" integrity="sha512+H4iLjY3JsKiF2V6N366in5IQHj2uEsGV7Pp/GRcm0fn76aPAk5V8xB6n8fQhhSonTqTXs/klFz4D0GIn6Br9g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-moment/1.0.0/chartjs-adapter-moment.min.js" integrity="sha512-oh5t+CdSBsaVVAvxcZKy3XJdP7ZbYUBSRCXDTVn0ODewMDDNnELsrG9eDm8rVZAQg7RsDD/8K3MjPAFB13o6eA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-moment/1.0.1/chartjs-adapter-moment.min.js" integrity="sha512-hVy4KxCKgnXi2ok7rlnlPma4JHXI1VPQeempoaclV1GwRHrDeaiuS1pI6DVldaj5oh6Opy2XJ2CTljQLPkaMrQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
   var params = {
     filterDescription: '{{ index .Form "filterDescription" 0 }}',
@@ -75,7 +75,16 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       tooltip: {
         callbacks: {
-          title: function() {}
+          title: function(context) {
+            if (context[0] === undefined)
+              return undefined;
+            return context[0].dataset.label;
+          },
+          label: function(context) {
+            if (context === undefined)
+              return undefined;
+            return context.formattedValue;
+          }
         }
       }
     },
