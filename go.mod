@@ -1,6 +1,6 @@
 module github.com/zlogic/vogon-go
 
-go 1.19
+go 1.20
 
 require (
 	github.com/akrylysov/pogreb v0.10.1
@@ -8,8 +8,8 @@ require (
 	github.com/go-chi/jwtauth/v5 v5.1.0
 	github.com/google/uuid v1.3.0
 	github.com/sirupsen/logrus v1.9.0
-	github.com/stretchr/testify v1.8.1
-	golang.org/x/crypto v0.5.0
+	github.com/stretchr/testify v1.8.2
+	golang.org/x/crypto v0.7.0
 )
 
 require (
@@ -24,6 +24,6 @@ require (
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
